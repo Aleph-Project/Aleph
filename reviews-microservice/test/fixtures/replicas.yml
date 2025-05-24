@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  review: one
+  auth_id: 1234567aaa
+  review_id: 1
+  replica_body: MyText
+
+two:
+  review: two
+  auth_id: 1234567bbb
+  review_id: 1
+  replica_body: MyText

@@ -1,0 +1,93 @@
+services:
+  profile-ms: 
+    container_name: profile-ms
+    build: 
+      context: ./profile-microservice
+      dockerfile: Dockerfile-dev
+    depends_on:
+      - profile-db 
+    volumes:
+      - ./profile-microservice:/usr/src/app
+    environment:
+      - S3_ACCESS_KEY=secret
+      - S3_SECRET_KEY=secret
+  profile-db:
+    image: postgres:15
+    container_name: profile-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - profile_data:/var/lib/postgresql/data
+  reviews-ms:
+    container_name: reviews-ms
+    build: 
+      context: ./reviews-microservice
+      dockerfile: Dockerfile-dev
+    depends_on:
+      - reviews-db
+    volumes:
+      - ./reviews-microservice:/usr/src/app
+  reviews-db:
+    image: postgres:15
+    container_name: reviews-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - reviews_data:/var/lib/postgresql/data
+  music-ms:
+    container_name: music-ms
+    build:
+      context: ./music-ms
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # Puerto comentado para que solo sea accesible a través del API Gateway
+    # ports:
+    #   - "3002:3002"
+    environment:
+      # - PORT=3002
+      - MONGODB_URI=mongodb://mongo:27017
+      - MONGODB_NAME=music_ms
+      - MONGODB_TIMEOUT=10
+      - SPOTIFY_CLIENT_ID=secret
+      - SPOTIFY_CLIENT_SECRET=secret
+    depends_on:
+      - mongo
+  mongo:
+    container_name: mongo
+    image: mongo:6
+    restart: unless-stopped
+    ports:
+      - "27018:27017"  # Exponer en un puerto distinto para evitar conflictos
+    volumes:
+      - mongo-data:/data/db
+    command: mongod --quiet --logpath /dev/null  # Reducir logs
+  aleph-frontend:
+    container_name: aleph-frontend
+    build: 
+      context: ./aleph-frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      - AUTH0_SECRET=secret
+      - APP_BASE_URL=http://localhost:3000
+      - AUTH0_ISSUER_BASE_URL=secret
+      - AUTH0_CLIENT_ID=secret
+      - AUTH0_CLIENT_SECRET=secret
+      - AUTH0_DOMAIN=secret
+    ports:
+      - "3000:3000"
+    depends_on:
+      - music-ms
+  apigateway:
+    container_name: apigateway
+    build: 
+      context: ./ApiGateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      
+volumes:
+  profile_data:
+  reviews_data:
+  mongo-data:
