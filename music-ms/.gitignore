@@ -1,0 +1,33 @@
+# Binarios compilados
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Archivos de salida de Go
+/bin/
+/dist/
+
+# Variables de entorno
+.env
+
+# Dependencias
+/vendor/
+
+# Archivos temporales
+/tmp/
+
+# Archivos de configuración del IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Archivos de log
+*.log
+
+# Archivos de caché
+.cache/

@@ -1,0 +1,23 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  auth_id: "1234567aaa"
+  city: one  # Referencia al fixture 'one' en cities.yml
+  name: Juan Pérez
+  bio: Desarrollador de software con experiencia en Ruby on Rails
+  birthday: 1990-05-15
+  avatar_url: 
+  wallpaper_url: 
+  timestamp_creation: <%= Time.current %>
+  timestamp_edit: <%= Time.current %>
+
+two:
+  auth_id: "7654321bbb"
+  city: two  # Referencia al fixture 'two' en cities.yml
+  name: María González
+  bio: Diseñadora UX/UI especializada en experiencias web
+  birthday: 1995-08-22
+  avatar_url: https://example.com/avatar2.jpg
+  wallpaper_url: https://example.com/wallpaper2.jpg
+  timestamp_creation: <%= Time.current %>
+  timestamp_edit: <%= Time.current %>

@@ -1,0 +1,18 @@
+FROM ruby:3.2.3
+
+WORKDIR /usr/src/app
+
+
+RUN apt-get update -qq && apt-get install -y build-essential libpq-dev nodejs
+
+
+RUN gem install bundler
+RUN gem install rails
+
+
+COPY Gemfile* ./
+RUN bundle install || true  # evita fallos si el Gemfile aún no está listo
+
+
+COPY . .
+CMD bash -c "rm -f tmp/pids/server.pid && rm -f tmp/sockets/server.sock && rm -f tmp/sockets/puma.sock && rm -f tmp/sockets/unicorn.sock && rm -f tmp/sockets/thin.sock && rm -f tmp/sockets/sidekiq.sock && rm -f tmp/sockets/sidekiqctl.sock && rm -f tmp/sockets/sidekiqctl.pid && rm -f tmp/sockets/sidekiqctl.log && rails db:prepare && rails server -b 0.0.0.0"

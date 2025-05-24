@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  reviewed_object_id: 1234567aaa
+  auth_id: MyText
+  review_title: MyText
+  review_body: MyText
+  rating: 1
+  is_song: true
+  is_public: true
+
+two:
+  reviewed_object_id: 1234567bbb
+  auth_id: MyText
+  review_title: MyText
+  review_body: MyText
+  rating: 1
+  is_song: false
+  is_public: false
