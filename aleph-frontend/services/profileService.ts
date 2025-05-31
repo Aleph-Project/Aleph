@@ -129,5 +129,36 @@ export async function DeleteProfile(auth_id: string): Promise<any> {
     }
 }
 
+export async function editProfile(data: CreateProfileData, auth_id: string): Promise<any> {
+    const formData = new FormData();
+    formData.append("profile[auth_id]", data.auth_id);
+    formData.append("profile[name]", data.name);
+    formData.append("profile[bio]", data.bio);
+    formData.append("profile[birthday]", data.birthday);
+    formData.append("profile[city_id]", String(data.city_id));
+    if (data.avatar_file) {
+        formData.append("profile[avatar_file]", data.avatar_file);
+    }
+    if (data.background_file) {
+        formData.append("profile[background_file]", data.background_file);
+    }
+
+  const response = await fetch(`${PROFILE_API_URL}/my-profile-update/${auth_id}`, {
+    method: "PATCH",
+    body: formData,
+  });
+
+//   const response = await fetch(`${PROFILE_API_URL}/create-profile`, {
+//     method: "POST",
+//     body: formData,
+//   });
+
+  if (!response.ok) {
+    throw new Error("Error editing profile");
+  }
+
+  return response.json();
+}
+
 
 
