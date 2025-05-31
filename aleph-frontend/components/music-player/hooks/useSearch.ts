@@ -1,88 +1,78 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Song as SongType, Album as AlbumType, Artist as ArtistType } from '@/services/songService'
-import { Artist, Album, Song, SearchResults } from '../types'
+import { useState } from "react";
+import { Song, Album, Artist } from "../types";
+import { searchSongsGraphQL, searchAlbumsGraphQL, searchArtistsGraphQL } from "@/services/songService";
 
-interface SearchResults {
-    artists: { id: number | string; name: string; imageUrl: string }[];
-    albums: { id: number | string; title: string; artist: string; coverUrl: string }[];
-    songs: SongType[];
+interface UseSearchResult {
+  searchResults: {
+    songs: Song[];
+    albums: Album[];
+    artists: Artist[];
+  };
+  loading: boolean;
+  error: string | null;
+  search: (query: string) => Promise<void>;
+  clearSearch: () => void;
 }
 
-export function useSearch(
-    apiSongs: SongType[],
-    apiAlbums: AlbumType[],
-    staticArtists: { id: number; name: string; imageUrl: string }[],
-    staticAlbums: { id: number; title: string; artist: string; coverUrl: string }[]
-) {
-    const [searchTerm, setSearchTerm] = useState('')
-    const [isSearching, setIsSearching] = useState(false)
-    const [searchResults, setSearchResults] = useState<SearchResults>({
-        artists: [],
-        albums: [],
-        songs: []
-    })
+export function useSearch(): UseSearchResult {
+  const [searchResults, setSearchResults] = useState<{
+    songs: Song[];
+    albums: Album[];
+    artists: Artist[];
+  }>({
+    songs: [],
+    albums: [],
+    artists: [],
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const handleSearch = useCallback((term: string) => {
-        setSearchTerm(term)
-        setIsSearching(term.trim() !== '')
-
-        if (term.trim() === '') {
-            setSearchResults({
-                artists: [],
-                albums: [],
-                songs: []
-            })
-            return
-        }
-
-        // Filtrar artistas
-        const filteredArtists = staticArtists.filter((artist) => 
-            artist.name.toLowerCase().includes(term)
-        )
-
-        // Filtrar álbumes
-        const staticFilteredAlbums = staticAlbums.filter(
-            (album) => album.title.toLowerCase().includes(term) || 
-                      album.artist.toLowerCase().includes(term)
-        )
-        
-        const dynamicAlbums = apiAlbums.filter(
-            (album) => album.title.toLowerCase().includes(term) || 
-                      album.artist.toLowerCase().includes(term)
-        )
-        
-        const allAlbums = [...staticFilteredAlbums, ...dynamicAlbums]
-
-        // Filtrar canciones
-        const filteredSongs = apiSongs.filter(
-            (song) =>
-                song.title.toLowerCase().includes(term) ||
-                song.artist.toLowerCase().includes(term) ||
-                (song.album && song.album.toLowerCase().includes(term))
-        )
-
-        setSearchResults({
-            artists: filteredArtists,
-            albums: allAlbums,
-            songs: filteredSongs
-        })
-    }, [apiSongs, apiAlbums, staticArtists, staticAlbums])
-
-    const clearSearch = useCallback(() => {
-        setSearchTerm('')
-        setIsSearching(false)
-        setSearchResults({
-            artists: [],
-            albums: [],
-            songs: []
-        })
-    }, [])
-
-    return {
-        searchTerm,
-        isSearching,
-        searchResults,
-        handleSearch,
-        clearSearch
+  const search = async (query: string) => {
+    if (!query.trim()) {
+      clearSearch();
+      return;
     }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const [songs, albums, artists] = await Promise.all([
+        searchSongsGraphQL(query),
+        searchAlbumsGraphQL(query),
+        searchArtistsGraphQL(query),
+      ]);
+
+      setSearchResults({
+        songs: Array.isArray(songs) ? songs : [],
+        albums: Array.isArray(albums) ? albums : [],
+        artists: Array.isArray(artists) ? artists : [],
+      });
+    } catch (err: any) {
+      setError("Error al realizar la búsqueda");
+      setSearchResults({
+        songs: [],
+        albums: [],
+        artists: [],
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchResults({
+      songs: [],
+      albums: [],
+      artists: [],
+    });
+    setError(null);
+  };
+
+  return {
+    searchResults,
+    loading,
+    error,
+    search,
+    clearSearch,
+  };
 } 

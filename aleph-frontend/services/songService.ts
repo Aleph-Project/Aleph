@@ -2,6 +2,9 @@ import { Review } from "@/services/reviewService";
 import { Profile } from "@/services/profileService";
 import { ReactSVGElement } from "react";
 
+import { gql } from '@apollo/client';
+import client from './graphqlClient';
+
 // Definición de la interfaz Song que coincide con el modelo en el microservicio
 export interface Song {
   _id: string;
@@ -14,7 +17,7 @@ export interface Song {
   genre: string;
   likes: number;
   plays: number;
-  cover_url: string;
+  image_url: string;
   audio_url: string;
   spotify_id?: string;  // ID del álbum en Spotify (opcional)
   album_id?: string;    // ID del álbum (opcional)
@@ -27,7 +30,7 @@ export interface Album {
   id: string;
   title: string;  // Nombre real del álbum
   artist: string;
-  coverUrl: string;
+  image_url: string;
   releaseDate?: string;
   songsCount: number;
 }
@@ -407,52 +410,79 @@ export async function getSongAudio(id: string): Promise<Blob> {
   }
 }
 
-// Función para obtener todos los detalles de un artista: información, álbumes y canciones
-export async function getArtistDetails(artistId: string): Promise<ArtistDetails> {
-  try {
-    // console.log(`Obteniendo detalles completos del artista con ID: ${artistId}`);
-    
-    // Utilizar el endpoint del backend que devuelve todos los detalles del artista en una sola llamada
-    const response = await fetch(`${MUSIC_API_URL}/artists/${artistId}/details`);
-    
-    if (!response.ok) {
-      throw new Error(`Error en la petición: ${response.status} ${response.statusText}`);
-    }
-    
-    // Si la respuesta es exitosa, procesar los datos
-    const artistDetails = await response.json();
-    // console.log(`Detalles completos del artista cargados en una sola petición.`);
-    
-    // Procesar el artista utilizando la función auxiliar
-    const artist = processArtist(artistDetails);
-    
-    // Guardar temporalmente las canciones originales para usarlas en el procesamiento de álbumes
-    const originalSongs = artistDetails.songs || [];
-    
-    // Procesar los álbumes utilizando la función auxiliar
-    const albums = (artistDetails.albums || []).map((album: any) => 
-      processAlbum(album, artist.name, originalSongs)
-    );
-    
-    // Procesar las canciones utilizando la función auxiliar
-    const songs = originalSongs.map((song: any) => 
-      processSong(song, albums, artist.name)
-    );
-    
-    const result = {
-      artist,
-      albums,
-      songs
-    };
-    
-    // console.log(`Resultado procesado completamente`, result);
-    
-    return result;
-    
-  } catch (error) {
-    // console.error(`Error obteniendo detalles completos del artista ${artistId}:`, error);
-    throw error;
-  }
+// Función para obtener todas las canciones
+export async function getAllSongsGraphQL() {
+  const { data } = await client.query({
+    query: GET_ALL_SONGS,
+    fetchPolicy: 'no-cache',
+  });
+  return data.songs;
+}
+
+// Función para obtener una canción por su ID
+export async function getSongByIdGraphQL(id: string) {
+  const { data } = await client.query({
+    query: GET_SONG_BY_ID,
+    variables: { id },
+    fetchPolicy: 'no-cache',
+  });
+  return data.song;
+}
+
+// Función para obtener todos los artistas
+export async function getAllArtistsGraphQL() {
+  const { data } = await client.query({
+    query: GET_ALL_ARTISTS,
+    fetchPolicy: 'no-cache',
+  });
+  return data.artists;
+}
+
+// Función para obtener un artista por su ID
+export async function getArtistByIdGraphQL(id: string) {
+  const { data } = await client.query({
+    query: GET_ARTIST_BY_ID,
+    variables: { id },
+    fetchPolicy: 'no-cache',
+  });
+  return data.artist;
+}
+
+// Función para obtener todos los álbumes
+export async function getAllAlbumsGraphQL() {
+  const { data } = await client.query({
+    query: GET_ALL_ALBUMS,
+    fetchPolicy: 'no-cache',
+  });
+  return data.albums;
+}
+
+// Función para obtener un álbum por su ID
+export async function getAlbumByIdGraphQL(id: string) {
+  const { data } = await client.query({
+    query: GET_ALBUM_BY_ID,
+    variables: { id },
+    fetchPolicy: 'no-cache',
+  });
+  return data.album;
+}
+
+// Función para obtener todas las categorías
+export async function getAllCategoriesGraphQL() {
+  const { data } = await client.query({
+    query: GET_ALL_CATEGORIES,
+    fetchPolicy: 'no-cache',
+  });
+  return data.categories;
+}
+
+// Función para obtener todos los géneros
+export async function getAllGenresGraphQL() {
+  const { data } = await client.query({
+    query: GET_ALL_GENRES,
+    fetchPolicy: 'no-cache',
+  });
+  return data.genres;
 }
 
 // Función auxiliar para procesar canciones y asegurar que tengan todos los campos necesarios
@@ -553,59 +583,193 @@ function processArtist(artistData: any): Artist {
   return artist as Artist;
 }
 
-// Función para extraer álbumes reales desde las canciones
-export function getAlbumsFromSongs(songs: Song[]): Album[] {
-  // Usar un mapa para agrupar canciones por álbum y evitar duplicados
-  const albumMap = new Map<string, Album>();
-  
-  songs.forEach(song => {
-    if (song.album && !song.album.includes(' - Collection')) {
-      // Usar una clave única basada en álbum y artista
-      const albumKey = `${song.album}-${song.artist}`;
-      
-      // Si este álbum ya está en el mapa, incrementamos el contador de canciones
-      if (albumMap.has(albumKey)) {
-        const existingAlbum = albumMap.get(albumKey)!;
-        existingAlbum.songsCount++;
-        return;
-      }
-      
-      // Sino, creamos una nueva entrada para el álbum
-      albumMap.set(albumKey, {
-        id: albumKey,
-        title: song.album,
-        artist: song.artist,
-        coverUrl: song.cover_url,
-        releaseDate: song.release_date,
-        songsCount: 1
-      });
-    }
+// Función para obtener una categoría por su ID
+export async function getCategoryByIdGraphQL(id: string) {
+  const { data } = await client.query({
+    query: GET_CATEGORY_BY_ID,
+    variables: { id },
+    fetchPolicy: 'no-cache',
   });
-  
-  // Convertir el mapa a un array y ordenar por artista y álbum
-  return Array.from(albumMap.values())
-    .sort((a, b) => a.artist.localeCompare(b.artist) || a.title.localeCompare(b.title));
+  return data.category;
 }
 
-export async function getReviewsAndProfileBySong(id: string): Promise<ReviewsWithProfilesResponse> {
-  try {
-    const response = await fetch(`${COMPOSED_API_URL}/reviews-with-profile/${id}`);
+// GraphQL
 
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}`);
+export const GET_ALL_SONGS = gql`
+  query GetAllSongs {
+    songs {
+      id
+      title
+      duration
+      spotify_id
+      album_id
+      track_number
+      audio_url
+      created_at
+      updated_at
+      album {
+        id
+        title
+        image_url
+      }
+      artists {
+        id
+        name
+        image_url
+      }
     }
-
-    // El backend retorna { reviewsWithProfiles: [ { review: {...}, profile: {...} }, ... ] }
-    const data = await response.json();
-    // Validación opcional para asegurar estructura
-    if (!Array.isArray(data.reviewsWithProfiles)) {
-      throw new Error("Formato inesperado en la respuesta del backend");
-    }
-    return {
-      reviewsWithProfiles: data.reviewsWithProfiles
-    };
-  } catch (error) {
-    console.error("Error fetching reviews with profiles:", error);
-    return { reviewsWithProfiles: [] };
   }
-}
+`;
+
+export const GET_SONG_BY_ID = gql`
+  query GetSongById($id: ID!) {
+    song(id: $id) {
+      id
+      title
+      duration
+      spotify_id
+      album_id
+      track_number
+      audio_url
+      created_at
+      updated_at
+      album {
+        id
+        title
+        image_url
+      }
+      artists {
+        id
+        name
+        image_url
+      }
+    }
+  }
+`;
+
+export const GET_ALL_ARTISTS = gql`
+    query GetAllArtists {
+      artists {
+        id
+        name
+        spotify_id
+        image_url
+        genres
+        popularity
+        created_at
+        updated_at
+      }
+    }
+`;
+
+export const GET_ARTIST_BY_ID = gql`
+  query GetArtistById($id: ID!) {
+    artist(id: $id) {
+      id
+      name
+      spotify_id
+      image_url
+      genres
+      popularity
+      created_at
+      updated_at
+      albums {
+        id
+        title
+        image_url
+        release_date
+      }
+      songs {
+        id
+        title
+        duration
+        album {
+          id
+          title
+        }
+      }
+    }
+  }
+`;
+
+export const GET_ALL_ALBUMS = gql`
+  query GetAllAlbums {
+    albums {
+      id
+      title
+      release_date
+      spotify_id
+      image_url
+      year
+      created_at
+      updated_at
+      artist_ids
+    }
+  }
+`;
+
+export const GET_ALBUM_BY_ID = gql`
+  query GetAlbumById($id: ID!) {
+    album(id: $id) {
+      id
+      title
+      release_date
+      spotify_id
+      image_url
+      year
+      created_at
+      updated_at
+      artist_ids
+      songs {
+        id
+        title
+        duration
+      }
+    }
+  }
+`;
+
+export const GET_ALL_CATEGORIES = gql`
+  query GetAllCategories {
+    categories {
+      id
+      name
+      slug
+      image_url
+      genres {
+        id
+        name
+        slug
+        count
+      }
+    }
+  }
+`;
+
+export const GET_ALL_GENRES = gql`
+  query GetAllGenres {
+    genres {
+      id
+      name
+      slug
+      count
+    }
+  }
+`;
+
+export const GET_CATEGORY_BY_ID = gql`
+  query GetCategoryById($id: ID!) {
+    category(id: $id) {
+      id
+      name
+      slug
+      image_url
+      genres {
+        id
+        name
+        slug
+        count
+      }
+    }
+  }
+`;

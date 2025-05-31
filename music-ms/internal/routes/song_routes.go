@@ -3,8 +3,8 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 
-	"path/to/your/project/internal/controllers"
-	"path/to/your/project/internal/database"
+	"music-ms/internal/controllers"
+	"music-ms/internal/database"
 )
 
 // SetupSongRoutes configura las rutas relacionadas con las canciones

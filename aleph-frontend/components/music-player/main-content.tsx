@@ -1,372 +1,328 @@
 "use client"
 
-import { Search, X, ArrowLeft, Heart } from "lucide-react"
-import Link from "next/link"
-import { artists as staticArtists } from "@/data/artists"
-import { albums } from "@/data/albums"
-import { categories } from "@/data/categories"
-// Importamos el servicio con las nuevas interfaces y funciones
-import { 
-    getAllSongs, 
-    getSongById, 
-    getAllArtists,
-    getAllAlbums,
-    getAllGenres,
-    getAlbumsFromSongs,
-    getSongsByArtist,
-    getAlbumsByArtist,
-    getArtistDetails,
-    Song as SongType, 
-    Album as AlbumType,
-    Artist as ArtistType,
-    Category as CategoryType,
-    Genre as GenreType,
-    ArtistDetails
-} from "@/services/songService"
-import { getGenreDetails, GenreDetails } from "@/services/genreService"
+import { Search, X, ArrowLeft } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ArtistDetail } from "./artist-detail"
 import { GenreDetail } from "./genre-detail"
 import { GenresModal } from "./genres-modal"
-import { usePlayerState } from './hooks/usePlayerState'
-import { useArtistData } from './hooks/useArtistData'
-import { useGenreData } from './hooks/useGenreData'
-import { useSearch } from './hooks/useSearch'
-import { SearchBar } from './components/navigation/SearchBar'
-import { NavigationTabs } from './components/navigation/NavigationTabs'
-import { ArtistGrid } from './components/listings/ArtistGrid'
-import { AlbumGrid } from './components/listings/AlbumGrid'
-import { SongList } from './components/listings/SongList'
-import { SongDetail } from './components/details/SongDetail'
-import { ViewMode, Tab } from './types'
-
-// Función para agrupar géneros por primera letra (simulando categorías)
-function groupGenresByFirstLetter(genres: GenreType[]): CategoryType[] {
-    // Crear un mapa para agrupar géneros por la primera letra
-    const genreMap = new Map<string, GenreType[]>();
-    
-    // Colores para las categorías
-    const colors = [
-        'from-pink-500 to-purple-500',
-        'from-yellow-500 to-orange-500',
-        'from-red-500 to-red-800',
-        'from-blue-400 to-indigo-600',
-        'from-purple-400 to-purple-800',
-        'from-green-400 to-emerald-600',
-        'from-amber-500 to-yellow-800',
-        'from-gray-400 to-gray-700',
-        'from-teal-400 to-cyan-600'
-    ];
-    
-    // Agrupar los géneros por su primera letra
-    genres.forEach(genre => {
-        if (!genre.name) return;
-        
-        const firstLetter = genre.name.charAt(0).toUpperCase();
-        if (!genreMap.has(firstLetter)) {
-            genreMap.set(firstLetter, []);
-        }
-        genreMap.get(firstLetter)?.push(genre);
-    });
-    
-    // Convertir el mapa en un array de categorías
-    let colorIndex = 0;
-    const categories: CategoryType[] = [];
-    
-    genreMap.forEach((genresInCategory, letter) => {
-        categories.push({
-            id: letter,
-            name: letter,
-            image_url: `/placeholder.svg?text=${letter}`,
-            color: colors[colorIndex % colors.length],
-            genres: genresInCategory
-        });
-        colorIndex++;
-    });
-    
-    // Ordenar las categorías alfabéticamente
-    return categories.sort((a, b) => a.name.localeCompare(b.name));
-}
+import { ArtistCard } from "./ui/artist-card"
+import { AlbumCard } from "./ui/album-card"
+import { GenreCard } from "./ui/genre-card"
+import { SongCard } from "./ui/song-card"
+import { useArtists } from "@/hooks/useArtists"
+import { useAlbums } from "@/hooks/useAlbums"
+import { useSongs } from "@/hooks/useSongs"
+import { useGenres } from "@/hooks/useGenres"
+import type { Song, Album, Artist, Category, Genre } from "./types"
 
 export function MainContent() {
-    // Hooks
-    const {
-        currentlyPlaying,
-        isPlaying,
-        volume,
-        progress,
-        playSong,
-        pauseSong,
-        resumeSong,
-        stopSong,
-        updateProgress,
-        updateVolume
-    } = usePlayerState()
+    const [activeTab, setActiveTab] = useState("artistas")
+    const [searchTerm, setSearchTerm] = useState("")
+    const [viewMode, setViewMode] = useState<"normal" | "artist-detail" | "genre-detail">("normal")
+    const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null)
+    const [selectedGenre, setSelectedGenre] = useState<Genre | null>(null)
+    const [isSearching, setIsSearching] = useState(false)
+    const [isGenresModalOpen, setIsGenresModalOpen] = useState(false)
+    const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
 
-    const {
-        artists,
-        selectedArtist,
-        artistAlbums,
-        artistSongs,
+    // Hooks personalizados
+    const { 
+        artists: apiArtists, 
         isLoading: isLoadingArtists,
-        error: artistError,
-        loadArtists,
-        selectArtist,
-        clearArtistSelection
-    } = useArtistData()
+        error: artistsError,
+        getArtistDetails 
+    } = useArtists()
 
-    const {
-        genres,
-        selectedGenre,
-        genreArtists,
-        genreAlbums,
-        genreSongs,
+    const { 
+        albums: apiAlbums, 
+        isLoading: isLoadingAlbums,
+        error: albumsError 
+    } = useAlbums()
+
+    const { 
+        songs: apiSongs, 
+        isLoading: isLoadingSongs,
+        error: songsError 
+    } = useSongs()
+
+    const { 
+        genres: apiGenres, 
         isLoading: isLoadingGenres,
-        error: genreError,
-        loadGenres,
-        selectGenre,
-        clearGenreSelection
-    } = useGenreData()
+        error: genresError,
+        getGenreDetails 
+    } = useGenres()
 
-    const {
-        searchTerm,
-        isSearching,
-        searchResults,
-        handleSearch,
-        clearSearch
-    } = useSearch(artists, artistAlbums, [], [])
+    const isLoading = isLoadingArtists || isLoadingAlbums || isLoadingSongs || isLoadingGenres
+    const loadingError = artistsError || albumsError || songsError || genresError
 
-    // Estado local
-    const [activeTab, setActiveTab] = useState<Tab>('artists')
-    const [viewMode, setViewMode] = useState<ViewMode>('normal')
-    const [allAlbums, setAllAlbums] = useState<Album[]>([])
-    const [allSongs, setAllSongs] = useState<Song[]>([])
-    const [isLoadingAlbums, setIsLoadingAlbums] = useState(false)
-    const [isLoadingSongs, setIsLoadingSongs] = useState(false)
+    const tabs = [
+        { key: "artistas", label: "Artistas" },
+        { key: "albums", label: "Albums" },
+        { key: "categorias", label: "Categorías" },
+        { key: "canciones", label: "Canciones" },
+        { key: "favoritos", label: "Favoritos" },
+        { key: "comentarios", label: "Mis comentarios" },
+    ]
 
-    // Efectos
-    useEffect(() => {
-        loadArtists()
-        loadGenres()
-    }, [loadArtists, loadGenres])
-
-    useEffect(() => {
-        const loadAllAlbums = async () => {
-            setIsLoadingAlbums(true)
-            try {
-                const response = await fetch('http://localhost:3000/api/v1/music/albums')
-                if (!response.ok) throw new Error('Error al cargar álbumes')
-                const data = await response.json()
-                const formattedAlbums = Array.isArray(data) ? data.map(album => ({
-                    ...album,
-                    cover_url: album.cover_url?.startsWith('http') 
-                        ? album.cover_url 
-                        : `http://localhost:3000${album.cover_url}`
-                })) : []
-                setAllAlbums(formattedAlbums)
-            } catch (error) {
-                console.error('Error loading albums:', error)
-            } finally {
-                setIsLoadingAlbums(false)
-            }
-        }
-
-        const loadAllSongs = async () => {
-            setIsLoadingSongs(true)
-            try {
-                const response = await fetch('http://localhost:3000/api/v1/music/songs')
-                if (!response.ok) throw new Error('Error al cargar canciones')
-                const data = await response.json()
-                const formattedSongs = Array.isArray(data) ? data.map(song => ({
-                    ...song,
-                    cover_url: song.cover_url?.startsWith('http') 
-                        ? song.cover_url 
-                        : `http://localhost:3000${song.cover_url}`
-                })) : []
-                setAllSongs(formattedSongs)
-            } catch (error) {
-                console.error('Error loading songs:', error)
-            } finally {
-                setIsLoadingSongs(false)
-            }
-        }
-
-        loadAllAlbums()
-        loadAllSongs()
-    }, [])
-
-    // Manejadores
-    const handleTabChange = (tab: Tab) => {
-        setActiveTab(tab)
-        setViewMode('normal')
-        clearArtistSelection()
-        clearGenreSelection()
-        clearSearch()
-    }
-
-    const handleArtistClick = (artist: Artist) => {
-        selectArtist(artist)
-        setViewMode('artist-detail')
-    }
-
-    const handleGenreClick = (genre: Category) => {
-        selectGenre(genre)
-        setViewMode('genre-detail')
-    }
-
-    const handleAlbumClick = (album: Album) => {
-        // Aquí podrías implementar la lógica para mostrar los detalles del álbum
-        console.log('Album clicked:', album)
-    }
-
-    const handleBackClick = () => {
-        setViewMode('normal')
-        clearArtistSelection()
-        clearGenreSelection()
-    }
-
-    const handleSongClick = (song: Song) => {
-        if (currentlyPlaying?.id === song.id) {
-            if (isPlaying) {
-                pauseSong()
-            } else {
-                resumeSong()
-            }
-        } else {
-            playSong(song)
+    const handleArtistSelect = async (artist: Artist) => {
+        try {
+            const artistDetails = await getArtistDetails(artist.id)
+            setSelectedArtist(artistDetails)
+            setViewMode("artist-detail")
+            setActiveTab("artistas")
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+        } catch (error) {
+            console.error("Error al cargar detalles del artista:", error)
+            setSelectedArtist(artist)
+            setViewMode("artist-detail")
+            setActiveTab("artistas")
         }
     }
 
-    // Renderizado condicional
-    const renderContent = () => {
-        if (artistError || genreError) {
-            return (
-                <div className="text-red-500 p-4 rounded-lg bg-red-100">
-                    <p className="font-medium">Error al cargar los datos:</p>
-                    {artistError && <p>{artistError}</p>}
-                    {genreError && <p>{genreError}</p>}
-                </div>
-            )
-        }
-
-        if (isSearching) {
-            return (
-                <div className="space-y-8">
-                    <ArtistGrid
-                        artists={searchResults.artists}
-                        isLoading={false}
-                        onArtistClick={handleArtistClick}
-                    />
-                    <AlbumGrid
-                        albums={searchResults.albums}
-                        isLoading={false}
-                        onAlbumClick={handleAlbumClick}
-                    />
-                    <SongList
-                        songs={searchResults.songs}
-                        isLoading={false}
-                        onSongClick={handleSongClick}
-                        currentlyPlaying={currentlyPlaying}
-                        isPlaying={isPlaying}
-                    />
-                </div>
-            )
-        }
-
-        switch (viewMode) {
-            case 'artist-detail':
-                return selectedArtist && (
-                    <ArtistDetail
-                        artist={selectedArtist}
-                        albums={artistAlbums}
-                        songs={artistSongs}
-                        isLoading={isLoadingArtists}
-                        onAlbumClick={handleAlbumClick}
-                        onSongClick={handleSongClick}
-                        currentlyPlaying={currentlyPlaying}
-                        isPlaying={isPlaying}
-                    />
-                )
-            case 'genre-detail':
-                return selectedGenre && (
-                    <GenreDetail
-                        genre={selectedGenre}
-                        artists={genreArtists}
-                        albums={genreAlbums}
-                        songs={genreSongs}
-                        isLoading={isLoadingGenres}
-                        onArtistClick={handleArtistClick}
-                        onAlbumClick={handleAlbumClick}
-                        onSongClick={handleSongClick}
-                        currentlyPlaying={currentlyPlaying}
-                        isPlaying={isPlaying}
-                    />
-                )
-            default:
-                return (
-                    <div className="space-y-8">
-                        {activeTab === 'artists' && (
-                            <ArtistGrid
-                                artists={artists}
-                                isLoading={isLoadingArtists}
-                                onArtistClick={handleArtistClick}
-                            />
-                        )}
-                        {activeTab === 'albums' && (
-                            <AlbumGrid
-                                albums={allAlbums}
-                                isLoading={isLoadingAlbums}
-                                onAlbumClick={handleAlbumClick}
-                            />
-                        )}
-                        {activeTab === 'songs' && (
-                            <SongList
-                                songs={allSongs}
-                                isLoading={isLoadingSongs}
-                                onSongClick={handleSongClick}
-                                currentlyPlaying={currentlyPlaying}
-                                isPlaying={isPlaying}
-                            />
-                        )}
-                    </div>
-                )
+    const handleGenreSelect = async (genre: Genre) => {
+        try {
+            const genreDetails = await getGenreDetails(genre.slug)
+            setSelectedGenre(genreDetails)
+            setViewMode("genre-detail")
+            setActiveTab("categorias")
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+        } catch (error) {
+            console.error("Error al cargar detalles del género:", error)
+            setSelectedGenre(genre)
+            setViewMode("genre-detail")
+            setActiveTab("categorias")
         }
     }
 
-    return (
-        <div className="flex-1 overflow-y-auto p-6">
-            <div className="max-w-7xl mx-auto space-y-8">
-                {/* Barra de búsqueda */}
-                <SearchBar
-                    searchTerm={searchTerm}
-                    onSearch={handleSearch}
-                    onClear={clearSearch}
-                />
+    const handleBackToNormal = () => {
+        setViewMode("normal")
+        setSelectedArtist(null)
+        setSelectedGenre(null)
+    }
 
-                {/* Navegación */}
-                <NavigationTabs
-                    activeTab={activeTab}
-                    viewMode={viewMode}
-                    onTabChange={handleTabChange}
-                    onBackClick={handleBackClick}
-                />
-
-                {/* Contenido principal */}
-                {renderContent()}
-
-                {/* Reproductor */}
-                {currentlyPlaying && (
-                    <div className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-800 p-4">
-                        <SongDetail
-                            song={currentlyPlaying}
-                            isPlaying={isPlaying}
-                            onPlayClick={resumeSong}
-                            onPauseClick={pauseSong}
-                        />
-                    </div>
-                )}
+    // Componentes Skeleton
+    const ArtistSkeleton = () => (
+        <div className="group">
+            <div className="p-3 rounded-lg">
+                <Skeleton className="w-full aspect-square rounded-full mb-3" />
+                <Skeleton className="h-4 w-3/4 mb-2" />
+                <Skeleton className="h-3 w-1/2" />
             </div>
         </div>
     )
-}
+
+    return (
+        <div className="flex-1 overflow-y-auto">
+            {/* Barra de búsqueda */}
+            <div className="sticky top-0 z-10 bg-zinc-900/95 backdrop-blur-sm p-4">
+                <div className="flex items-center gap-2">
+                    {viewMode !== "normal" && (
+                        <button
+                            onClick={handleBackToNormal}
+                            className="p-2 hover:bg-zinc-800 rounded-full transition-colors"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
+                    )}
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                        <input
+                            type="text"
+                            placeholder="Buscar artistas, álbumes o canciones..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-zinc-800/50 text-white pl-10 pr-10 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-zinc-700"
+                        />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm("")}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-zinc-700 rounded-full transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Contenido principal */}
+            <div className="p-4">
+                {/* Mensaje de error si falla la carga del API */}
+                {loadingError && (
+                    <div className="mb-4 p-3 bg-red-900/20 border border-red-900/30 rounded-lg text-red-300 text-sm">
+                        {loadingError}
+                    </div>
+                )}
+
+                {/* Vista de detalles del artista */}
+                {viewMode === "artist-detail" && selectedArtist && (
+                    <ArtistDetail 
+                        artist={selectedArtist}
+                        albums={apiAlbums.filter(album => album.artist_id === selectedArtist.id)}
+                        songs={apiSongs.filter(song => song.artist_id === selectedArtist.id)}
+                        isLoading={isLoading}
+                    />
+                )}
+
+                {/* Vista de detalles del género */}
+                {viewMode === "genre-detail" && selectedGenre && (
+                    <GenreDetail 
+                        genre={selectedGenre}
+                        artists={apiArtists.filter(artist => artist.genres?.includes(selectedGenre.name))}
+                        albums={apiAlbums.filter(album => album.genres?.includes(selectedGenre.name))}
+                        songs={apiSongs.filter(song => song.genre === selectedGenre.name)}
+                        isLoading={isLoading}
+                        onSelectRelatedGenre={(genreName) => {
+                            const relatedGenre = apiGenres.find(g => g.name === genreName)
+                            if (relatedGenre) {
+                                handleGenreSelect(relatedGenre)
+                            }
+                        }}
+                    />
+                )}
+
+                {/* Vista normal */}
+                {viewMode === "normal" && (
+                    <div className="space-y-6">
+                        {/* Pestañas */}
+                        <div className="flex gap-4 border-b border-zinc-800">
+                            {tabs.map((tab) => (
+                                <button
+                                    key={tab.key}
+                                    onClick={() => setActiveTab(tab.key)}
+                                    className={`pb-2 px-1 ${
+                                        activeTab === tab.key
+                                            ? "border-b-2 border-white text-white"
+                                            : "text-zinc-400 hover:text-white"
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Contenido de las pestañas */}
+                        {activeTab === "artistas" && (
+                            <div>
+                                <h2 className="text-xl font-bold mb-4">Artistas</h2>
+                                {isLoading ? (
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2">
+                                        {[...Array(7)].map((_, index) => (
+                                            <ArtistSkeleton key={index} />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2">
+                                        {apiArtists.map((artist) => (
+                                            <ArtistCard
+                                                key={artist.id}
+                                                artist={artist}
+                                                onClick={() => handleArtistSelect(artist)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === "albums" && (
+                            <div>
+                                <h2 className="text-xl font-bold mb-4">Álbumes</h2>
+                                {isLoading ? (
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2">
+                                        {[...Array(7)].map((_, index) => (
+                                            <ArtistSkeleton key={index} />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2">
+                                        {apiAlbums.map((album) => (
+                                            <AlbumCard
+                                                key={album.id}
+                                                album={album}
+                                                onClick={() => {
+                                                    const artist = apiArtists.find(a => a.id === album.artist_id)
+                                                    if (artist) {
+                                                        handleArtistSelect(artist)
+                                                    }
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === "categorias" && (
+                            <div>
+                                <h2 className="text-xl font-bold mb-4">Categorías</h2>
+                                {isLoading ? (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                        {[...Array(8)].map((_, index) => (
+                                            <ArtistSkeleton key={index} />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                        {apiGenres.map((genre) => (
+                                            <GenreCard
+                                                key={genre.id}
+                                                genre={genre}
+                                                onClick={() => handleGenreSelect(genre)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === "canciones" && (
+                            <div>
+                                <h2 className="text-xl font-bold mb-4">Canciones</h2>
+                                {isLoading ? (
+                                    <div className="space-y-2">
+                                        {[...Array(5)].map((_, index) => (
+                                            <div key={index} className="flex items-center gap-4 p-2">
+                                                <Skeleton className="w-12 h-12 rounded" />
+                                                <div className="flex-1">
+                                                    <Skeleton className="h-4 w-3/4 mb-2" />
+                                                    <Skeleton className="h-3 w-1/2" />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {apiSongs.map((song) => (
+                                            <SongCard
+                                                key={song.id}
+                                                song={song}
+                                                onClick={() => {
+                                                    const artist = apiArtists.find(a => a.id === song.artist_id)
+                                                    if (artist) {
+                                                        handleArtistSelect(artist)
+                                                    }
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Modal de géneros */}
+            {selectedCategory && (
+                <GenresModal
+                    isOpen={isGenresModalOpen}
+                    onClose={() => setIsGenresModalOpen(false)}
+                    category={selectedCategory}
+                    onSelectGenre={handleGenreSelect}
+                />
+            )}
+        </div>
+    )
+} 

@@ -17,24 +17,21 @@ export default function Home() {
           <div className="flex justify-between items-start">
             <div className="max-w-3xl">
               <h1 className="hero-title text-6xl md:text-7xl lg:text-8xl mb-6">
-                <span className="text-purple-300/70">Aleph Music</span>
+                Hola
+                <br />
+                espero
+                <br />
+                <span className="text-purple-300/70">que estés</span> 
+                <br />
+                <span className="text-purple-300/70">bien</span>
               </h1>
-              <h2 className="text-2xl md:text-3xl text-white/90 mb-6">
-                Experiencia musical sin compromiso
-              </h2>
-              <p className="text-xl text-white/80 max-w-2xl mt-4">
-                Bienvenido a la plataforma para los verdaderos amantes de la música. 
-                Aleph ofrece una biblioteca con tus sonidos favoritos, 
-                curada para para satisfacer incluso a los oídos más exigentes. 
-                Descubra nuevos artistas y redescubra clásicos.
-              </p>
-              <div className="flex space-x-4 mt-8">
-                <Link href="/auth/login" className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-md transition-colors font-medium">
-                  Explorar Biblioteca
-                </Link>
-                <Link href="/auth/login?screen_hint=signup" className="px-6 py-3 border border-white/30 hover:bg-white/10 rounded-md transition-colors font-medium">
-                  Crear Cuenta
-                </Link>
+              {/* Esto de acá abajo lo pueden borrar */}
+              <div className="flex space-x-2 mt-6">
+                {[0, 1, 2, 3,4].map((i) => (
+                  <div key={i} className="w-7 h-7 rounded-full bg-white/30 flex items-center justify-center">
+                    <div className="w-5 h-5 rounded-full"></div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -73,41 +70,11 @@ export default function Home() {
         {/* Inicio de la sección "At Aleph" similar a la sección "At oxaley" */}
         <section className="w-full px-8 sm:px-12 md:px-16 py-24 border-t border-white/10 relative z-10">
           <h2 className="text-4xl md:text-5xl lg:text-6xl hero-title mb-8">
-            Su música, su manera
+            Hola de nuevo
             <br />
-            Una experiencia personalizada
+            Primero la música
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
-            <div className="bg-white/5 p-6 rounded-lg">
-              <h3 className="text-2xl mb-4 font-medium">Perfil personalizado</h3>
-              <p className="text-white/80">
-                Configure su perfil para reflejar sus gustos y recibir recomendaciones hechas a su medida.
-              </p>
-            </div>
-            <div className="bg-white/5 p-6 rounded-lg">
-              <h3 className="text-2xl mb-4 font-medium">Descubrimiento de música</h3>
-              <p className="text-white/80">
-                Explore nuevos géneros y artistas gracias a nuestras herramientas inteligentes de búsqueda.
-              </p>
-            </div>
-            <div className="bg-white/5 p-6 rounded-lg">
-              <h3 className="text-2xl mb-4 font-medium">Cree sus listas</h3>
-              <p className="text-white/80">
-                Organice sus canciones favoritas en listas personalizadas para cada ocasión y estado de ánimo.
-              </p>
-            </div>
-            <div className="bg-white/5 p-6 rounded-lg">
-              <h3 className="text-2xl mb-4 font-medium">Reseñas detalladas</h3>
-              <p className="text-white/80">
-                Comparta su opinión y descubra críticas que enriquecen su experiencia musical.
-              </p>
-            </div>
-          </div>
-          <div className="mt-12 text-center">
-            <Link href="/auth/login" className="px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-md transition-colors font-medium inline-block">
-              Comenzar su viaje musical
-            </Link>
-          </div>
+          {/* Resto del contenido se añadiría aquí */}
         </section>
       </div>
     </>

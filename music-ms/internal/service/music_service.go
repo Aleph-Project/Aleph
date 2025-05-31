@@ -46,12 +46,11 @@ func (s *MusicService) GetSongCollection() *mongo.Collection {
 	return s.db.Collection("songs")
 }
 
-// GetSongs obtiene todas las canciones
-func (s *MusicService) GetSongs(ctx context.Context, limit, skip int) ([]models.Song, error) {
+// GetSongs obtiene todas las canciones con sus detalles
+func (s *MusicService) GetSongs(ctx context.Context, limit, skip int) ([]models.SongWithDetails, error) {
 	collection := s.db.Collection("songs")
 	
 	findOptions := options.Find()
-	// Si el límite es 0 o negativo, no establecemos límite para traer todas las canciones
 	if limit > 0 {
 		findOptions.SetLimit(int64(limit))
 	}
@@ -69,7 +68,66 @@ func (s *MusicService) GetSongs(ctx context.Context, limit, skip int) ([]models.
 		return nil, err
 	}
 	
-	return songs, nil
+	var songsWithDetails []models.SongWithDetails
+	for _, song := range songs {
+		// Obtener detalles del álbum
+		var album models.Album
+		albumCollection := s.db.Collection("albums")
+		err := albumCollection.FindOne(ctx, bson.M{"_id": song.AlbumID}).Decode(&album)
+		if err != nil {
+			log.Printf("Error al obtener álbum para canción %s: %v", song.ID.Hex(), err)
+			continue
+		}
+		
+		// Obtener detalles de los artistas
+		var artists []models.Artist
+		artistCollection := s.db.Collection("artists")
+		
+		// Combinar artistas del álbum y de la canción
+		var artistIDs []primitive.ObjectID
+		
+		// Agregar artistas del álbum
+		if len(album.ArtistIDs) > 0 {
+			artistIDs = append(artistIDs, album.ArtistIDs...)
+		}
+		
+		// Agregar artistas de la canción
+		if len(song.ArtistIDs) > 0 {
+			// Evitar duplicados
+			for _, artistID := range song.ArtistIDs {
+				exists := false
+				for _, existingID := range artistIDs {
+					if existingID == artistID {
+						exists = true
+						break
+					}
+				}
+				if !exists {
+					artistIDs = append(artistIDs, artistID)
+				}
+			}
+			}
+		
+		if len(artistIDs) > 0 {
+			artistCursor, err := artistCollection.Find(ctx, bson.M{"_id": bson.M{"$in": artistIDs}})
+			if err == nil {
+				if err := artistCursor.All(ctx, &artists); err != nil {
+					log.Printf("Error al decodificar artistas para canción %s: %v", song.ID.Hex(), err)
+				}
+				artistCursor.Close(ctx)
+			} else {
+				log.Printf("Error al buscar artistas para canción %s: %v", song.ID.Hex(), err)
+			}
+		}
+		
+		songsWithDetails = append(songsWithDetails, models.SongWithDetails{
+			Song:    song,
+			Album:   album,
+			Artists: artists,
+		})
+	}
+	
+	return songsWithDetails, nil
 }
 
 // CountSongs cuenta el número total de canciones en la base de datos

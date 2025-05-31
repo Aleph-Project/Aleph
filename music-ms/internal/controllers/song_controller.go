@@ -13,8 +13,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"path/to/your/project/internal/models"
-	"path/to/your/project/internal/database"
+	"music-ms/internal/models"
+	"music-ms/internal/database"
 )
 
 // SongController maneja las solicitudes relacionadas con canciones

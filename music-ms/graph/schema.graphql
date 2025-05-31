@@ -1,0 +1,70 @@
+# GraphQL schema for music microservice
+
+type Song {
+  id: ID!
+  title: String!
+  duration: Int!
+  spotify_id: String
+  album_id: ID
+  track_number: Int
+  audio_url: String
+  created_at: String
+  updated_at: String
+  album: Album
+  artists: [Artist!]
+}
+
+type Album {
+  id: ID!
+  title: String!
+  release_date: String
+  spotify_id: String
+  image_url: String
+  year: Int
+  created_at: String
+  updated_at: String
+  artist_ids: [ID!]
+  songs: [Song!]
+  artists: [Artist!]
+}
+
+type Artist {
+  id: ID!
+  name: String!
+  spotify_id: String
+  image_url: String
+  genres: [String!]
+  popularity: Int
+  created_at: String
+  updated_at: String
+  albums: [Album!]
+  songs: [Song!]
+}
+
+type Genre {
+  id: ID!
+  name: String!
+  slug: String!
+  count: Int
+}
+
+type Category {
+  id: ID!
+  name: String!
+  slug: String
+  image_url: String
+  genres: [Genre!]!
+}
+
+type Query {
+  songs: [Song!]!
+  song(id: ID!): Song
+  albums: [Album!]!
+  album(id: ID!): Album
+  artists: [Artist!]!
+  artist(id: ID!): Artist
+  genres: [Genre!]!
+  genre(id: ID!): Genre
+  categories: [Category!]!
+  category(id: ID!): Category
+}

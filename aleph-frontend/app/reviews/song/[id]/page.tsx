@@ -29,7 +29,7 @@ type Song = {
   album_id?: string;    // ID del álbum (opcional)
   created_at?: string;
   updated_at?: string;
-}
+} 
 
 type Replica = {
   id: string
@@ -41,237 +41,215 @@ type Replica = {
 }
 
 export default function SongPage() {
-  const [song, setSong] = useState<Song | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [reviews, setReviews] = useState<ReviewWithProfile[]>([])
-  const [newReview, setNewReview] = useState({ rating: 0, text: "" })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const params = useParams<{ id: string }>()
-  const { id } = params
-  const { user, isLoading } = useUser();
-  const auth_id = extractAuthIdFromUser(user?.sub);
+    const [song, setSong] = useState<Song | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [reviews, setReviews] = useState<ReviewWithProfile[]>([])
+    const [newReview, setNewReview] = useState({ rating: 0, text: "" })
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const params = useParams<{ id: string }>()
+    const { id } = params
+    const { user, isLoading } = useUser();
+    const auth_id = extractAuthIdFromUser(user?.sub);
 
-  // Agregado modal para las replicas de las reseñas
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedReview, setSelectedReview] = useState<ReviewWithProfile | null>(null)
-  const [reviewComments, setReviewComments] = useState<Replica[]>([])
-  const [newComment, setNewComment] = useState("")
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
-  const modalRef = useRef<HTMLDivElement>(null)
+    // Agregado modal para las replicas de las reseñas
+    const [isModalOpen, setIsModalOpen] = useState(false)
+    const [selectedReview, setSelectedReview] = useState<ReviewWithProfile | null>(null)
+    const [reviewComments, setReviewComments] = useState<Replica[]>([])
+    const [newComment, setNewComment] = useState("")
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+    const modalRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const fetchSong = async () => {
-      try {
-        const response = await getSongById(id)
-        setSong(response)
+    useEffect(() => {
+        const fetchSong = async () => {
+            try {
+                const response = await getSongById(id)
+                setSong(response)
+                
+                // obtener reseñas de la canción
+                const reviewsResponse = await getReviewsAndProfileBySong(id)
+                setReviews(reviewsResponse.reviewsWithProfiles || [])
+            } catch (error) {
+                console.error("Error fetching song:", error)
+            }
+            finally {
+                setLoading(false)
+            }
+        }
+        fetchSong();
+    }, [id])
 
-        // obtener reseñas de la canción
-        const reviewsResponse = await getReviewsAndProfileBySong(id)
-        setReviews(reviewsResponse.reviewsWithProfiles || [])
-      } catch (error) {
-        console.error("Error fetching song:", error)
-      }
-      finally {
-        setLoading(false)
-      }
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+        if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+            closeModal()
+        }
+        }
+
+        if (isModalOpen) {
+        document.addEventListener("mousedown", handleClickOutside)
+        }
+
+        return () => {
+        document.removeEventListener("mousedown", handleClickOutside)
+        }
+    }, [isModalOpen])
+
+    useEffect(() => {
+        if (isModalOpen) {
+        document.body.style.overflow = "hidden"
+        } else {
+        document.body.style.overflow = "auto"
+        }
+
+        return () => {
+        document.body.style.overflow = "auto"
+        }
+    }, [isModalOpen])
+
+    const formatNumber = (num: number) => {
+        if (num >= 1000000) {
+        return `${(num / 1000000).toFixed(1)}M`
+        } else if (num >= 1000) {
+        return `${(num / 1000).toFixed(1)}K`
+        }
+        return num.toString()
     }
-    fetchSong();
-  }, [id])
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        closeModal()
-      }
+    const handleRatingChange = (rating: number) => {
+        setNewReview((prev) => ({ ...prev, rating }))
     }
 
-    if (isModalOpen) {
-      document.addEventListener("mousedown", handleClickOutside)
+    const handleReviewTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setNewReview((prev) => ({ ...prev, text: e.target.value }))
     }
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [isModalOpen])
-
-  useEffect(() => {
-    if (isModalOpen) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = "auto"
-    }
-
-    return () => {
-      document.body.style.overflow = "auto"
-    }
-  }, [isModalOpen])
-
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1)}M`
-    } else if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K`
-    }
-    return num.toString()
-  }
-
-  const handleRatingChange = (rating: number) => {
-    setNewReview((prev) => ({ ...prev, rating }))
-  }
-
-  const handleReviewTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNewReview((prev) => ({ ...prev, text: e.target.value }))
-  }
-
-  const renderStars = (rating: number, interactive = false) => {
+    const renderStars = (rating: number, interactive = false) => {
     return Array.from({ length: 5 }).map((_, index) => (
       <Star
         key={index}
-        className={`h-5 w-5 ${index < rating ? "text-yellow-400 fill-yellow-400" : "text-zinc-600"
-          } ${interactive ? "cursor-pointer" : ""}`}
+        className={`h-5 w-5 ${
+          index < rating ? "text-yellow-400 fill-yellow-400" : "text-zinc-600"
+        } ${interactive ? "cursor-pointer" : ""}`}
         onClick={interactive ? () => handleRatingChange(index + 1) : undefined}
       />
     ))
-  }
-
-  const handleSubmitReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newReview.rating === 0 || !newReview.text.trim()) {
-      alert("Por favor, añade una calificación y un comentario");
-      return;
     }
+    
+    const handleSubmitReview = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (newReview.rating === 0 || !newReview.text.trim()) {
+            alert("Por favor, añade una calificación y un comentario")
+            return
+        }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
-      const response = await fetch(`/api/v1/reviews`, {
+      // En un caso real, esta sería tu llamada a la API para guardar la reseña
+      const response = await fetch(`/api/songs/${params.id}/reviews`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          review: {  
-            auth_id: auth_id,
-            review_title: `Reseña para ${song?.title}`,
-            review_body: newReview.text,
-            rating: newReview.rating,
-            reviewed_object_id: params.id,  // Agrega el ID de la canción
-            is_song: true,  
-            is_public: true  
-          }
-        }),
-      });
+        body: JSON.stringify(newReview),
+      })
 
       if (response.ok) {
-        const newReviewData = await response.json();
-
-        // Crear un objeto ReviewWithProfile para agregar a la lista
-        const reviewWithProfile = {
-          review: newReviewData,
-          profile: {
-            name: user?.name || "Usuario",
-            avatar_url: user?.picture || "/placeholder.svg",
-          }
-        };
-
-        setReviews((prev) => [reviewWithProfile, ...prev]);
-        setNewReview({ rating: 0, text: "" });
-      } else {
-        const errorData = await response.json();
-        console.error("Error en la respuesta:", errorData);
-        alert("No se pudo crear la reseña. Por favor, inténtalo de nuevo.");
+        const newReviewData = await response.json()
+        setReviews((prev) => [newReviewData, ...prev])
+        setNewReview({ rating: 0, text: "" })
       }
     } catch (error) {
-      console.error("Error al enviar reseña:", error);
+      console.error("Error al enviar reseña:", error)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
-
-  const openReviewModal = async (review: ReviewWithProfile) => {
-    setSelectedReview(review)
-    setIsModalOpen(true)
-
-    try {
-      // Obtener comentarios de la reseña
-      const data = await getReplicasByReview(review.review.id)
-      setReviewComments(data)
-    } catch (error) {
-      console.error("Error al cargar comentarios:", error)
-      setReviewComments([])
     }
-  }
 
-  const closeModal = () => {
-    setIsModalOpen(false)
-    setSelectedReview(null)
-    setReviewComments([])
-    setNewComment("")
-  }
+    const openReviewModal = async (review: ReviewWithProfile) => {
+        setSelectedReview(review)
+        setIsModalOpen(true)
 
-  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        try {
+        // Obtener comentarios de la reseña
+        const data = await getReplicasByReview(review.review.id)
+        setReviewComments(data)
+        } catch (error) {
+        console.error("Error al cargar comentarios:", error)
+        setReviewComments([])
+        }
+    }
+
+    const closeModal = () => {
+        setIsModalOpen(false)
+        setSelectedReview(null)
+        setReviewComments([])
+        setNewComment("")
+    }
+
+     const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewComment(e.target.value)
-  }
+    }
 
   // Enviar nuevo comentario
-  const handleSubmitComment = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newComment.trim() || !selectedReview) {
-      return
+    const handleSubmitComment = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!newComment.trim() || !selectedReview) {
+        return
+        }
+        if (!auth_id) {
+        alert("Debes iniciar sesión para comentar.")
+        return
+        }
+
+        setIsSubmittingComment(true)
+        try {
+        
+        const replica = {
+          review_id: selectedReview.review.id,
+          auth_id: auth_id,
+          replica_body: newComment
+        }
+        
+        const response = await createReplica(replica)
+        if (response) {
+            setReviewComments((prev) => [...prev, response])
+            setNewComment("")
+        } else {
+            console.error("Error al crear la réplica")
+        }
+        
+        } catch (error) {
+        console.error("Error al enviar comentario:", error)
+        } finally {
+        setIsSubmittingComment(false)
+        }
     }
-    if (!auth_id) {
-      alert("Debes iniciar sesión para comentar.")
-      return
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        })
     }
 
-    setIsSubmittingComment(true)
-    try {
-
-      const replica = {
-        review_id: selectedReview.review.id,
-        auth_id: auth_id,
-        replica_body: newComment
-      }
-
-      const response = await createReplica(replica)
-      if (response) {
-        setReviewComments((prev) => [...prev, response])
-        setNewComment("")
-      } else {
-        console.error("Error al crear la réplica")
-      }
-
-    } catch (error) {
-      console.error("Error al enviar comentario:", error)
-    } finally {
-      setIsSubmittingComment(false)
+    if (loading) {
+        return (
+        <div className="min-h-screen bg-black text-white flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
+        </div>
+        )
     }
-  }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    })
-  }
+    if (!song) {
+        return (
+        <div className="min-h-screen bg-black text-white flex items-center justify-center">
+            <p className="text-xl">Canción no encontrada</p>
+        </div>
+        )
+    }
 
-  if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
-      </div>
-    )
-  }
-
-  if (!song) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <p className="text-xl">Canción no encontrada</p>
-      </div>
-    )
-  }
-
-  return (
     <div className="min-h-screen bg-black text-white">
       {/* Sección de cabecera con imagen difuminada */}
       <div className="relative">
@@ -437,11 +415,11 @@ export default function SongPage() {
             {reviews.length > 0 ? (
               <div className="space-y-4">
                 {reviews.map((review) => (
-                  <div
+                  <div 
                     key={review.review.id}
                     className="bg-zinc-900 rounded-lg p-6 hover:bg-zinc-800 transition-colors cursor-pointer"
                     onClick={() => openReviewModal(review)}
-                  >
+                    >
                     <div className="flex items-start gap-4">
                       <Image
                         src={review.profile.avatar_url || "/placeholder.svg"}
@@ -591,7 +569,7 @@ export default function SongPage() {
             </div>
           </div>
         </div>
-      )}
+        )}
     </div>
   )
 }

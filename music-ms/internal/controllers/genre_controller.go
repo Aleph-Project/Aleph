@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"path/to/your/project/internal/models"
+	"music-ms/internal/models"
 )
 
 // GenreController maneja las solicitudes relacionadas con géneros musicales
