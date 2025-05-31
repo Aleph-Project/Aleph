@@ -119,7 +119,6 @@ export function MainContent({ onEditClick, onDeleteClick, userData, userReviews,
     setSearchTerm("");
   };
 
-
   return (
     <div className="flex-1 flex flex-col h-full rounded-lg bg-gradient-to-b from-zinc-800 to-black overflow-y-auto">
       <div className="p-6 pb-0 flex-shrink-0">

@@ -84,8 +84,14 @@ export default function Profile() {
       const res = await getAllReviewsByProfile(auth_id);
       // console.log("Reseñas obtenidas:", res);
 
-      setUserReviews(res);
-      return res;
+      const reviewsWithObjectName = res.map(review => ({
+        ...review,
+        reviewed_object_name: "Desconocido"
+        
+      }));
+      
+      setUserReviews(reviewsWithObjectName);
+      return reviewsWithObjectName;
     } catch (error) {
       console.error("Error fetching user reviews:", error);
       return [];
@@ -150,9 +156,14 @@ export default function Profile() {
     setIsEditingProfile(true);
   };
 
-  const handleBackClick = () => {
+  const handleBackClick = async (auth_id:string) => {
     console.log("Botón de volver clickeado");
     setIsEditingProfile(false);
+    await getProfileData(auth_id);
+    const reviews = await getUserReviews(auth_id);
+    if (reviews) {
+      await getSongsorAlbumsOfReviews(reviews);
+    }
   };
 
   const handleDeleteClick = () => {
@@ -247,7 +258,7 @@ export default function Profile() {
               </div>
 
               <div className="p-4 h-full">
-                <EditProfile onBackClick={handleBackClick} />
+                <EditProfile onBackClick={handleBackClick} userData={userData}/>
               </div>
             </div>
           </div>
