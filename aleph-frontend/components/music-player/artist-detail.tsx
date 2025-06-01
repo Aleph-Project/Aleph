@@ -145,7 +145,7 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
                   >
                     <div className="relative group-hover:bg-zinc-800 p-3 rounded-lg transition-colors">
                       <img
-                        src={album.coverUrl || "/placeholder.svg"}
+                        src={album.image_url || "/placeholder.svg"}
                         alt={album.title}
                         className="w-full aspect-square rounded-lg object-cover mb-2"
                         onError={(e) => {
@@ -180,7 +180,7 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
                   >
                     <div className="mr-3 text-zinc-400 w-6 text-center">{index + 1}</div>
                     <img
-                      src={song.cover_url || "/placeholder.svg"}
+                      src={song.image_url || "/placeholder.svg"}
                       alt={song.title}
                       className="h-12 w-12 rounded object-cover mr-3"
                       onError={(e) => {
@@ -221,7 +221,7 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
             
             <div className="flex items-center mb-6">
               <img
-                src={selectedAlbum.coverUrl || "/placeholder.svg"}
+                src={selectedAlbum.image_url || "/placeholder.svg"}
                 alt={selectedAlbum.title}
                 className="w-40 h-40 object-cover rounded-lg mr-6"
                 onError={(e) => {
@@ -234,7 +234,7 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
               <div>
                 <h1 className="text-3xl font-bold text-white mb-2">{selectedAlbum.title}</h1>
                 <p className="text-zinc-300 mb-4">
-                  Álbum de {selectedAlbum.artist}
+                  {selectedAlbum.artist}
                 </p>
                 <p className="text-sm text-zinc-400 mb-4">
                   {selectedAlbum.songsCount} canciones
@@ -274,7 +274,7 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
                   <div className="col-span-1 text-zinc-400">{index + 1}</div>
                   <div className="col-span-6 md:col-span-5 flex items-center">
                     <img
-                      src={song.cover_url || "/placeholder.svg"}
+                      src={song.image_url || "/placeholder.svg"}
                       alt={song.title}
                       className="h-10 w-10 rounded mr-3"
                       onError={(e) => {

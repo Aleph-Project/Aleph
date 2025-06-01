@@ -1,9 +1,12 @@
 "use client"
 
-import { Song } from "../types"
-
 interface SongCardProps {
-    song: Song
+    song: {
+        id: string
+        title: string
+        image_url: string
+        __typename?: string
+    }
     onClick: () => void
 }
 
@@ -20,12 +23,6 @@ export function SongCard({ song, onClick }: SongCardProps) {
             />
             <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-sm text-white truncate">{song.title}</h3>
-                <p className="text-xs text-zinc-400 truncate">
-                    {song.artist} • {song.album}
-                </p>
-            </div>
-            <div className="text-xs text-zinc-400">
-                {song.duration}
             </div>
         </div>
     )

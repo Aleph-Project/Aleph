@@ -598,6 +598,11 @@ export function GenreDetail({ genre, artists, albums, songs, isLoading, onSelect
               key={index}
               className="p-3 bg-zinc-800/70 hover:bg-zinc-700 rounded-lg transition-colors text-left"
               onClick={() => {
+                // No llamar a onSelectRelatedGenre si el género es el mismo que el actual
+                if (relatedGenre === genre.name) {
+                  return;
+                }
+                
                 if (onSelectRelatedGenre) {
                   onSelectRelatedGenre(relatedGenre);
                 } else {

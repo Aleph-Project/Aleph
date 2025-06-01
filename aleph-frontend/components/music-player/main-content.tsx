@@ -1,10 +1,11 @@
 "use client"
 
-import { Search, X, ArrowLeft } from "lucide-react"
+import { Search, X, ArrowLeft, Play, Heart, Clock } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ArtistDetail } from "./artist-detail"
 import { GenreDetail } from "./genre-detail"
+import { AlbumDetail } from "./album-detail"
 import { GenresModal } from "./genres-modal"
 import { ArtistCard } from "./ui/artist-card"
 import { AlbumCard } from "./ui/album-card"
@@ -19,7 +20,7 @@ import type { Song, Album, Artist, Category, Genre } from "./types"
 export function MainContent() {
     const [activeTab, setActiveTab] = useState("artistas")
     const [searchTerm, setSearchTerm] = useState("")
-    const [viewMode, setViewMode] = useState<"normal" | "artist-detail" | "genre-detail">("normal")
+    const [viewMode, setViewMode] = useState<"normal" | "artist-detail" | "genre-detail" | "album-detail">("normal")
     const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null)
     const [selectedGenre, setSelectedGenre] = useState<Genre | null>(null)
     const [isSearching, setIsSearching] = useState(false)
@@ -31,13 +32,19 @@ export function MainContent() {
         artists: apiArtists, 
         isLoading: isLoadingArtists,
         error: artistsError,
-        getArtistDetails 
+        selectArtist,
+        selectedArtist: selectedArtistFromHook,
+        artistAlbums,
+        artistSongs
     } = useArtists()
 
     const { 
         albums: apiAlbums, 
         isLoading: isLoadingAlbums,
-        error: albumsError 
+        error: albumsError,
+        selectAlbum,
+        selectedAlbum,
+        albumSongs
     } = useAlbums()
 
     const { 
@@ -67,14 +74,12 @@ export function MainContent() {
 
     const handleArtistSelect = async (artist: Artist) => {
         try {
-            const artistDetails = await getArtistDetails(artist.id)
-            setSelectedArtist(artistDetails)
+            await selectArtist(artist)
             setViewMode("artist-detail")
             setActiveTab("artistas")
             window.scrollTo({ top: 0, behavior: 'smooth' })
         } catch (error) {
             console.error("Error al cargar detalles del artista:", error)
-            setSelectedArtist(artist)
             setViewMode("artist-detail")
             setActiveTab("artistas")
         }
@@ -82,6 +87,10 @@ export function MainContent() {
 
     const handleGenreSelect = async (genre: Genre) => {
         try {
+            if (viewMode === "genre-detail" && selectedGenre?.id === genre.id) {
+                return;
+            }
+            
             const genreDetails = await getGenreDetails(genre.slug)
             setSelectedGenre(genreDetails)
             setViewMode("genre-detail")
@@ -92,6 +101,19 @@ export function MainContent() {
             setSelectedGenre(genre)
             setViewMode("genre-detail")
             setActiveTab("categorias")
+        }
+    }
+
+    const handleAlbumSelect = async (album: Album) => {
+        try {
+            await selectAlbum(album)
+            setViewMode("album-detail")
+            setActiveTab("albums")
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+        } catch (error) {
+            console.error("Error al cargar detalles del álbum:", error)
+            setViewMode("album-detail")
+            setActiveTab("albums")
         }
     }
 
@@ -156,11 +178,11 @@ export function MainContent() {
                 )}
 
                 {/* Vista de detalles del artista */}
-                {viewMode === "artist-detail" && selectedArtist && (
+                {viewMode === "artist-detail" && selectedArtistFromHook && (
                     <ArtistDetail 
-                        artist={selectedArtist}
-                        albums={apiAlbums.filter(album => album.artist_id === selectedArtist.id)}
-                        songs={apiSongs.filter(song => song.artist_id === selectedArtist.id)}
+                        artist={selectedArtistFromHook}
+                        albums={artistAlbums}
+                        songs={artistSongs}
                         isLoading={isLoading}
                     />
                 )}
@@ -179,6 +201,16 @@ export function MainContent() {
                                 handleGenreSelect(relatedGenre)
                             }
                         }}
+                    />
+                )}
+
+                {/* Vista de detalles del álbum */}
+                {viewMode === "album-detail" && selectedAlbum && (
+                    <AlbumDetail 
+                        album={selectedAlbum}
+                        songs={albumSongs}
+                        isLoading={isLoading}
+                        onBack={handleBackToNormal}
                     />
                 )}
 
@@ -241,12 +273,7 @@ export function MainContent() {
                                             <AlbumCard
                                                 key={album.id}
                                                 album={album}
-                                                onClick={() => {
-                                                    const artist = apiArtists.find(a => a.id === album.artist_id)
-                                                    if (artist) {
-                                                        handleArtistSelect(artist)
-                                                    }
-                                                }}
+                                                onClick={() => handleAlbumSelect(album)}
                                             />
                                         ))}
                                     </div>

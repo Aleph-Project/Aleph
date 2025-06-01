@@ -1,11 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Artist } from "@/components/music-player/types"
-import { getAllArtistsGraphQL, getArtistByIdGraphQL } from "@/services/songService"
+import { Artist, Album, Song } from "@/services/songService"
+import { getAllArtistsGraphQL, getArtistDetailsGraphQL } from "@/services/songService"
 
 export function useArtists() {
     const [artists, setArtists] = useState<Artist[]>([])
+    const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null)
+    const [artistAlbums, setArtistAlbums] = useState<Album[]>([])
+    const [artistSongs, setArtistSongs] = useState<Song[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -26,20 +29,36 @@ export function useArtists() {
         fetchArtists()
     }, [])
 
-    const getArtistDetails = async (id: string) => {
+    const selectArtist = async (artist: Artist) => {
         try {
-            const artistDetails = await getArtistByIdGraphQL(id)
-            return artistDetails
+            setIsLoading(true)
+            const details = await getArtistDetailsGraphQL(artist.id)
+            setSelectedArtist(details.artist)
+            setArtistAlbums(details.albums)
+            setArtistSongs(details.songs)
+            setError(null)
         } catch (err) {
+            setError("Error al cargar los detalles del artista")
             console.error("Error fetching artist details:", err)
-            throw err
+        } finally {
+            setIsLoading(false)
         }
+    }
+
+    const clearSelectedArtist = () => {
+        setSelectedArtist(null)
+        setArtistAlbums([])
+        setArtistSongs([])
     }
 
     return {
         artists,
+        selectedArtist,
+        artistAlbums,
+        artistSongs,
         isLoading,
         error,
-        getArtistDetails
+        selectArtist,
+        clearSelectedArtist
     }
 } 

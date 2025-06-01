@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Album } from "@/components/music-player/types"
-import { getAllAlbumsGraphQL } from "@/services/songService"
+import { Album, Song } from "@/components/music-player/types"
+import { getAllAlbumsGraphQL, getAlbumDetailsGraphQL } from "@/services/songService"
 
 export function useAlbums() {
     const [albums, setAlbums] = useState<Album[]>([])
+    const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
+    const [albumSongs, setAlbumSongs] = useState<Song[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -26,9 +28,33 @@ export function useAlbums() {
         fetchAlbums()
     }, [])
 
+    const selectAlbum = async (album: Album) => {
+        try {
+            setIsLoading(true)
+            const details = await getAlbumDetailsGraphQL(album.id)
+            setSelectedAlbum(details.album)
+            setAlbumSongs(details.songs)
+            setError(null)
+        } catch (err) {
+            setError("Error al cargar los detalles del álbum")
+            console.error("Error fetching album details:", err)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const clearSelectedAlbum = () => {
+        setSelectedAlbum(null)
+        setAlbumSongs([])
+    }
+
     return {
         albums,
+        selectedAlbum,
+        albumSongs,
         isLoading,
-        error
+        error,
+        selectAlbum,
+        clearSelectedAlbum
     }
 } 

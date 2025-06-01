@@ -10,6 +10,7 @@ import (
 
 	"github.com/angel/music-ms/graph/generated"
 	"github.com/angel/music-ms/graph/model"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Songs is the resolver for the songs field.
@@ -211,6 +212,29 @@ func (r *queryResolver) Artist(ctx context.Context, id string) (*model.Artist, e
 		for i, aid := range a.ArtistIDs {
 			artistIDs[i] = aid.Hex()
 		}
+
+		// Obtener detalles completos del álbum incluyendo canciones
+		albumDetails, err := r.Resolver.MusicService.GetAlbum(ctx, a.ID.Hex())
+		if err != nil {
+			continue
+		}
+
+		// Mapear las canciones del álbum
+		var albumSongs []*model.Song
+		for _, s := range albumDetails.Songs {
+			albumSongs = append(albumSongs, &model.Song{
+				ID:          s.ID.Hex(),
+				Title:       s.Title,
+				Duration:    s.Duration,
+				SpotifyID:   strPtr(s.SpotifyID),
+				AlbumID:     strPtr(s.AlbumID.Hex()),
+				TrackNumber: &s.TrackNumber,
+				AudioURL:    strPtr(s.AudioURL),
+				CreatedAt:   strPtr(s.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+				UpdatedAt:   strPtr(s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			})
+		}
+
 		albums = append(albums, &model.Album{
 			ID:          a.ID.Hex(),
 			Title:       a.Title,
@@ -221,12 +245,31 @@ func (r *queryResolver) Artist(ctx context.Context, id string) (*model.Artist, e
 			UpdatedAt:   strPtr(a.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 			ArtistIds:   artistIDs,
 			ImageURL:    strPtr(a.ImageURL),
+			Songs:       albumSongs,
 		})
 	}
 
 	// Map songs
 	var songs []*model.Song
 	for _, s := range artist.Songs {
+		// Obtener información del álbum para cada canción
+		var album *model.Album
+		if s.AlbumID != primitive.NilObjectID {
+			albumData, err := r.Resolver.MusicService.GetAlbum(ctx, s.AlbumID.Hex())
+			if err == nil {
+				album = &model.Album{
+					ID:          albumData.ID.Hex(),
+					Title:       albumData.Title,
+					ReleaseDate: strPtr(albumData.ReleaseDate),
+					SpotifyID:   strPtr(albumData.SpotifyID),
+					Year:        &albumData.Year,
+					CreatedAt:   strPtr(albumData.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+					UpdatedAt:   strPtr(albumData.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+					ImageURL:    strPtr(albumData.ImageURL),
+				}
+			}
+		}
+
 		songs = append(songs, &model.Song{
 			ID:          s.ID.Hex(),
 			Title:       s.Title,
@@ -237,6 +280,7 @@ func (r *queryResolver) Artist(ctx context.Context, id string) (*model.Artist, e
 			AudioURL:    strPtr(s.AudioURL),
 			CreatedAt:   strPtr(s.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
 			UpdatedAt:   strPtr(s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			Album:       album,
 		})
 	}
 
