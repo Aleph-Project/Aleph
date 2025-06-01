@@ -773,6 +773,13 @@ export async function getArtistDetailsGraphQL(id: string): Promise<ArtistDetails
   }
 }
 
+// Función auxiliar para formatear la duración de segundos a mm:ss
+function formatDuration(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
 export async function getAlbumDetailsGraphQL(albumId: string): Promise<{ album: Album; songs: Song[] }> {
     try {
         // Primero obtenemos los detalles del álbum
@@ -836,7 +843,7 @@ export async function getAlbumDetailsGraphQL(albumId: string): Promise<{ album: 
                 authors: [artistName],
                 album: albumData.album.title,
                 release_date: albumData.album.release_date,
-                duration: song.duration.toString(),
+                duration: formatDuration(song.duration),
                 genre: '',
                 likes: 0,
                 plays: 0,

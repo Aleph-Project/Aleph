@@ -11,6 +11,10 @@ interface AlbumDetailProps {
 }
 
 export function AlbumDetail({ album, songs, isLoading, onBack }: AlbumDetailProps) {
+    // Log de depuración para ver qué datos llegan
+    console.log("[AlbumDetail] Álbum recibido:", album);
+    console.log("[AlbumDetail] Canciones recibidas:", songs);
+
     if (isLoading) {
         return (
             <div className="p-6">
@@ -78,8 +82,8 @@ export function AlbumDetail({ album, songs, isLoading, onBack }: AlbumDetailProp
                 <div className="grid grid-cols-12 p-3 border-b border-zinc-800 text-xs uppercase text-zinc-500 font-medium">
                     <div className="col-span-1 flex items-center">#</div>
                     <div className="col-span-6 md:col-span-5">Título</div>
-                    <div className="hidden md:block md:col-span-3">Álbum</div>
-                    <div className="col-span-4 md:col-span-2">
+                    <div className="hidden md:block md:col-span-4">Álbum</div>
+                    <div className="col-span-2 flex items-center justify-center text-center">
                         <Clock className="h-4 w-4" />
                     </div>
                 </div>
@@ -108,11 +112,10 @@ export function AlbumDetail({ album, songs, isLoading, onBack }: AlbumDetailProp
                                 <p className="text-xs text-zinc-400">{song.artist}</p>
                             </div>
                         </div>
-                        <div className="hidden md:block md:col-span-3 text-sm text-zinc-400">
+                        <div className="hidden md:block md:col-span-4 text-sm text-zinc-400">
                             {song.album}
                         </div>
-                        <div className="col-span-4 md:col-span-2 flex items-center justify-end">
-                            <Heart className="h-5 w-5 text-zinc-400 hover:text-white mr-4 cursor-pointer" />
+                        <div className="col-span-2 flex items-center justify-center text-center">
                             <span className="text-xs text-zinc-400">{song.duration}</span>
                         </div>
                     </div>
