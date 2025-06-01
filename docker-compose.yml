@@ -4,38 +4,25 @@ services:
     build: 
       context: ./profile-microservice
       dockerfile: Dockerfile-dev
-    depends_on:
-      - profile-db 
     volumes:
       - ./profile-microservice:/usr/src/app
     environment:
       - S3_ACCESS_KEY=secret
       - S3_SECRET_KEY=secret
-  profile-db:
-    image: postgres:15
-    container_name: profile-db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - profile_data:/var/lib/postgresql/data
+      - PROFILE_DB_USER=${PROFILE_DB_USER}
+      - PROFILE_DB_PASSWORD=${PROFILE_DB_PASSWORD}
+      - PROFILE_DB_HOST=${PROFILE_DB_HOST}
   reviews-ms:
     container_name: reviews-ms
     build: 
       context: ./reviews-microservice
       dockerfile: Dockerfile-dev
-    depends_on:
-      - reviews-db
     volumes:
       - ./reviews-microservice:/usr/src/app
-  reviews-db:
-    image: postgres:15
-    container_name: reviews-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - reviews_data:/var/lib/postgresql/data
+      - PROFILE_DB_USER=${PROFILE_DB_USER}
+      - PROFILE_DB_PASSWORD=${PROFILE_DB_PASSWORD}
+      - PROFILE_DB_HOST=${PROFILE_DB_HOST}
   music-ms:
     container_name: music-ms
     build:
