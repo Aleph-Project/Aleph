@@ -416,15 +416,113 @@ func (r *queryResolver) ArtistsByGenre(ctx context.Context, genre string) ([]*mo
 	}
 	var result []*model.Artist
 	for _, artist := range artists {
+		// Obtener detalles completos del artista (álbumes y canciones)
+		artistDetails, err := r.Resolver.MusicService.GetArtist(ctx, artist.ID.Hex())
+		if err != nil {
+			// Si falla, devolver solo los datos básicos
+			result = append(result, &model.Artist{
+				ID:         artist.ID.Hex(),
+				Name:       artist.Name,
+				SpotifyID:  strPtr(artist.SpotifyID),
+				ImageURL:   strPtr(artist.ImageURL),
+				Genres:     artist.Genres,
+				Popularity: &artist.Popularity,
+				CreatedAt:  strPtr(artist.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+				UpdatedAt:  strPtr(artist.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			})
+			continue
+		}
+
+		// Mapear álbumes
+		var albums []*model.Album
+		for _, a := range artistDetails.Albums {
+			artistIDs := make([]string, len(a.ArtistIDs))
+			for i, aid := range a.ArtistIDs {
+				artistIDs[i] = aid.Hex()
+			}
+
+			// Obtener detalles completos del álbum incluyendo canciones
+			albumDetails, err := r.Resolver.MusicService.GetAlbum(ctx, a.ID.Hex())
+			if err != nil {
+				continue
+			}
+
+			// Mapear las canciones del álbum
+			var albumSongs []*model.Song
+			for _, s := range albumDetails.Songs {
+				albumSongs = append(albumSongs, &model.Song{
+					ID:          s.ID.Hex(),
+					Title:       s.Title,
+					Duration:    s.Duration,
+					SpotifyID:   strPtr(s.SpotifyID),
+					AlbumID:     strPtr(s.AlbumID.Hex()),
+					TrackNumber: &s.TrackNumber,
+					AudioURL:    strPtr(s.AudioURL),
+					CreatedAt:   strPtr(s.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+					UpdatedAt:   strPtr(s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+				})
+			}
+
+			albums = append(albums, &model.Album{
+				ID:          a.ID.Hex(),
+				Title:       a.Title,
+				ReleaseDate: strPtr(a.ReleaseDate),
+				SpotifyID:   strPtr(a.SpotifyID),
+				Year:        &a.Year,
+				CreatedAt:   strPtr(a.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+				UpdatedAt:   strPtr(a.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+				ArtistIds:   artistIDs,
+				ImageURL:    strPtr(a.ImageURL),
+				Songs:       albumSongs,
+			})
+		}
+
+		// Mapear canciones
+		var songs []*model.Song
+		for _, s := range artistDetails.Songs {
+			// Obtener información del álbum para cada canción
+			var album *model.Album
+			if s.AlbumID != primitive.NilObjectID {
+				albumData, err := r.Resolver.MusicService.GetAlbum(ctx, s.AlbumID.Hex())
+				if err == nil {
+					album = &model.Album{
+						ID:          albumData.ID.Hex(),
+						Title:       albumData.Title,
+						ReleaseDate: strPtr(albumData.ReleaseDate),
+						SpotifyID:   strPtr(albumData.SpotifyID),
+						Year:        &albumData.Year,
+						CreatedAt:   strPtr(albumData.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+						UpdatedAt:   strPtr(albumData.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+						ImageURL:    strPtr(albumData.ImageURL),
+					}
+				}
+			}
+
+			songs = append(songs, &model.Song{
+				ID:          s.ID.Hex(),
+				Title:       s.Title,
+				Duration:    s.Duration,
+				SpotifyID:   strPtr(s.SpotifyID),
+				AlbumID:     strPtr(s.AlbumID.Hex()),
+				TrackNumber: &s.TrackNumber,
+				AudioURL:    strPtr(s.AudioURL),
+				CreatedAt:   strPtr(s.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+				UpdatedAt:   strPtr(s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+				Album:       album,
+			})
+		}
+
 		result = append(result, &model.Artist{
-			ID:         artist.ID.Hex(),
-			Name:       artist.Name,
-			SpotifyID:  strPtr(artist.SpotifyID),
-			ImageURL:   strPtr(artist.ImageURL),
-			Genres:     artist.Genres,
-			Popularity: &artist.Popularity,
-			CreatedAt:  strPtr(artist.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
-			UpdatedAt:  strPtr(artist.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			ID:         artistDetails.ID.Hex(),
+			Name:       artistDetails.Name,
+			SpotifyID:  strPtr(artistDetails.SpotifyID),
+			ImageURL:   strPtr(artistDetails.ImageURL),
+			Genres:     artistDetails.Genres,
+			Popularity: &artistDetails.Popularity,
+			CreatedAt:  strPtr(artistDetails.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			UpdatedAt:  strPtr(artistDetails.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			Albums:     albums,
+			Songs:      songs,
 		})
 	}
 	return result, nil
