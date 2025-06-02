@@ -9,8 +9,8 @@ services:
     volumes:
       - ./profile-microservice:/usr/src/app
     environment:
-      - S3_ACCESS_KEY= #
-      - S3_SECRET_KEY= # 
+      - S3_ACCESS_KEY=secret
+      - S3_SECRET_KEY=secret
   profile-db:
     image: postgres:15
     container_name: profile-db
@@ -49,8 +49,8 @@ services:
       - MONGODB_URI=mongodb://mongo:27017
       - MONGODB_NAME=music_ms
       - MONGODB_TIMEOUT=10
-      - SPOTIFY_CLIENT_ID= #
-      - SPOTIFY_CLIENT_SECRET= # 
+      - SPOTIFY_CLIENT_ID=secret
+      - SPOTIFY_CLIENT_SECRET=secret
     depends_on:
       - mongo
   mongo:
@@ -68,12 +68,12 @@ services:
       context: ./aleph-frontend
       dockerfile: Dockerfile.dev
     environment:
-      - AUTH0_SECRET= #
+      - AUTH0_SECRET=secret
       - APP_BASE_URL=http://localhost:3000
-      - AUTH0_ISSUER_BASE_URL= #
-      - AUTH0_CLIENT_ID= #
-      - AUTH0_CLIENT_SECRET= #
-      - AUTH0_DOMAIN= #
+      - AUTH0_ISSUER_BASE_URL=secret
+      - AUTH0_CLIENT_ID=secret
+      - AUTH0_CLIENT_SECRET=secret
+      - AUTH0_DOMAIN=secret
     ports:
       - "3000:3000"
     depends_on:
