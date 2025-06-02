@@ -19,7 +19,7 @@ export function GenreCard({ genre, onClick }: GenreCardProps) {
                 </div>
                 <h3 className="font-bold text-sm text-white truncate">{genre.name}</h3>
                 <p className="text-xs text-zinc-400 truncate">
-                    {genre.count ? `${genre.count} canciones` : "Género"}
+                    {genre.count ? `${genre.count} artistas` : "Género"}
                 </p>
             </div>
         </div>

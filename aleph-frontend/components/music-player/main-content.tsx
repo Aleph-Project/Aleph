@@ -15,6 +15,7 @@ import { useArtists } from "@/hooks/useArtists"
 import { useAlbums } from "@/hooks/useAlbums"
 import { useSongs } from "@/hooks/useSongs"
 import { useGenres } from "@/hooks/useGenres"
+import { getArtistsByGenre } from "@/services/artistByGenreService";
 import type { Song, Album, Artist, Category, Genre } from "./types"
 
 export function MainContent() {
@@ -90,17 +91,17 @@ export function MainContent() {
             if (viewMode === "genre-detail" && selectedGenre?.id === genre.id) {
                 return;
             }
-            
-            const genreDetails = await getGenreDetails(genre.slug)
-            setSelectedGenre(genreDetails)
-            setViewMode("genre-detail")
-            setActiveTab("categorias")
+            // Consulta GraphQL para obtener artistas por género
+            const artistsByGenre = await getArtistsByGenre(genre.name);
+            setSelectedGenre({ ...genre, artists: artistsByGenre });
+            setViewMode("genre-detail");
+            setActiveTab("categorias");
             window.scrollTo({ top: 0, behavior: 'smooth' })
         } catch (error) {
-            console.error("Error al cargar detalles del género:", error)
-            setSelectedGenre(genre)
-            setViewMode("genre-detail")
-            setActiveTab("categorias")
+            console.error("Error al cargar detalles del género:", error);
+            setSelectedGenre(genre);
+            setViewMode("genre-detail");
+            setActiveTab("categorias");
         }
     }
 
@@ -189,19 +190,63 @@ export function MainContent() {
 
                 {/* Vista de detalles del género */}
                 {viewMode === "genre-detail" && selectedGenre && (
-                    <GenreDetail 
-                        genre={selectedGenre}
-                        artists={apiArtists.filter(artist => artist.genres?.includes(selectedGenre.name))}
-                        albums={apiAlbums.filter(album => album.genres?.includes(selectedGenre.name))}
-                        songs={apiSongs.filter(song => song.genre === selectedGenre.name)}
-                        isLoading={isLoading}
-                        onSelectRelatedGenre={(genreName) => {
-                            const relatedGenre = apiGenres.find(g => g.name === genreName)
-                            if (relatedGenre) {
-                                handleGenreSelect(relatedGenre)
-                            }
-                        }}
-                    />
+                    (() => {
+                        // The artists returned by the GraphQL query have albums and songs
+                        const artistsWithDetails = (selectedGenre.artists || []) as Array<
+                            Artist & { albums?: any[]; songs?: any[] }
+                        >;
+                        // Normalize albums
+                        const allAlbums = artistsWithDetails.flatMap(artist =>
+                            (artist.albums || []).map(album => ({
+                                id: album.id || album._id || '',
+                                title: album.title || album.name || '',
+                                artist: album.artist || artist.name || '',
+                                coverUrl: album.coverUrl || album.cover_url || album.image_url || '',
+                                image_url: album.coverUrl || album.cover_url || album.image_url || '',
+                                releaseDate: album.releaseDate || album.release_date || '',
+                                songsCount: Array.isArray(album.songs) ? album.songs.length : (album.songsCount || album.songs_count || 0),
+                            }))
+                        );
+                        // Normalize songs
+                        const allSongs = artistsWithDetails.flatMap(artist =>
+                            (artist.albums || []).flatMap(album =>
+                                (album.songs || []).map((song: any) => ({
+                                    _id: song._id || song.id || '',
+                                    title: song.title || '',
+                                    artist: song.artist || artist.name || '',
+                                    authors: song.authors || [],
+                                    album: song.album || album.title || '',
+                                    release_date: song.release_date || song.releaseDate || '',
+                                    duration: song.duration || '',
+                                    genre: song.genre || '',
+                                    likes: song.likes || 0,
+                                    plays: song.plays || 0,
+                                    cover_url: song.cover_url || song.coverUrl || album.coverUrl || '',
+                                    audio_url: song.audio_url || song.audioUrl || '',
+                                    spotify_id: song.spotify_id || song.spotifyId,
+                                    album_id: song.album_id || song.albumId,
+                                    created_at: song.created_at,
+                                    updated_at: song.updated_at,
+                                }))
+                            )
+                        );
+                        return (
+                            <GenreDetail
+                                genre={selectedGenre}
+                                artists={artistsWithDetails}
+                                albums={allAlbums}
+                                songs={allSongs}
+                                isLoading={isLoading}
+                                onSelectRelatedGenre={(genreName) => {
+                                    const relatedGenre = apiGenres.find((g: Genre) => g.name === genreName)
+                                    if (relatedGenre) {
+                                        handleGenreSelect(relatedGenre)
+                                    }
+                                }}
+                                onArtistSelect={handleArtistSelect}
+                            />
+                        );
+                    })()
                 )}
 
                 {/* Vista de detalles del álbum */}
@@ -352,4 +397,4 @@ export function MainContent() {
             )}
         </div>
     )
-} 
+}
