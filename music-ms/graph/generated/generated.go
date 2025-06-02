@@ -88,17 +88,16 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Album          func(childComplexity int, id string) int
-		Albums         func(childComplexity int) int
-		Artist         func(childComplexity int, id string) int
-		Artists        func(childComplexity int) int
-		ArtistsByGenre func(childComplexity int, genre string) int
-		Categories     func(childComplexity int) int
-		Category       func(childComplexity int, id string) int
-		Genre          func(childComplexity int, id string) int
-		Genres         func(childComplexity int) int
-		Song           func(childComplexity int, id string) int
-		Songs          func(childComplexity int) int
+		Album      func(childComplexity int, id string) int
+		Albums     func(childComplexity int) int
+		Artist     func(childComplexity int, id string) int
+		Artists    func(childComplexity int) int
+		Categories func(childComplexity int) int
+		Category   func(childComplexity int, id string) int
+		Genre      func(childComplexity int, id string) int
+		Genres     func(childComplexity int) int
+		Song       func(childComplexity int, id string) int
+		Songs      func(childComplexity int) int
 	}
 
 	Song struct {
@@ -127,7 +126,6 @@ type QueryResolver interface {
 	Genre(ctx context.Context, id string) (*model.Genre, error)
 	Categories(ctx context.Context) ([]*model.Category, error)
 	Category(ctx context.Context, id string) (*model.Category, error)
-	ArtistsByGenre(ctx context.Context, genre string) ([]*model.Artist, error)
 }
 
 type executableSchema struct {
@@ -396,18 +394,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Artists(childComplexity), true
-
-	case "Query.artistsByGenre":
-		if e.complexity.Query.ArtistsByGenre == nil {
-			break
-		}
-
-		args, err := ec.field_Query_artistsByGenre_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.ArtistsByGenre(childComplexity, args["genre"].(string)), true
 
 	case "Query.categories":
 		if e.complexity.Query.Categories == nil {
@@ -687,7 +673,7 @@ type Category {
   name: String!
   slug: String
   image_url: String
-  genres: [Genre!]!
+  genres: [Genre!]
 }
 
 type Query {
@@ -701,7 +687,6 @@ type Query {
   genre(id: ID!): Genre
   categories: [Category!]!
   category(id: ID!): Category
-  artistsByGenre(genre: String!): [Artist!]!
 }
 `, BuiltIn: false},
 }
@@ -789,34 +774,6 @@ func (ec *executionContext) field_Query_artist_argsID(
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
 		return ec.unmarshalNID2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_artistsByGenre_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := ec.field_Query_artistsByGenre_argsGenre(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["genre"] = arg0
-	return args, nil
-}
-func (ec *executionContext) field_Query_artistsByGenre_argsGenre(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (string, error) {
-	if _, ok := rawArgs["genre"]; !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("genre"))
-	if tmp, ok := rawArgs["genre"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
 	var zeroVal string
@@ -2185,14 +2142,11 @@ func (ec *executionContext) _Category_genres(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Genre)
 	fc.Result = res
-	return ec.marshalNGenre2ᚕᚖgithubᚗcomᚋangelᚋmusicᚑmsᚋgraphᚋmodelᚐGenreᚄ(ctx, field.Selections, res)
+	return ec.marshalOGenre2ᚕᚖgithubᚗcomᚋangelᚋmusicᚑmsᚋgraphᚋmodelᚐGenreᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Category_genres(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3049,83 +3003,6 @@ func (ec *executionContext) fieldContext_Query_category(ctx context.Context, fie
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_category_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_artistsByGenre(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_artistsByGenre(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ArtistsByGenre(rctx, fc.Args["genre"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Artist)
-	fc.Result = res
-	return ec.marshalNArtist2ᚕᚖgithubᚗcomᚋangelᚋmusicᚑmsᚋgraphᚋmodelᚐArtistᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_artistsByGenre(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Artist_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Artist_name(ctx, field)
-			case "spotify_id":
-				return ec.fieldContext_Artist_spotify_id(ctx, field)
-			case "image_url":
-				return ec.fieldContext_Artist_image_url(ctx, field)
-			case "genres":
-				return ec.fieldContext_Artist_genres(ctx, field)
-			case "popularity":
-				return ec.fieldContext_Artist_popularity(ctx, field)
-			case "created_at":
-				return ec.fieldContext_Artist_created_at(ctx, field)
-			case "updated_at":
-				return ec.fieldContext_Artist_updated_at(ctx, field)
-			case "albums":
-				return ec.fieldContext_Artist_albums(ctx, field)
-			case "songs":
-				return ec.fieldContext_Artist_songs(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Artist", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_artistsByGenre_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5877,9 +5754,6 @@ func (ec *executionContext) _Category(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._Category_image_url(ctx, field, obj)
 		case "genres":
 			out.Values[i] = ec._Category_genres(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6169,28 +6043,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_category(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "artistsByGenre":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_artistsByGenre(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
@@ -7361,6 +7213,53 @@ func (ec *executionContext) marshalOCategory2ᚖgithubᚗcomᚋangelᚋmusicᚑm
 		return graphql.Null
 	}
 	return ec._Category(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOGenre2ᚕᚖgithubᚗcomᚋangelᚋmusicᚑmsᚋgraphᚋmodelᚐGenreᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Genre) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNGenre2ᚖgithubᚗcomᚋangelᚋmusicᚑmsᚋgraphᚋmodelᚐGenre(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOGenre2ᚖgithubᚗcomᚋangelᚋmusicᚑmsᚋgraphᚋmodelᚐGenre(ctx context.Context, sel ast.SelectionSet, v *model.Genre) graphql.Marshaler {

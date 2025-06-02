@@ -34,7 +34,7 @@ type Category struct {
 	Name     string   `json:"name"`
 	Slug     *string  `json:"slug,omitempty"`
 	ImageURL *string  `json:"image_url,omitempty"`
-	Genres   []*Genre `json:"genres"`
+	Genres   []*Genre `json:"genres,omitempty"`
 }
 
 type Genre struct {

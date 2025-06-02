@@ -67,5 +67,4 @@ type Query {
   genre(id: ID!): Genre
   categories: [Category!]!
   category(id: ID!): Category
-  artistsByGenre(genre: String!): [Artist!]!
 }
