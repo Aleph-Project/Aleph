@@ -408,6 +408,28 @@ func (r *queryResolver) Category(ctx context.Context, id string) (*model.Categor
 	return nil, fmt.Errorf("Category not found")
 }
 
+// ArtistsByGenre is the resolver for the artistsByGenre field.
+func (r *queryResolver) ArtistsByGenre(ctx context.Context, genre string) ([]*model.Artist, error) {
+	artists, err := r.Resolver.MusicService.GetArtistsByGenre(ctx, genre)
+	if err != nil {
+		return nil, err
+	}
+	var result []*model.Artist
+	for _, artist := range artists {
+		result = append(result, &model.Artist{
+			ID:         artist.ID.Hex(),
+			Name:       artist.Name,
+			SpotifyID:  strPtr(artist.SpotifyID),
+			ImageURL:   strPtr(artist.ImageURL),
+			Genres:     artist.Genres,
+			Popularity: &artist.Popularity,
+			CreatedAt:  strPtr(artist.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			UpdatedAt:  strPtr(artist.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		})
+	}
+	return result, nil
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
