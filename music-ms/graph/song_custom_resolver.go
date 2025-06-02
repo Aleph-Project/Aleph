@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/angel/music-ms/graph/model"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Albums is the resolver for the albums field of Artist.
@@ -112,7 +113,7 @@ func (r *songResolver) Artists(ctx context.Context, obj *model.Song) ([]*model.A
 	}
 
 	var artists []*model.Artist
-	
+
 	// Convertir los artistas del modelo interno al modelo GraphQL
 	for _, a := range songDetails.Artists {
 		artist := &model.Artist{
@@ -129,6 +130,62 @@ func (r *songResolver) Artists(ctx context.Context, obj *model.Song) ([]*model.A
 	}
 
 	return artists, nil
+}
+
+// Albums es el resolver para el campo albums de Artist.
+func (r *Resolver) Artist_Albums(ctx context.Context, obj *model.Artist) ([]*model.Album, error) {
+	// Usar el servicio para obtener los álbumes del artista
+	artistWithDetails, err := r.MusicService.GetArtist(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	var albums []*model.Album
+	for _, a := range artistWithDetails.Albums {
+		artistIDs := make([]string, len(a.ArtistIDs))
+		for i, id := range a.ArtistIDs {
+			artistIDs[i] = id.Hex()
+		}
+		albums = append(albums, &model.Album{
+			ID:          a.ID.Hex(),
+			Title:       a.Title,
+			ReleaseDate: strPtr(a.ReleaseDate),
+			SpotifyID:   strPtr(a.SpotifyID),
+			Year:        &a.Year,
+			CreatedAt:   strPtr(a.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			UpdatedAt:   strPtr(a.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			ArtistIds:   artistIDs,
+			ImageURL:    strPtr(a.ImageURL),
+		})
+	}
+	return albums, nil
+}
+
+// Songs es el resolver para el campo songs de Artist.
+func (r *Resolver) Artist_Songs(ctx context.Context, obj *model.Artist) ([]*model.Song, error) {
+	artistWithDetails, err := r.MusicService.GetArtist(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	var songs []*model.Song
+	for _, s := range artistWithDetails.Songs {
+		var albumID *string
+		if s.AlbumID != primitive.NilObjectID {
+			id := s.AlbumID.Hex()
+			albumID = &id
+		}
+		songs = append(songs, &model.Song{
+			ID:          s.ID.Hex(),
+			Title:       s.Title,
+			Duration:    s.Duration,
+			SpotifyID:   strPtr(s.SpotifyID),
+			AlbumID:     albumID,
+			TrackNumber: &s.TrackNumber,
+			AudioURL:    strPtr(s.AudioURL),
+			CreatedAt:   strPtr(s.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			UpdatedAt:   strPtr(s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		})
+	}
+	return songs, nil
 }
 
 type songResolver struct{ *Resolver }
