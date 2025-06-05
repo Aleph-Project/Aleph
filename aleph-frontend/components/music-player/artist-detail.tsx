@@ -84,7 +84,7 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
   );
   
   return (
-    <div>
+    <div className="pb-24">
       <div className="space-y-6">
         {isLoading ? (
           <ArtistHeaderSkeleton />

@@ -1,7 +1,8 @@
 "use client"
 
-import { Play, Heart, Clock } from "lucide-react"
+import { Play, Heart, Clock, Pause, Square } from "lucide-react"
 import { Album, Song } from "@/components/music-player/types"
+import { useWebSocket } from "@/hooks/useWebSocket"
 
 interface AlbumDetailProps {
     album: Album
@@ -11,9 +12,42 @@ interface AlbumDetailProps {
 }
 
 export function AlbumDetail({ album, songs, isLoading, onBack }: AlbumDetailProps) {
+    // Hook para WebSocket streaming
+    const { 
+        isConnected, 
+        isPlaying, 
+        currentSong, 
+        error: streamError, 
+        playSong, 
+        pauseSong, 
+        stopSong 
+    } = useWebSocket()
+
     // Log de depuración para ver qué datos llegan
     console.log("[AlbumDetail] Álbum recibido:", album);
     console.log("[AlbumDetail] Canciones recibidas:", songs);
+    console.log("[AlbumDetail] WebSocket conectado:", isConnected);
+    console.log("[AlbumDetail] Canción actual:", currentSong);
+
+    const handlePlayAlbum = () => {
+        if (songs.length > 0) {
+            console.log('[AlbumDetail] Reproduciendo álbum, primera canción:', songs[0]);
+            playSong(songs[0]._id || songs[0].id)
+        }
+    }
+
+    const handlePlaySong = (songId: string) => {
+        console.log('[AlbumDetail] Reproduciendo canción con ID:', songId);
+        playSong(songId)
+    }
+
+    const handlePauseResume = () => {
+        if (isPlaying) {
+            pauseSong()
+        } else if (currentSong) {
+            playSong(currentSong._id)
+        }
+    }
 
     if (isLoading) {
         return (
@@ -38,7 +72,7 @@ export function AlbumDetail({ album, songs, isLoading, onBack }: AlbumDetailProp
     }
 
     return (
-        <div className="p-6">
+        <div className="p-6 pb-24">
             <button
                 onClick={onBack}
                 className="mt-4 text-sm text-white hover:underline hover:text-purple-500 mb-6"
@@ -51,7 +85,7 @@ export function AlbumDetail({ album, songs, isLoading, onBack }: AlbumDetailProp
                     src={album.image_url || "/placeholder.svg"}
                     alt={album.title}
                     className="w-40 h-40 object-cover rounded-lg mr-6"
-                    onError={(e) => {
+                    onError={(e: any) => {
                         const target = e.target as HTMLImageElement;
                         target.onerror = null;
                         target.src = "/placeholder.svg";
@@ -67,12 +101,31 @@ export function AlbumDetail({ album, songs, isLoading, onBack }: AlbumDetailProp
                         {album.release_date && ` • ${new Date(album.release_date).getFullYear()}`}
                     </p>
                     <div className="flex space-x-3">
-                        <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full flex items-center">
-                            <Play className="h-4 w-4 mr-2" /> Reproducir
+                        <button 
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full flex items-center"
+                            onClick={handlePlayAlbum}
+                            disabled={!isConnected || songs.length === 0}
+                        >
+                            {isPlaying && currentSong ? (
+                                <Pause className="h-4 w-4 mr-2" />
+                            ) : (
+                                <Play className="h-4 w-4 mr-2" />
+                            )}
+                            {isPlaying && currentSong ? 'Pausar' : 'Reproducir'}
                         </button>
                         <button className="border border-zinc-600 hover:border-white text-white px-4 py-2 rounded-full flex items-center">
                             <Heart className="h-4 w-4 mr-2" /> Guardar
                         </button>
+                        {streamError && (
+                            <div className="text-red-400 text-sm">
+                                Error: {streamError}
+                            </div>
+                        )}
+                        {!isConnected && (
+                            <div className="text-yellow-400 text-sm">
+                                Conectando al servidor de streaming...
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -91,17 +144,42 @@ export function AlbumDetail({ album, songs, isLoading, onBack }: AlbumDetailProp
                 {songs.map((song, index) => (
                     <div
                         key={`album-song-${song._id}-${index}`}
-                        className={`grid grid-cols-12 p-3 items-center hover:bg-zinc-800 ${
+                        className={`grid grid-cols-12 p-3 items-center hover:bg-zinc-800 group cursor-pointer ${
                             index % 2 === 0 ? "bg-zinc-900/60" : "bg-zinc-900/30"
                         }`}
+                        onClick={() => {
+                            console.log('[AlbumDetail] Reproduciendo canción:', song);
+                            handlePlaySong(song._id || song.id);
+                        }}
                     >
-                        <div className="col-span-1 text-zinc-400">{index + 1}</div>
+                        <div className="col-span-1 text-zinc-400 relative">
+                            <span className="group-hover:opacity-0 transition-opacity">
+                                {index + 1}
+                            </span>
+                            <button 
+                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                onClick={(e: any) => {
+                                    e.stopPropagation();
+                                    if (isPlaying && currentSong?._id === (song._id || song.id)) {
+                                        pauseSong();
+                                    } else {
+                                        handlePlaySong(song._id || song.id);
+                                    }
+                                }}
+                            >
+                                {isPlaying && currentSong?._id === (song._id || song.id) ? (
+                                    <Pause className="h-4 w-4 text-purple-400 fill-purple-400" />
+                                ) : (
+                                    <Play className="h-4 w-4 text-purple-400 fill-purple-400" />
+                                )}
+                            </button>
+                        </div>
                         <div className="col-span-6 md:col-span-5 flex items-center">
                             <img
                                 src={song.image_url || "/placeholder.svg"}
                                 alt={song.title}
                                 className="h-10 w-10 rounded mr-3"
-                                onError={(e) => {
+                                onError={(e: any) => {
                                     const target = e.target as HTMLImageElement;
                                     target.onerror = null;
                                     target.src = "/placeholder.svg";

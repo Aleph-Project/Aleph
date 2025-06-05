@@ -170,7 +170,7 @@ export function MainContent() {
             </div>
 
             {/* Contenido principal */}
-            <div className="p-4">
+            <div className="p-4 pb-24">
                 {/* Mensaje de error si falla la carga del API */}
                 {loadingError && (
                     <div className="mb-4 p-3 bg-red-900/20 border border-red-900/30 rounded-lg text-red-300 text-sm">
