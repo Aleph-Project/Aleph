@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,9 +12,8 @@ import (
 )
 
 type Song struct {
-	ID       string `json:"_id"`
+	ID       string `json:"id"`
 	Title    string `json:"title"`
-	Artist   string `json:"artist"`
 	AudioURL string `json:"audio_url"`
 }
 
@@ -42,33 +42,60 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getSongFromMusicMS(songID string) (*Song, error) {
-	musicMSURL := os.Getenv("MUSIC_MS_URL")
-	if musicMSURL == "" {
-		musicMSURL = "http://music-ms:3001" // Usar nombre del servicio Docker
+	apiGatewayURL := os.Getenv("API_GATEWAY_URL")
+	if apiGatewayURL == "" {
+		apiGatewayURL = "http://apigateway:8080" // Cambia esto según tu entorno
 	}
 
-	url := fmt.Sprintf("%s/api/songs/%s", musicMSURL, songID)
-	log.Printf("Consultando music-ms en: %s", url)
-	
-	resp, err := http.Get(url)
+	graphqlURL := apiGatewayURL + "/api/v1/music/graphql"
+	query := `query GetSongById($id: ID!) { song(id: $id) { id title audio_url } }`
+	requestBody := map[string]interface{}{
+		"query":     query,
+		"variables": map[string]interface{}{"id": songID},
+	}
+
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("Consultando music-ms (GraphQL) en: %s con id: %s", graphqlURL, songID)
+	resp, err := http.Post(graphqlURL, "application/json", bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Error: music-ms respondió con status %d para song ID %s", resp.StatusCode, songID)
+		log.Printf("Error: music-ms (GraphQL) respondió con status %d para song ID %s", resp.StatusCode, songID)
 		return nil, fmt.Errorf("canción no encontrada (status: %d)", resp.StatusCode)
 	}
 
-	var song Song
-	if err := json.NewDecoder(resp.Body).Decode(&song); err != nil {
-		log.Printf("Error decodificando respuesta de music-ms: %v", err)
+	var result struct {
+		Data struct {
+			Song *Song `json:"song"`
+		} `json:"data"`
+		Errors []interface{} `json:"errors"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		log.Printf("Error decodificando respuesta de music-ms (GraphQL): %v", err)
 		return nil, fmt.Errorf("error procesando datos de la canción")
 	}
 
-	log.Printf("Canción obtenida exitosamente: %s - %s", song.Title, song.Artist)
-	return &song, nil
+	if len(result.Errors) > 0 {
+		log.Printf("Error: la respuesta GraphQL contiene errores")
+		return nil, fmt.Errorf("canción no encontrada o error en GraphQL")
+	}
+
+	if result.Data.Song == nil {
+		log.Printf("Error: la canción no existe")
+		return nil, fmt.Errorf("canción no encontrada o error en GraphQL")
+	}
+
+	// Permitir audio_url null
+	log.Printf("Canción obtenida exitosamente (GraphQL): %s", result.Data.Song.Title)
+	return result.Data.Song, nil
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +135,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Enviando datos de canción al cliente: %s", song.Title)
 			response := StreamResponse{
 				Type:    "song_data",
-				Message: fmt.Sprintf("Reproduciendo: %s - %s", song.Title, song.Artist),
+				Message: fmt.Sprintf("Reproduciendo: %s", song.Title),
 				Song:    song,
 			}
 			conn.WriteJSON(response)
