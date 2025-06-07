@@ -78,6 +78,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./auth-ms:/app
+      - /app/node_modules
     environment:
       - PORT=4000
       - JWT_SECRET=secret
