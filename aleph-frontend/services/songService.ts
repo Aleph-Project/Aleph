@@ -33,6 +33,14 @@ export interface Album {
   image_url: string;
   releaseDate?: string;
   songsCount: number;
+  songs?: {
+    id: string;
+    title: string;
+    duration: number;
+    track_number?: number;
+    audio_url?: string;
+    album_id?: string;
+  }[];
 }
 
 // Interfaz para artistas de la API
@@ -694,24 +702,14 @@ export const GET_ARTIST_DETAILS = gql`
         image_url
         release_date
         year
+        artist_ids
         songs {
           id
           title
           duration
           track_number
           audio_url
-        }
-      }
-      songs {
-        id
-        title
-        duration
-        track_number
-        audio_url
-        album {
-          id
-          title
-          image_url
+          album_id
         }
       }
     }
@@ -736,7 +734,7 @@ export async function getArtistDetailsGraphQL(id: string): Promise<ArtistDetails
       popularity: artistData.popularity
     };
 
-    // Procesar los álbumes
+    // Procesar los álbumes y sus canciones
     const albums: Album[] = artistData.albums.map((album: any) => ({
       id: album.id,
       title: album.title,
@@ -745,22 +743,24 @@ export async function getArtistDetailsGraphQL(id: string): Promise<ArtistDetails
       songsCount: album.songs?.length || 0
     }));
 
-    // Procesar las canciones
-    const songs: Song[] = artistData.songs.map((song: any) => ({
-      _id: song.id,
-      title: song.title,
-      artist: artistData.name,
-      authors: [artistData.name],
-      album: song.album?.title || '',
-      release_date: '',
-      duration: song.duration.toString(),
-      genre: '',
-      likes: 0,
-      plays: 0,
-      image_url: song.album?.image_url || '',
-      audio_url: song.audio_url || '',
-      album_id: song.album?.id
-    }));
+    // Procesar todas las canciones de todos los álbumes
+    const songs: Song[] = artistData.albums.flatMap((album: any) => 
+      album.songs.map((song: any) => ({
+        _id: song.id,
+        title: song.title,
+        artist: artistData.name,
+        authors: [artistData.name],
+        album: album.title,
+        release_date: album.release_date,
+        duration: formatDuration(song.duration),
+        genre: '',
+        likes: 0,
+        plays: 0,
+        image_url: album.image_url,
+        audio_url: song.audio_url || '',
+        album_id: album.id
+      }))
+    );
 
     return {
       artist,
