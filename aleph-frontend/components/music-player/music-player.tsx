@@ -120,7 +120,7 @@ export function MusicPlayer() {
                 ) : currentSong ? (
                     <>
                         <img
-                            src={currentSong.image_url || "/placeholder.svg?height=56&width=56"}
+                            src={currentSong.image_url || currentSong.coverUrl || "/placeholder.svg?height=56&width=56"}
                             alt="Album cover"
                             className="h-14 w-14 rounded object-cover mr-3"
                             onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -132,6 +132,9 @@ export function MusicPlayer() {
                         <div>
                             <h4 className="text-sm font-medium">{currentSong.title}</h4>
                             <p className="text-xs text-zinc-400">{currentSong.artist}</p>
+                            {currentSong.duration && (
+                                <p className="text-xs text-zinc-400">{currentSong.duration}</p>
+                            )}
                         </div>
                     </>
                 ) : (

@@ -52,6 +52,11 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
           setCurrentSong(response.song || null)
           setIsPlaying(true)
           setError(null)
+          // Emitir evento personalizado para MusicPlayer
+          if (response.song) {
+            const event = new CustomEvent('playSong', { detail: response.song })
+            window.dispatchEvent(event)
+          }
           console.log('[WebSocket] Canción cargada:', response.song)
           break
           
