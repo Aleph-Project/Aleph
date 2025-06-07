@@ -5,10 +5,20 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { resetPassword } from "@/services/authService"
 
 export default function NewPasswordPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const [password, setPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [error, setError] = useState("")
+    const [success, setSuccess] = useState(false)
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const email = searchParams?.get("email") || ""
+    const code = searchParams?.get("code") || ""
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword)
@@ -16,6 +26,32 @@ export default function NewPasswordPage() {
 
     const toggleConfirmPasswordVisibility = () => {
         setShowConfirmPassword(!showConfirmPassword)
+    }
+
+    // Simple password security check (igual que en register)
+    function isPasswordSecure(pw: string) {
+        // Al menos 8 caracteres, 1 mayúscula, 1 minúscula, 1 número
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/.test(pw)
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setError("")
+        if (!isPasswordSecure(password)) {
+            setError("La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.")
+            return
+        }
+        if (password !== confirmPassword) {
+            setError("Las contraseñas no coinciden.")
+            return
+        }
+        try {
+            await resetPassword(email, code, password)
+            setSuccess(true)
+            setTimeout(() => router.push("/login"), 2000)
+        } catch (err: any) {
+            setError(err?.response?.data?.error || "No se pudo cambiar la contraseña.")
+        }
     }
 
     return (
@@ -31,9 +67,9 @@ export default function NewPasswordPage() {
                     <Image
                         src="/Vinilo.png"
                         alt="Vinyl Record"
-                        width={700}
-                        height={500}
-                        className="object-contain animate-spin-slow object-center"
+                        width={450}
+                        height={450}
+                        className="animate-spin-slow object-cover aspect-square overflow-visible"
                         style={{ animationDuration: "20s" }}
                     />
                     <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 z-30">
@@ -53,7 +89,7 @@ export default function NewPasswordPage() {
                 <div className="lg:basis-[50%] sm:basis-[80%] bg-violet-400 pt-16 px-12 pb-8 pl-48 rounded-3xl">
                     <h2 className="text-xl font-bold text-black mb-4">Ingresa tu nueva contraseña:</h2>
 
-                    <form className="space-y-4">
+                    <form className="space-y-4" onSubmit={handleSubmit}>
                         <div className="space-y-2">
                             <label htmlFor="password" className="text-sm font-medium text-gray-700">
                                 Nueva Contraseña
@@ -64,6 +100,8 @@ export default function NewPasswordPage() {
                                     type={showPassword ? "text" : "password"}
                                     placeholder="••••••••"
                                     className="w-full pr-10 text-gray-950"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                 />
                                 <button
                                     type="button"
@@ -85,6 +123,8 @@ export default function NewPasswordPage() {
                                     type={showConfirmPassword ? "text" : "password"}
                                     placeholder="••••••••"
                                     className="w-full pr-10 text-gray-950"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
                                 />
                                 <button
                                     type="button"
@@ -95,6 +135,9 @@ export default function NewPasswordPage() {
                                 </button>
                             </div>
                         </div>
+
+                        {error && <div className="text-red-700 text-sm text-center">{error}</div>}
+                        {success && <div className="text-green-700 text-sm text-center">¡Contraseña cambiada! Redirigiendo...</div>}
 
                         <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700">
                             Guardar Contraseña

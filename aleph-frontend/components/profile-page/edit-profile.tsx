@@ -5,12 +5,11 @@ import { useRouter } from "next/navigation"
 import * as React from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { extractAuthIdFromUser } from "@/app/utils/auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { editProfile } from "@/services/profileService";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useSession } from "next-auth/react";
 
 
 import {
@@ -68,8 +67,11 @@ export function EditProfile({ onBackClick, userData }: EditProfileProps) {
   //   "Soy una amante de la música y la cultura. Me encanta descubrir nuevos artistas y compartir mis descubrimientos con los demás. Siempre estoy buscando nuevas melodías que me inspiren y me hagan sentir viva."
   // );
   const router = useRouter()
-  const { user, isLoading } = useUser();    
-  const auth_id = extractAuthIdFromUser(user?.sub);
+  // const { user, isLoading } = useUser();    
+  // const auth_id = extractAuthIdFromUser(user?.sub);
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const auth_id = user?.id;
   const [date, setDate] = useState(userData.birthday || null);
   const [city, setCity] = useState("");
   const [cities, setCities] = useState<City[]>([]);

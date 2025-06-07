@@ -4,8 +4,7 @@ import { useEffect, useState, useRef, type FormEvent, type ChangeEvent } from "r
 import { getAllCities, City } from "@/services/cityService"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { useUser } from "@auth0/nextjs-auth0";
-import { extractAuthIdFromUser } from "@/app/utils/auth";
+import { useSession } from "next-auth/react";
 import { CreateProfile } from "@/services/profileService";
 
 export default function CrearPerfil() {
@@ -20,8 +19,9 @@ export default function CrearPerfil() {
   })
   const [cities, setCities] = useState<City[]>([])
   const [citiesLoading, setCitiesLoading] = useState(true)
-  const { user, isLoading } = useUser();    
-  const auth_id = extractAuthIdFromUser(user?.sub);
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const auth_id = user?.id;
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [backgroundPreview, setBackgroundPreview] = useState<string | null>(null)

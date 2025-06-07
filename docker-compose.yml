@@ -56,12 +56,10 @@ services:
       context: ./aleph-frontend
       dockerfile: Dockerfile.dev
     environment:
-      - AUTH0_SECRET=secret
-      - APP_BASE_URL=http://localhost:3000
-      - AUTH0_ISSUER_BASE_URL=secret
-      - AUTH0_CLIENT_ID=secret
-      - AUTH0_CLIENT_SECRET=secret
-      - AUTH0_DOMAIN=secret
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=secret
+      - GOOGLE_CLIENT_ID=secret
+      - GOOGLE_CLIENT_SECRET=secret
     ports:
       - "3000:3000"
     depends_on:
@@ -73,6 +71,23 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+  auth-ms:
+    container_name: auth-ms
+    build:
+      context: ./auth-ms
+      dockerfile: Dockerfile
+    volumes:
+      - ./auth-ms:/app
+    environment:
+      - PORT=4000
+      - JWT_SECRET=secret
+      - EMAIL_USER=alephmusicmanagement@gmail.com
+      - EMAIL_PASS=secret
+      - EMAIL_FROM=Aleph <alephmusicmanagement@gmail.com>
+      - FRONTEND_URL=http://localhost:3000
+      - MONGO_URI=secret
+    ports:
+      - "4000:4000"
       
 volumes:
   profile_data:

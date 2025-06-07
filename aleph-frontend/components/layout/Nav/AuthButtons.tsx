@@ -1,10 +1,12 @@
 "use client";
 
-import { useUser } from "@auth0/nextjs-auth0";
-
+import { useSession, signOut } from "next-auth/react";
 
 export default function AuthButtons() {
-    const { user, isLoading } = useUser();
+    const { data: session, status } = useSession();
+    const user = session?.user;
+    const isLoading = status === "loading";
+    const userId = user?.id; // Obtener el id del usuario desde session.user.id si existe
 
     if (isLoading) {
         return null;
@@ -17,14 +19,14 @@ export default function AuthButtons() {
     if (!user) {
         return (
             <div className="flex gap-2">
-                <a href="/auth/login?screen_hint=signup">
-                    <button className={buttonClass}>
-                        Registrate
-                    </button>
-                </a>
-                <a href="/auth/login">
+                <a href="/login">
                     <button className={buttonClass}>
                         Iniciar sesión
+                    </button>
+                </a>
+                <a href="/register">
+                    <button className={buttonClass}>
+                        Regístrate
                     </button>
                 </a>
             </div>
@@ -33,12 +35,10 @@ export default function AuthButtons() {
 
     return (
         <div className="flex gap-2 items-center">
-            <span className="text-sm mr-2">Hola, {user.nickname}!</span>
-            <a href="/auth/logout">
-                <button className={buttonClass}>
-                    Cerrar sesión
-                </button>
-            </a>
+            <span className="text-sm mr-2">Hola, {user.name || user.email}!</span>
+            <button className={buttonClass} onClick={() => signOut({ callbackUrl: "/" })}>
+                Cerrar sesión
+            </button>
         </div>
     );
 }
