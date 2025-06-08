@@ -96,7 +96,10 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - TOPIC_SONG_PLAYED_NAME=song-played-topic
-      - DB_URL=postgresql://user:pass@host:port/dbname
+      - PROFILE_DB_USER=${PROFILE_DB_USER}
+      - PROFILE_DB_PASSWORD=${PROFILE_DB_PASSWORD}
+      - PROFILE_DB_HOST=${PROFILE_DB_HOST}
+      - PROFILE_DB_NAME=${PROFILE_DB_NAME} 
   auth-ms:
     container_name: auth-ms
     build:

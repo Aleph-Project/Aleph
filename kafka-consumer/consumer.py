@@ -24,7 +24,6 @@ def start_consumer():
 
     try:
         while True:
-            print("Waiting for messages...")
             msg = consumer.poll(1.0)
             if msg is None:
                 continue
