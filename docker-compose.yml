@@ -39,17 +39,17 @@ services:
       - MONGODB_TIMEOUT=10
       - SPOTIFY_CLIENT_ID=secret
       - SPOTIFY_CLIENT_SECRET=secret
-    depends_on:
-      - mongo
-  mongo:
-    container_name: music-db
-    image: mongo:6
-    restart: unless-stopped
-    ports:
-      - "27018:27017"  # Exponer en un puerto distinto para evitar conflictos
-    volumes:
-      - mongo-data:/data/db
-    command: mongod --quiet --logpath /dev/null  # Reducir logs
+    # depends_on:
+    #   - mongo
+  # mongo:
+  #   container_name: music-db
+  #   image: mongo:6
+  #   restart: unless-stopped
+  #   ports:
+  #     - "27018:27017"  # Exponer en un puerto distinto para evitar conflictos
+  #   volumes:
+  #     - mongo-data:/data/db
+  #   command: mongod --quiet --logpath /dev/null  # Reducir logs
   aleph-frontend:
     container_name: aleph-frontend
     build: 
