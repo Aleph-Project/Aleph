@@ -15,7 +15,7 @@ export default function Navbar() {
   const { data: session, status } = useSession();
   // Obtener el id del usuario desde session.user.id si existe
   const user = session?.user;
-  const userId = user?.id;
+  const userId = user?.email;
   const isLoading = status === "loading";
 
   const navigation = user

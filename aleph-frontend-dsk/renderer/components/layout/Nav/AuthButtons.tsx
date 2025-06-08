@@ -6,7 +6,7 @@ export default function AuthButtons() {
     const { data: session, status } = useSession();
     const user = session?.user;
     const isLoading = status === "loading";
-    const userId = user?.id; // Obtener el id del usuario desde session.user.id si existe
+    const userId = user?.email; // Obtener el id del usuario desde session.user.id si existe
 
     if (isLoading) {
         return null;
