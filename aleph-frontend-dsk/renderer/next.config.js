@@ -1,3 +1,4 @@
+const path = require('path');
 /** @type {import('next').NextConfig} */
 module.exports = {
   output: 'export',
@@ -6,7 +7,16 @@ module.exports = {
   images: {
     unoptimized: true,
   },
-  webpack: (config) => {
-    return config
+  webpack: (config, { isServer }) => {
+    // Agregar aliases
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, '../'),
+      '@/components': path.resolve(__dirname, './components'),
+      '@/lib': path.resolve(__dirname, './lib'),
+      '@/hooks': path.resolve(__dirname, './hooks')
+    };
+    
+    return config;
   },
 }

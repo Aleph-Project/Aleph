@@ -2,14 +2,288 @@
 @tailwind components;
 @tailwind utilities;
 
+
+body {
+  font-family: Montserrat;
+}
+
 @layer base {
-  body {
-    @apply bg-gray-900 text-white;
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+
+    /*paleta de colores aleph*/
+    --electric-violet: 271 97% 52%;
+    --persian-indigo: 248 63% 30%;
+    --federal-blue: 253 85% 18%;
+    --mauve: 264 76% 85%;
+    --rich-black: 240 33% 9%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
   }
 }
 
 @layer components {
-  .btn-blue {
-    @apply text-white font-bold px-4 py-2 rounded bg-blue-600 hover:bg-blue-500;
+  /* Personalización de la barra de desplazamiento */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #fcfcfc;
+    border-radius: 9999px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #ffffff;
+  }
+
+  /* Para Firefox */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #3a2255 transparent;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-[hsl(var(--border))];
+  }
+  body {
+    @apply bg-black text-white;
+    position: relative;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  
+  html {
+    height: 100%;
+    overflow-y: auto;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .animate-spin-slow {
+    animation: spin 20s linear infinite;
+  }
+}
+
+/* Wrapper para el contenido que permite el scroll */
+.content-wrapper {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+/* Efecto de destello central movido hacia la parte inferior, ahora fijo */
+.light-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 80%, 
+    rgba(117, 103, 129, 0.7) 0%, 
+    rgba(81, 52, 106, 0.5) 10%, 
+    rgba(70, 45, 95, 0.3) 25%, 
+    rgba(50, 32, 70, 0.15) 40%, 
+    rgba(10, 8, 31, 0) 60%);
+  pointer-events: none;
+  z-index: -1;
+  mix-blend-mode: soft-light;
+}
+
+/* Fondo con gradiente más oscuro en los bordes y centro de luz en la parte inferior, ahora fijo */
+.gradient-background {
+  background: radial-gradient(circle at 50% 80%, 
+    #3a2255 0%, 
+    #271540 30%, 
+    #150921 55%, 
+    #0a0617 75%, 
+    #030208 100%);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+  overflow: hidden;
+}
+
+/* Efecto de textura quemada, ahora fijo */
+.gradient-background:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Efecto de viñeta reforzado para oscurecer más los bordes */
+.gradient-background:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-shadow: 
+    inset 0 0 100px rgba(0, 0, 0, 0.9),
+    inset 0 0 200px rgba(0, 0, 0, 0.85);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Efectos de partículas sutiles */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+  filter: blur(1px);
+}
+
+/* Estilos para los diferentes tamaños de texto */
+.hero-title {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  text-shadow: 0 2px 15px rgba(114, 63, 255, 0.3);
+}
+
+.hero-subtitle {
+  font-weight: 400;
+  opacity: 0.7;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
+}
+
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE y Edge */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari y Opera */
+}
+
+/* Contenedor principal con scroll */
+.content-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 1;
+}
+
+/* Animación de desplazamiento para el botón scroll */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Efecto de destello central */
+.light-glow {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  height: 800px;
+  border-radius: 50%;
+  background: radial-gradient(circle, 
+    rgba(137, 99, 216, 0.15) 0%, 
+    rgba(90, 51, 173, 0.1) 25%, 
+    rgba(51, 29, 99, 0.05) 50%, 
+    rgba(0, 0, 0, 0) 70%);
+  z-index: -1;
+  pointer-events: none;
+  filter: blur(20px);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.scroll-indicator {
+  animation: bounce 2s infinite;
 }
