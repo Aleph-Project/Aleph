@@ -1,4 +1,6 @@
 import { Artist, Album, Song } from './songService';
+import { gql } from '@apollo/client';
+import client from './graphqlClient';
 
 // Interface para la información detallada de un género
 export interface GenreDetails {
@@ -98,3 +100,23 @@ export async function getGenreDetails(genreSlug: string): Promise<GenreDetails> 
     throw error;
   }
 }
+
+export const GET_GENRE_BY_ID = gql`
+  query GetGenreById($id: ID!) {
+    genre(id: $id) {
+      id
+      name
+      slug
+      count
+    }
+  }
+`;
+
+// export async function getGenreByIdGraphQL(id: string) {
+//   const { data } = await client.query({
+//     query: GET_GENRE_BY_ID,
+//     variables: { id },
+//     fetchPolicy: 'no-cache',
+//   });
+//   return data.genre;
+// }

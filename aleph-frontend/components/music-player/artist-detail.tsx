@@ -10,6 +10,7 @@ import {
   Song, 
   Artist 
 } from "@/services/songService";
+import { AlbumDetail } from "@/components/music-player/album-detail";
 
 // Propiedades esperadas para el componente ArtistDetail
 interface ArtistDetailProps {
@@ -145,7 +146,7 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
                   >
                     <div className="relative group-hover:bg-zinc-800 p-3 rounded-lg transition-colors">
                       <img
-                        src={album.coverUrl || "/placeholder.svg"}
+                        src={album.image_url || "/placeholder.svg"}
                         alt={album.title}
                         className="w-full aspect-square rounded-lg object-cover mb-2"
                         onError={(e) => {
@@ -180,7 +181,7 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
                   >
                     <div className="mr-3 text-zinc-400 w-6 text-center">{index + 1}</div>
                     <img
-                      src={song.cover_url || "/placeholder.svg"}
+                      src={song.image_url || "/placeholder.svg"}
                       alt={song.title}
                       className="h-12 w-12 rounded object-cover mr-3"
                       onError={(e) => {
@@ -211,102 +212,35 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
             </div>
           </div>
         ) : (
-          <div className="p-6">
-            <button
-              onClick={() => setSelectedAlbum(null)}
-              className="mt-4 text-sm text-white hover:underline hover:text-purple-500 mb-6"
-            >
-              ← Volver a todos los álbumes
-            </button>
-            
-            <div className="flex items-center mb-6">
-              <img
-                src={selectedAlbum.coverUrl || "/placeholder.svg"}
-                alt={selectedAlbum.title}
-                className="w-40 h-40 object-cover rounded-lg mr-6"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.onerror = null;
-                  target.src = "/placeholder.svg";
-                  console.log("Error al cargar la imagen del álbum seleccionado, usando placeholder", selectedAlbum);
-                }}
+          (() => {
+            // Procesar canciones para formato mm:ss y autor correcto
+            const albumSongs = songs
+              .filter(song => song.album === selectedAlbum.title)
+              .map(song => ({
+                ...song,
+                duration: formatDuration(song.duration),
+                artist: song.artist || artist.name
+              }));
+            return (
+              <AlbumDetail
+                album={selectedAlbum}
+                songs={albumSongs}
+                isLoading={isLoading}
+                onBack={() => setSelectedAlbum(null)}
               />
-              <div>
-                <h1 className="text-3xl font-bold text-white mb-2">{selectedAlbum.title}</h1>
-                <p className="text-zinc-300 mb-4">
-                  Álbum de {selectedAlbum.artist}
-                </p>
-                <p className="text-sm text-zinc-400 mb-4">
-                  {selectedAlbum.songsCount} canciones
-                  {selectedAlbum.releaseDate && ` • ${new Date(selectedAlbum.releaseDate).getFullYear()}`}
-                </p>
-                <div className="flex space-x-3">
-                  <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full flex items-center">
-                    <Play className="h-4 w-4 mr-2" /> Reproducir
-                  </button>
-                  <button className="border border-zinc-600 hover:border-white text-white px-4 py-2 rounded-full flex items-center">
-                    <Heart className="h-4 w-4 mr-2" /> Guardar
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Canciones del álbum */}
-            <div className="bg-zinc-900/40 rounded-md overflow-hidden">
-              <div className="grid grid-cols-12 p-3 border-b border-zinc-800 text-xs uppercase text-zinc-500 font-medium">
-                <div className="col-span-1 flex items-center">#</div>
-                <div className="col-span-6 md:col-span-5">Título</div>
-                <div className="hidden md:block md:col-span-3">Álbum</div>
-                <div className="col-span-4 md:col-span-2">
-                  <Clock className="h-4 w-4" />
-                </div>
-              </div>
-              
-              {songs
-                .filter(song => song.album === selectedAlbum.title)
-                .map((song, index) => (
-                <div
-                  key={`album-song-${song._id}-${index}`}
-                  className={`grid grid-cols-12 p-3 items-center hover:bg-zinc-800 ${
-                    index % 2 === 0 ? "bg-zinc-900/60" : "bg-zinc-900/30"
-                  }`}
-                >
-                  <div className="col-span-1 text-zinc-400">{index + 1}</div>
-                  <div className="col-span-6 md:col-span-5 flex items-center">
-                    <img
-                      src={song.cover_url || "/placeholder.svg"}
-                      alt={song.title}
-                      className="h-10 w-10 rounded mr-3"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.onerror = null;
-                        target.src = "/placeholder.svg";
-                      }}
-                    />
-                    <div>
-                      <h3 className="text-sm font-medium text-white">{song.title}</h3>
-                      <p className="text-xs text-zinc-400">{song.artist}</p>
-                    </div>
-                  </div>
-                  <div className="hidden md:block md:col-span-3 text-sm text-zinc-400">
-                    {song.album}
-                  </div>
-                  <div className="col-span-4 md:col-span-2 flex items-center justify-end">
-                    <Heart className="h-5 w-5 text-zinc-400 hover:text-white mr-4 cursor-pointer" />
-                    <span className="text-xs text-zinc-400">{song.duration}</span>
-                  </div>
-                </div>
-              ))}
-              
-              {songs.filter(song => song.album === selectedAlbum.title).length === 0 && (
-                <div className="text-center py-6">
-                  <p className="text-zinc-400">No hay canciones disponibles para este álbum</p>
-                </div>
-              )}
-            </div>
-          </div>
+            );
+          })()
         )}
       </div>
     </div>
   );
+}
+
+// Función auxiliar para formatear duración
+function formatDuration(duration: string | number): string {
+  let seconds = typeof duration === 'string' ? parseInt(duration, 10) : duration;
+  if (isNaN(seconds) || seconds < 0) return '0:00';
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }

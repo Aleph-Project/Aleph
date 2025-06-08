@@ -1,4 +1,5 @@
 import type React from "react"
+import Providers from "./Providers";
 import type { Metadata } from "next"
 import { Montserrat } from "next/font/google"
 import "./globals.css"
@@ -22,12 +23,14 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${montserrat.className} min-h-screen flex flex-col`}>
-        <Navbar />
-        <div className="h-20"></div> {/* Espaciador para compensar el navbar fijo */}
-        <main className="flex-1">
-          {children}
-        </main>
-        <ConditionalFooter />
+        <Providers>
+          <Navbar />
+          <div className="h-20"></div> {/* Espaciador para compensar el navbar fijo */}
+          <main className="flex-1">
+            {children}
+          </main>
+          <ConditionalFooter />
+        </Providers>
       </body>
     </html>
   )

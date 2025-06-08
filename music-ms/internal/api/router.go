@@ -1,10 +1,14 @@
 package api
 
 import (
+	gqlhandler "github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
-	
+
+	"github.com/angel/music-ms/graph"
+	"github.com/angel/music-ms/graph/generated"
 	"github.com/angel/music-ms/internal/config"
 	"github.com/angel/music-ms/internal/service"
 )
@@ -12,7 +16,6 @@ import (
 // SetupRouter configura el router HTTP
 func SetupRouter(db *mongo.Database) *gin.Engine {
 	r := gin.Default()
-
 
 	// Configuración de CORS
 	r.Use(cors.New(cors.Config{
@@ -52,21 +55,21 @@ func SetupRouter(db *mongo.Database) *gin.Engine {
 			music.GET("/songs/:id", handler.GetSong)
 			music.GET("/songs/:id/audio", handler.GetSongAudio)
 			music.GET("/songs/search", handler.SearchSongsByName)
-			
+
 			// Rutas de álbumes
 			music.GET("/albums", handler.GetAlbums)
 			music.GET("/albums/:id", handler.GetAlbum)
-			
+
 			// Rutas de artistas
 			music.GET("/artists", handler.GetArtists)
 			music.GET("/artists/:id", handler.GetArtist)
 			music.GET("/artists/:id/details", handler.GetArtist) // Alias para compatibilidad
-			
+
 			// Rutas de géneros
 			music.GET("/genres", handler.GetGenres)
 			music.GET("/genres/:id", handler.GetGenreByID)
 			music.GET("/genres/slug/:slug", handler.GetGenreBySlug)
-			
+
 			// Rutas de Spotify
 			spotify := music.Group("/spotify")
 			if spotifyService != nil {
@@ -74,6 +77,12 @@ func SetupRouter(db *mongo.Database) *gin.Engine {
 				spotify.POST("/import_album", handler.ImportAlbumFromSpotify)
 				spotify.POST("/import_artist", handler.ImportArtistFromSpotify)
 			}
+
+			// GraphQL endpoint
+			music.POST("/graphql", gin.WrapH(gqlhandler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{MusicService: musicService}}))))
+
+			// Playground (opcional, solo en desarrollo)
+			music.GET("/playground", gin.WrapH(playground.Handler("GraphQL", "/api/v1/music/graphql")))
 		}
 	}
 
