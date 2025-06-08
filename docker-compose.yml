@@ -7,8 +7,8 @@ services:
     volumes:
       - ./profile-microservice:/usr/src/app
     environment:
-      - S3_ACCESS_KEY=secret
-      - S3_SECRET_KEY=secret
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
       - PROFILE_DB_USER=${PROFILE_DB_USER}
       - PROFILE_DB_PASSWORD=${PROFILE_DB_PASSWORD}
       - PROFILE_DB_HOST=${PROFILE_DB_HOST}
@@ -37,8 +37,8 @@ services:
       - MONGODB_URI=mongodb://mongo:27017
       - MONGODB_NAME=music_ms
       - MONGODB_TIMEOUT=10
-      - SPOTIFY_CLIENT_ID=secret
-      - SPOTIFY_CLIENT_SECRET=secret
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
     depends_on:
       - mongo
   mongo:
@@ -56,12 +56,12 @@ services:
       context: ./aleph-frontend
       dockerfile: Dockerfile.dev
     environment:
-      - AUTH0_SECRET=secret
+      - AUTH0_SECRET=${AUTH0_SECRET}
       - APP_BASE_URL=http://localhost:3000
-      - AUTH0_ISSUER_BASE_URL=secret
-      - AUTH0_CLIENT_ID=secret
-      - AUTH0_CLIENT_SECRET=secret
-      - AUTH0_DOMAIN=secret
+      - AUTH0_ISSUER_BASE_URL=${AUTH0_ISSUER_BASE_URL}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
     ports:
       - "3000:3000"
     depends_on:
@@ -88,6 +88,18 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
       - ALLOW_PLAINTEXT_LISTENER=yes
+
+  aleph_kafka_consumer:
+    container_name: aleph_kafka_consumer
+    build: 
+      context: ./kafka-consumer
+      dockerfile: Dockerfile
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - TOPIC_SONG_PLAYED_NAME=song-played-topic
+      - DB_URL=postgresql://user:pass@host:port/dbname
       
 volumes:
   profile_data:
