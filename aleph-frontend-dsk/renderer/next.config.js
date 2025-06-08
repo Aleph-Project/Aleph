@@ -7,6 +7,9 @@ module.exports = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    outputFileTracingRoot: __dirname,
+  },
   webpack: (config, { isServer }) => {
     // Agregar aliases
     config.resolve.alias = {

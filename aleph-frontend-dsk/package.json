@@ -8,11 +8,7 @@
   "scripts": {
     "dev": "nextron",
     "build": "nextron build",
-    "build:all": "nextron build --all",
-    "build:win32": "nextron build --win --ia32",
-    "build:win64": "nextron build --win --x64",
-    "build:mac": "nextron build --mac --x64",
-    "build:linux": "nextron build --linux",
+    "start": "electron . --no-sandbox --disable-gpu --disable-dev-shm-usage",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
@@ -80,5 +76,8 @@
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.7.3"
+  },
+  "nextron": {
+    "rendererSrcDir": "renderer"
   }
 }
