@@ -22,5 +22,6 @@
       "@/hooks/*": ["./renderer/hooks/*"]
     }
   },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "renderer/next.config.js", "app", "dist"]
 }
