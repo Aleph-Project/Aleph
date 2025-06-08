@@ -4,8 +4,10 @@ const { Config } = require("tailwindcss")
 const config = {
   darkMode: ["class"],
   content: [
-    './renderer/pages/**/*.{js,ts,jsx,tsx}',
-    './renderer/components/**/*.{js,ts,jsx,tsx}',
+    './renderer/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './renderer/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './renderer/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './renderer/**/*.{js,ts,jsx,tsx}',
   ],
   prefix: "",
   theme: {
