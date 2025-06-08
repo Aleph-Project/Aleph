@@ -18,10 +18,10 @@ func SetupSongRoutes(router *gin.Engine, db *database.MongoDB) {
 		{
 			// GET /music/songs - Obtener todas las canciones
 			songsGroup.GET("", songController.GetAllSongs)
-			
+
 			// GET /music/songs/:id - Obtener una canción específica por ID
 			songsGroup.GET("/:id", songController.GetSongByID)
-			
+
 			// GET /music/songs/:id/audio - Obtener el archivo de audio de una canción
 			songsGroup.GET("/:id/audio", songController.GetSongAudio)
 		}

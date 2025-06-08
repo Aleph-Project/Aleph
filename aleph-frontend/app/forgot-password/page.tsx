@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp"
+import { requestResetCode, verifyResetCode } from "@/services/authService"
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("")
@@ -16,35 +17,34 @@ export default function ForgotPasswordPage() {
     const [otp, setOtp] = useState("")
     const router = useRouter()
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        // Simulate email validation logic
-        const isValidEmail = Math.random() < 0.7 // 70% chance of success
-        if (isValidEmail) {
+        setErrorMessage("")
+        try {
+            await requestResetCode(email)
             setIsDialogOpen(true)
-            setErrorMessage("")
-        } else {
-            setErrorMessage("Correo electrónico no válido")
+        } catch (err: any) {
+            setErrorMessage(err?.response?.data?.error || "No se pudo enviar el código. Intenta de nuevo.")
         }
     }
 
-    const handleOtpSubmit = () => {
-        // Simulate OTP validation logic
-        const isOtpValid = Math.random() < 0.7 // 70% chance of success
-        if (isOtpValid) {
-            console.log("OTP verified successfully")
+    const handleOtpSubmit = async () => {
+        setOtpError(false)
+        try {
+            await verifyResetCode(email, otp)
             setIsDialogOpen(false)
-            router.push("/new-password") // Redirect to the success page
-        } else {
+            router.push(`/new-password?email=${encodeURIComponent(email)}&code=${otp}`)
+        } catch (err: any) {
             setOtpError(true)
         }
     }
 
-    const handleResendCode = () => {
-        // Clear the previous OTP and simulate resending logic
+    const handleResendCode = async () => {
         setOtp("")
-        console.log("Resend code clicked")
         setOtpError(false)
+        try {
+            await requestResetCode(email)
+        } catch {}
     }
 
     return (
@@ -60,9 +60,9 @@ export default function ForgotPasswordPage() {
                     <Image
                         src="/Vinilo.png"
                         alt="Vinyl Record"
-                        width={700}
-                        height={500}
-                        className="object-contain animate-spin-slow object-center"
+                        width={450}
+                        height={450}
+                        className="animate-spin-slow object-cover aspect-square overflow-visible"
                         style={{ animationDuration: "20s" }}
                     />
                     <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 z-30">
@@ -119,11 +119,11 @@ export default function ForgotPasswordPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                        <InputOTPGroup>
+                        <InputOTPGroup className="text-black">
                             <InputOTPSlot index={0} />
                             <InputOTPSlot index={1} />
                             <InputOTPSlot index={2} />
-                            <InputOTPSeparator />
+                            <InputOTPSeparator className="mx-2" />
                             <InputOTPSlot index={3} />
                             <InputOTPSlot index={4} />
                             <InputOTPSlot index={5} />
@@ -145,7 +145,7 @@ export default function ForgotPasswordPage() {
                             Verificar
                         </Button>
                         <DialogClose asChild>
-                            <Button variant="ghost">Cancelar</Button>
+                            <Button variant="ghost" className="bg-gray-500 hover:bg-gray-600">Cancelar</Button>
                         </DialogClose>
                     </DialogFooter>
                 </DialogContent>

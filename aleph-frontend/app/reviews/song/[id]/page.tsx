@@ -9,8 +9,7 @@ import { useParams } from "next/navigation"
 import { getReviewsAndProfileBySong } from "@/services/songService"
 import { ReviewWithProfile } from "@/services/songService"
 import { createReplica } from "@/services/reviewService"
-import { useUser } from "@auth0/nextjs-auth0";
-import { extractAuthIdFromUser } from "@/app/utils/auth";
+import { useSession } from "next-auth/react";
 
 type Song = {
   _id: string;
@@ -48,8 +47,9 @@ export default function SongPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const params = useParams<{ id: string }>()
   const { id } = params
-  const { user, isLoading } = useUser();
-  const auth_id = extractAuthIdFromUser(user?.sub);
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const auth_id = user?.id;
 
   // Agregado modal para las replicas de las reseñas
   const [isModalOpen, setIsModalOpen] = useState(false)

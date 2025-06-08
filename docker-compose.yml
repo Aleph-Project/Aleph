@@ -4,50 +4,38 @@ services:
     build: 
       context: ./profile-microservice
       dockerfile: Dockerfile-dev
-    depends_on:
-      - profile-db 
     volumes:
       - ./profile-microservice:/usr/src/app
     environment:
       - S3_ACCESS_KEY=secret
       - S3_SECRET_KEY=secret
-  profile-db:
-    image: postgres:15
-    container_name: profile-db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - profile_data:/var/lib/postgresql/data
+      - PROFILE_DB_USER=${PROFILE_DB_USER}
+      - PROFILE_DB_PASSWORD=${PROFILE_DB_PASSWORD}
+      - PROFILE_DB_HOST=${PROFILE_DB_HOST}
   reviews-ms:
     container_name: reviews-ms
     build: 
       context: ./reviews-microservice
       dockerfile: Dockerfile-dev
-    depends_on:
-      - reviews-db
     volumes:
       - ./reviews-microservice:/usr/src/app
-  reviews-db:
-    image: postgres:15
-    container_name: reviews-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - reviews_data:/var/lib/postgresql/data
+      - PROFILE_DB_USER=${PROFILE_DB_USER}
+      - PROFILE_DB_PASSWORD=${PROFILE_DB_PASSWORD}
+      - PROFILE_DB_HOST=${PROFILE_DB_HOST}
   music-ms:
     container_name: music-ms
     build:
       context: ./music-ms
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "3001:3002"
+    # Puerto comentado para que solo sea accesible a través del API Gateway
+    # ports:
+    #   - "3002:3002"
     environment:
-      - PORT=3002
-      - MONGODB_URI=mongodb://mongo:27017
-      - MONGODB_NAME=music_ms
+      # - PORT=3002
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_NAME=${MONGODB_NAME}
       - MONGODB_TIMEOUT=10
       - SPOTIFY_CLIENT_ID=secret
       - SPOTIFY_CLIENT_SECRET=secret
@@ -68,12 +56,10 @@ services:
       context: ./aleph-frontend
       dockerfile: Dockerfile.dev
     environment:
-      - AUTH0_SECRET=secret
-      - APP_BASE_URL=http://localhost:3000
-      - AUTH0_ISSUER_BASE_URL=secret
-      - AUTH0_CLIENT_ID=secret
-      - AUTH0_CLIENT_SECRET=secret
-      - AUTH0_DOMAIN=secret
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     ports:
       - "3000:3000"
     depends_on:
@@ -85,6 +71,24 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+  auth-ms:
+    container_name: auth-ms
+    build:
+      context: ./auth-ms
+      dockerfile: Dockerfile
+    volumes:
+      - ./auth-ms:/app
+      - /app/node_modules
+    environment:
+      - PORT=${PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - MONGO_URI=${AUTH_MONGO_URI}
+    ports:
+      - "4000:4000"
       
 volumes:
   profile_data:

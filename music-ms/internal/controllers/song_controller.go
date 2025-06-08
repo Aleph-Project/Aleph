@@ -8,13 +8,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"music-ms/internal/models"
-	"music-ms/internal/database"
 )
 
 // SongController maneja las solicitudes relacionadas con canciones
@@ -127,28 +125,28 @@ func (sc *SongController) GetSongAudio(c *gin.Context) {
 
 // GetSongByName obtiene una canción específica por nombre
 func (sc *SongController) SearchSongsByName(c *gin.Context) {
-    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-    name := c.Query("name")
-    if name == "" {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "El parámetro 'name' es requerido"})
-        return
-    }
+	name := c.Query("name")
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "El parámetro 'name' es requerido"})
+		return
+	}
 
-    filter := bson.M{"name": bson.M{"$regex": name, "$options": "i"}} // búsqueda insensible a mayúsculas
-    var songs []models.Song
-    cursor, err := sc.Collection.Find(ctx, filter)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al buscar canciones"})
-        return
-    }
-    defer cursor.Close(ctx)
+	filter := bson.M{"name": bson.M{"$regex": name, "$options": "i"}} // búsqueda insensible a mayúsculas
+	var songs []models.Song
+	cursor, err := sc.Collection.Find(ctx, filter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al buscar canciones"})
+		return
+	}
+	defer cursor.Close(ctx)
 
-    if err = cursor.All(ctx, &songs); err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al decodificar las canciones"})
-        return
-    }
+	if err = cursor.All(ctx, &songs); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al decodificar las canciones"})
+		return
+	}
 
-    c.JSON(http.StatusOK, songs)
+	c.JSON(http.StatusOK, songs)
 }
