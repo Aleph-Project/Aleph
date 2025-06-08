@@ -523,6 +523,63 @@ func (r *queryResolver) ArtistsByGenre(ctx context.Context, genre string) ([]*mo
 	return result, nil
 }
 
+// ArtistsByGenreBasic is the resolver for the artistsByGenreBasic field.
+func (r *queryResolver) ArtistsByGenreBasic(ctx context.Context, genre string, limit *int, offset *int) ([]*model.ArtistBasic, error) {
+	// Valores por defecto
+	defaultLimit := 20
+	defaultOffset := 0
+
+	if limit != nil {
+		defaultLimit = *limit
+	}
+	if offset != nil {
+		defaultOffset = *offset
+	}
+
+	// Obtener artistas básicos sin consultas anidadas profundas
+	artists, err := r.Resolver.MusicService.GetArtistsByGenreWithPagination(ctx, genre, defaultLimit, defaultOffset)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*model.ArtistBasic
+	for _, artist := range artists {
+		// Contar álbumes y canciones de forma eficiente
+		albumCount, err := r.Resolver.MusicService.CountAlbumsByArtist(ctx, artist.ID.Hex())
+		if err != nil {
+			albumCount = 0 // Si falla, asignar 0
+		}
+
+		songCount, err := r.Resolver.MusicService.CountSongsByArtist(ctx, artist.ID.Hex())
+		if err != nil {
+			songCount = 0 // Si falla, asignar 0
+		}
+
+		result = append(result, &model.ArtistBasic{
+			ID:         artist.ID.Hex(),
+			Name:       artist.Name,
+			SpotifyID:  strPtr(artist.SpotifyID),
+			ImageURL:   strPtr(artist.ImageURL),
+			Genres:     artist.Genres,
+			Popularity: &artist.Popularity,
+			CreatedAt:  strPtr(artist.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			UpdatedAt:  strPtr(artist.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			AlbumCount: &albumCount,
+			SongCount:  &songCount,
+		})
+	}
+	return result, nil
+}
+
+// ArtistsByGenreCount is the resolver for the artistsByGenreCount field.
+func (r *queryResolver) ArtistsByGenreCount(ctx context.Context, genre string) (int, error) {
+	count, err := r.Resolver.MusicService.CountArtistsByGenre(ctx, genre)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 

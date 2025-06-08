@@ -876,3 +876,96 @@ func (s *MusicService) GetArtistWithDetails(ctx context.Context, id string) (*mo
 		Songs:  songs,
 	}, nil
 }
+
+// GetArtistsByGenreWithPagination obtiene artistas por género con paginación
+func (s *MusicService) GetArtistsByGenreWithPagination(ctx context.Context, genreName string, limit, offset int) ([]models.Artist, error) {
+	collection := s.db.Collection("artists")
+
+	// Opciones para paginación
+	findOptions := options.Find()
+	findOptions.SetSkip(int64(offset))
+	findOptions.SetLimit(int64(limit))
+	findOptions.SetSort(bson.D{{"name", 1}}) // Ordenar por nombre
+
+	// Buscar artistas que tengan el nombre del género en su array de géneros
+	cursor, err := collection.Find(ctx, bson.M{"genres": genreName}, findOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var artists []models.Artist
+	if err := cursor.All(ctx, &artists); err != nil {
+		return nil, err
+	}
+
+	return artists, nil
+}
+
+// CountArtistsByGenre cuenta el número total de artistas para un género específico
+func (s *MusicService) CountArtistsByGenre(ctx context.Context, genreName string) (int, error) {
+	collection := s.db.Collection("artists")
+
+	count, err := collection.CountDocuments(ctx, bson.M{"genres": genreName})
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
+}
+
+// CountAlbumsByArtist cuenta el número de álbumes de un artista específico
+func (s *MusicService) CountAlbumsByArtist(ctx context.Context, artistID string) (int, error) {
+	objectID, err := primitive.ObjectIDFromHex(artistID)
+	if err != nil {
+		return 0, err
+	}
+
+	collection := s.db.Collection("albums")
+	count, err := collection.CountDocuments(ctx, bson.M{"artist_ids": objectID})
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
+}
+
+// CountSongsByArtist cuenta el número de canciones de un artista específico
+func (s *MusicService) CountSongsByArtist(ctx context.Context, artistID string) (int, error) {
+	objectID, err := primitive.ObjectIDFromHex(artistID)
+	if err != nil {
+		return 0, err
+	}
+
+	// Primero obtener todos los álbumes del artista
+	albumCollection := s.db.Collection("albums")
+	albumCursor, err := albumCollection.Find(ctx, bson.M{"artist_ids": objectID})
+	if err != nil {
+		return 0, err
+	}
+	defer albumCursor.Close(ctx)
+
+	var albums []models.Album
+	if err := albumCursor.All(ctx, &albums); err != nil {
+		return 0, err
+	}
+
+	// Obtener IDs de los álbumes
+	var albumIDs []primitive.ObjectID
+	for _, album := range albums {
+		albumIDs = append(albumIDs, album.ID)
+	}
+
+	if len(albumIDs) == 0 {
+		return 0, nil
+	}
+
+	// Contar canciones en esos álbumes
+	songCollection := s.db.Collection("songs")
+	count, err := songCollection.CountDocuments(ctx, bson.M{"album_id": bson.M{"$in": albumIDs}})
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
+}

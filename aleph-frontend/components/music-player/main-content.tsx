@@ -1,8 +1,9 @@
 "use client"
 
-import { Search, X, ArrowLeft, Play, Heart, Clock } from "lucide-react"
+import { Search, X, ArrowLeft, Play, Heart, Clock, Users, Album as AlbumIcon, ChevronLeft, ChevronRight, Music } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
 import { ArtistDetail } from "./artist-detail"
 import { GenreDetail } from "./genre-detail"
 import { AlbumDetail } from "./album-detail"
@@ -15,7 +16,8 @@ import { useArtists } from "@/hooks/useArtists"
 import { useAlbums } from "@/hooks/useAlbums"
 import { useSongs } from "@/hooks/useSongs"
 import { useGenres } from "@/hooks/useGenres"
-import { getArtistsByGenre } from "@/services/artistByGenreService";
+import { getArtistsByGenre } from "@/services/artistByGenreService"
+import { getArtistsBasicByGenre } from "@/services/optimizedGenreService"
 import type { Song, Album, Artist, Category, Genre } from "./types"
 
 export function MainContent() {
@@ -48,12 +50,14 @@ export function MainContent() {
         albumSongs
     } = useAlbums()
 
-    const { 
-        songs: apiSongs, 
-        isLoading: isLoadingSongs,
-        error: songsError 
-    } = useSongs()
+    // Comentado para evitar cargar todas las canciones (muy lento)
+    // const { 
+    //     songs: apiSongs, 
+    //     isLoading: isLoadingSongs,
+    //     error: songsError 
+    // } = useSongs()
 
+    // Hook de géneros simplificado
     const { 
         genres: apiGenres, 
         isLoading: isLoadingGenres,
@@ -61,8 +65,8 @@ export function MainContent() {
         getGenreDetails 
     } = useGenres()
 
-    const isLoading = isLoadingArtists || isLoadingAlbums || isLoadingSongs || isLoadingGenres
-    const loadingError = artistsError || albumsError || songsError || genresError
+    const isLoading = isLoadingArtists || isLoadingAlbums || isLoadingGenres
+    const loadingError = artistsError || albumsError || genresError
 
     const tabs = [
         { key: "artistas", label: "Artistas" },
@@ -86,22 +90,43 @@ export function MainContent() {
         }
     }
 
+    // Función optimizada para ir a detalles del género
     const handleGenreSelect = async (genre: Genre) => {
         try {
-            if (viewMode === "genre-detail" && selectedGenre?.id === genre.id) {
-                return;
-            }
-            // Consulta GraphQL para obtener artistas por género
-            const artistsByGenre = await getArtistsByGenre(genre.name);
-            setSelectedGenre({ ...genre, artists: artistsByGenre });
-            setViewMode("genre-detail");
-            setActiveTab("categorias");
+            console.log("Seleccionando género:", genre.name)
+            
+            // Usar la consulta optimizada que no causa timeouts
+            const artistsBasic = await getArtistsBasicByGenre(genre.name)
+            console.log("Artistas básicos obtenidos:", artistsBasic.length)
+            
+            // Convertir ArtistBasic a Artist para compatibilidad con GenreDetail
+            const artistsConverted = artistsBasic.map(artistBasic => ({
+                id: artistBasic.id,
+                name: artistBasic.name,
+                image_url: artistBasic.image_url,
+                genres: artistBasic.genres,
+                popularity: artistBasic.popularity,
+                spotify_id: "", // Campo requerido por el tipo Artist
+                created_at: artistBasic.created_at,
+                updated_at: artistBasic.updated_at,
+                // Campos vacíos para álbumes y canciones por ahora
+                albums: [],
+                songs: []
+            }))
+            
+            // Establecer el género seleccionado con los artistas convertidos
+            setSelectedGenre({ ...genre, artists: artistsConverted })
+            
+            // Cambiar a vista de detalles del género
+            setViewMode("genre-detail")
+            setActiveTab("categorias")
             window.scrollTo({ top: 0, behavior: 'smooth' })
         } catch (error) {
-            console.error("Error al cargar detalles del género:", error);
-            setSelectedGenre(genre);
-            setViewMode("genre-detail");
-            setActiveTab("categorias");
+            console.error("Error al cargar detalles del género:", error)
+            // En caso de error, aún así ir a la vista de detalles
+            setSelectedGenre(genre)
+            setViewMode("genre-detail")
+            setActiveTab("categorias")
         }
     }
 
@@ -191,11 +216,12 @@ export function MainContent() {
                 {/* Vista de detalles del género */}
                 {viewMode === "genre-detail" && selectedGenre && (
                     (() => {
-                        // The artists returned by the GraphQL query have albums and songs
+                        // Los artistas devueltos por la consulta GraphQL tienen álbumes y canciones
                         const artistsWithDetails = (selectedGenre.artists || []) as Array<
                             Artist & { albums?: any[]; songs?: any[] }
                         >;
-                        // Normalize albums
+                        
+                        // Normalizar álbumes
                         const allAlbums = artistsWithDetails.flatMap(artist =>
                             (artist.albums || []).map(album => ({
                                 id: album.id || album._id || '',
@@ -207,7 +233,8 @@ export function MainContent() {
                                 songsCount: Array.isArray(album.songs) ? album.songs.length : (album.songsCount || album.songs_count || 0),
                             }))
                         );
-                        // Normalize songs
+                        
+                        // Normalizar canciones
                         const allSongs = artistsWithDetails.flatMap(artist =>
                             (artist.albums || []).flatMap(album =>
                                 (album.songs || []).map((song: any) => ({
@@ -230,6 +257,7 @@ export function MainContent() {
                                 }))
                             )
                         );
+                        
                         return (
                             <GenreDetail
                                 genre={selectedGenre}
@@ -326,23 +354,46 @@ export function MainContent() {
                             </div>
                         )}
 
+                        {/* Pestaña de Categorías Mejorada */}
                         {activeTab === "categorias" && (
-                            <div>
-                                <h2 className="text-xl font-bold mb-4">Categorías</h2>
+                            <div className="space-y-6">
+                                <h2 className="text-xl font-bold">Géneros Musicales</h2>
+                                <p className="text-zinc-400 text-sm">
+                                    Selecciona un género para explorar todos sus artistas, álbumes y canciones
+                                </p>
+
                                 {isLoading ? (
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                        {[...Array(8)].map((_, index) => (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                        {[...Array(10)].map((_, index) => (
                                             <ArtistSkeleton key={index} />
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                         {apiGenres.map((genre) => (
-                                            <GenreCard
+                                            <div
                                                 key={genre.id}
-                                                genre={genre}
+                                                className="group cursor-pointer p-4 rounded-lg border border-zinc-700 hover:border-blue-500 hover:bg-blue-500/5 transition-all duration-200"
                                                 onClick={() => handleGenreSelect(genre)}
-                                            />
+                                            >
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                        <Music className="h-6 w-6 text-white" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h3 className="font-semibold text-white group-hover:text-blue-400 transition-colors">
+                                                            {genre.name}
+                                                        </h3>
+                                                        <div className="flex items-center space-x-1 text-sm text-zinc-400">
+                                                            <Users className="h-3 w-3" />
+                                                            <span>{genre.count || 0} artistas</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <ArrowLeft className="h-4 w-4 text-blue-400 rotate-180" />
+                                                    </div>
+                                                </div>
+                                            </div>
                                         ))}
                                     </div>
                                 )}
@@ -350,36 +401,36 @@ export function MainContent() {
                         )}
 
                         {activeTab === "canciones" && (
-                            <div>
+                            <div className="space-y-6">
                                 <h2 className="text-xl font-bold mb-4">Canciones</h2>
-                                {isLoading ? (
-                                    <div className="space-y-2">
-                                        {[...Array(5)].map((_, index) => (
-                                            <div key={index} className="flex items-center gap-4 p-2">
-                                                <Skeleton className="w-12 h-12 rounded" />
-                                                <div className="flex-1">
-                                                    <Skeleton className="h-4 w-3/4 mb-2" />
-                                                    <Skeleton className="h-3 w-1/2" />
-                                                </div>
-                                            </div>
-                                        ))}
+                                <div className="text-center py-12 space-y-4">
+                                    <div className="w-20 h-20 mx-auto rounded-full bg-zinc-800 flex items-center justify-center">
+                                        <Music className="w-10 h-10 text-zinc-400" />
                                     </div>
-                                ) : (
                                     <div className="space-y-2">
-                                        {apiSongs.map((song) => (
-                                            <SongCard
-                                                key={song.id}
-                                                song={song}
-                                                onClick={() => {
-                                                    const artist = apiArtists.find(a => a.id === song.artist_id)
-                                                    if (artist) {
-                                                        handleArtistSelect(artist)
-                                                    }
-                                                }}
-                                            />
-                                        ))}
+                                        <h3 className="text-lg font-medium text-white">
+                                            Explora canciones por artista
+                                        </h3>
+                                        <p className="text-zinc-400 max-w-md mx-auto">
+                                            Para escuchar canciones, navega por géneros o artistas. 
+                                            Esto te permitirá descubrir música de manera más organizada.
+                                        </p>
                                     </div>
-                                )}
+                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                        <button
+                                            onClick={() => setActiveTab("categorias")}
+                                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                                        >
+                                            Explorar géneros
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab("artistas")}
+                                            className="px-6 py-2 border border-zinc-600 hover:border-zinc-500 text-white rounded-lg transition-colors"
+                                        >
+                                            Ver artistas
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -392,7 +443,7 @@ export function MainContent() {
                     isOpen={isGenresModalOpen}
                     onClose={() => setIsGenresModalOpen(false)}
                     category={selectedCategory}
-                    onSelectGenre={handleGenreSelect}
+                    onGenreSelect={handleGenreSelect}
                 />
             )}
         </div>
