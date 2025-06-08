@@ -5,14 +5,13 @@ import { MusicPlayer } from "@/components/music-player/music-player";
 import { Sidebar } from "@/components/music-player/sidebar";
 import { MainContent } from "@/components/profile-page/main-content";
 import { EditProfile } from "@/components/profile-page/edit-profile";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useSession } from "next-auth/react";
 import {
   checkProfileExists,
   getProfileLogued,
 } from "@/services/profileService";
 import { getAllReviewsByProfile } from "@/services/reviewService";
 import { getAlbumById, getSongById } from "@/services/songService";
-import { extractAuthIdFromUser } from "../utils/auth";
 import Link from "next/link";
 import { DeleteProfile } from "@/services/profileService";
 
@@ -47,8 +46,9 @@ interface Review {
 export default function Profile() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
-  const { user, isLoading } = useUser();
-  const auth_id = extractAuthIdFromUser(user?.sub);
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const auth_id = user?.id;
   const [userData, setUserData] = useState({
     name: "",
     bio: "",
@@ -181,7 +181,7 @@ export default function Profile() {
   };
 
   if (
-    isLoading ||
+    status === "loading" ||
     profileExists === null ||
     userData === null ||
     userReviews === null

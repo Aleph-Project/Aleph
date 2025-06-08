@@ -15,17 +15,16 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  # For details on connection pooling, see Rails configuration guide
-  # https://guides.rubyonrails.org/configuring.html#database-pooling
-  username: postgres
-  password: postgres
-  host: reviews-db
+  username: <%= ENV['PROFILE_DB_USER'] %>
+  password: <%= ENV['PROFILE_DB_PASSWORD'] %>
+  host: <%= ENV['PROFILE_DB_HOST'] %>
+  sslmode: require
   pool: 5
 
 
 development:
   <<: *default
-  database: reviews_development
+  database: reviews_db
 
   # The specified database role being used to connect to PostgreSQL.
   # To create additional roles in PostgreSQL see `$ createuser --help`.
