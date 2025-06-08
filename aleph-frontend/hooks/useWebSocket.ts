@@ -73,7 +73,12 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
         case 'error':
           setError(response.message)
           setIsPlaying(false)
-          console.error('[WebSocket] Error:', response.message)
+          // Si es un error de audio no disponible, no mostrar como error crítico
+          if (response.message.includes('no tiene audio disponible')) {
+            console.warn('[WebSocket] Audio no disponible:', response.message)
+          } else {
+            console.error('[WebSocket] Error:', response.message)
+          }
           break
       }
     } catch (err) {
@@ -103,20 +108,27 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
         setIsConnected(false)
         setIsPlaying(false)
         
-        // Reconexión automática después de 3 segundos
-        reconnectTimeoutRef.current = setTimeout(() => {
-          console.log('[WebSocket] Intentando reconectar...')
-          connect()
-        }, 3000)
+        // Reconexión automática después de 5 segundos (aumentado de 3)
+        // Solo reconectar si no fue una desconexión intencional
+        if (wsRef.current) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            console.log('[WebSocket] Intentando reconectar...')
+            connect()
+          }, 5000)
+        }
       }
       
       wsRef.current.onerror = (error: Event) => {
-        console.error('[WebSocket] Error de conexión:', error)
+        // Mejorar el manejo del error para evitar problemas de serialización
+        const errorMessage = error instanceof ErrorEvent ? error.message : 'Error de conexión WebSocket'
+        console.error('[WebSocket] Error de conexión:', errorMessage)
         setError('Error de conexión WebSocket')
         setIsConnected(false)
       }
     } catch (err) {
-      console.error('[WebSocket] Error al crear conexión:', err)
+      // Mejorar el manejo del error para evitar problemas de serialización
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al crear conexión'
+      console.error('[WebSocket] Error al crear conexión:', errorMessage)
       setError('No se pudo establecer conexión WebSocket')
     }
   }, [url, handleMessage])
@@ -153,9 +165,13 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
   }, [sendMessage, currentSong])
 
   useEffect(() => {
-    connect()
+    // Delay pequeño para evitar conexiones muy agresivas al montar el componente
+    const initialConnectionTimeout = setTimeout(() => {
+      connect()
+    }, 100)
     
     return () => {
+      clearTimeout(initialConnectionTimeout)
       disconnect()
     }
   }, [connect, disconnect])

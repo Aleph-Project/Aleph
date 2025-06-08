@@ -41,6 +41,20 @@ services:
       - SPOTIFY_CLIENT_SECRET=secret
     # depends_on:
     #   - mongo
+  streaming-ms:
+    container_name: streaming-ms
+    build:
+      context: ./streaming-ms
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8081:8080"  # Exponer WebSocket para conexión directa desde el frontend
+    environment:
+      - PORT=8080
+      - API_GATEWAY_URL=http://apigateway:8080
+    depends_on:
+      - apigateway
+      - music-ms
   # mongo:
   #   container_name: music-db
   #   image: mongo:6
@@ -64,6 +78,7 @@ services:
       - "3000:3000"
     depends_on:
       - music-ms
+      - streaming-ms
   apigateway:
     container_name: apigateway
     build: 

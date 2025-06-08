@@ -19,9 +19,18 @@ interface ArtistDetailProps {
   albums: Album[];
   songs: Song[];
   isLoading: boolean;
+  webSocket: {
+    isConnected: boolean
+    isPlaying: boolean
+    currentSong: Song | null
+    error: string | null
+    playSong: (songId: string) => void
+    pauseSong: () => void
+    stopSong: () => void
+  }
 }
 
-export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailProps) {
+export function ArtistDetail({ artist, albums, songs, isLoading, webSocket }: ArtistDetailProps) {
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [albumSongs, setAlbumSongs] = useState<Song[]>([]);
   const [isLoadingAlbum, setIsLoadingAlbum] = useState(false);
@@ -236,6 +245,7 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
               setSelectedAlbum(null);
               setAlbumSongs([]);
             }}
+            webSocket={webSocket}
           />
         )}
       </div>

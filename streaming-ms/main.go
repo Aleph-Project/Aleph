@@ -132,6 +132,17 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
+			// Verificar si hay audio_url disponible
+			if song.AudioURL == "" {
+				log.Printf("Canción encontrada pero sin audio_url: %s", song.Title)
+				response := StreamResponse{
+					Type:    "error",
+					Message: fmt.Sprintf("La canción '%s' no tiene audio disponible. Audio URL no configurado en la base de datos.", song.Title),
+				}
+				conn.WriteJSON(response)
+				continue
+			}
+
 			log.Printf("Enviando datos de canción al cliente: %s", song.Title)
 			response := StreamResponse{
 				Type:    "song_data",

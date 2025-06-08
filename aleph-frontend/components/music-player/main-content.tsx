@@ -16,6 +16,7 @@ import { useArtists } from "@/hooks/useArtists"
 import { useAlbums } from "@/hooks/useAlbums"
 import { useSongs } from "@/hooks/useSongs"
 import { useGenres } from "@/hooks/useGenres"
+import { useWebSocket } from "@/hooks/useWebSocket"
 import { getArtistsByGenre } from "@/services/artistByGenreService"
 import { getArtistsBasicByGenre } from "@/services/optimizedGenreService"
 import type { Song, Album, Artist, Category, Genre } from "./types"
@@ -29,6 +30,9 @@ export function MainContent() {
     const [isSearching, setIsSearching] = useState(false)
     const [isGenresModalOpen, setIsGenresModalOpen] = useState(false)
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
+
+    // Inicializar WebSocket en el componente principal
+    const webSocket = useWebSocket()
 
     // Hooks personalizados
     const { 
@@ -179,7 +183,7 @@ export function MainContent() {
                             type="text"
                             placeholder="Buscar artistas, álbumes o canciones..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                             className="w-full bg-zinc-800/50 text-white pl-10 pr-10 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-zinc-700"
                         />
                         {searchTerm && (
@@ -191,6 +195,15 @@ export function MainContent() {
                             </button>
                         )}
                     </div>
+                    {/* Indicador de estado WebSocket */}
+                    {webSocket && (
+                        <div className="flex items-center space-x-2">
+                            <div className={`w-2 h-2 rounded-full ${webSocket.isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                            <span className="text-xs text-zinc-400">
+                                {webSocket.isConnected ? 'Streaming' : 'Desconectado'}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -210,6 +223,7 @@ export function MainContent() {
                         albums={artistAlbums}
                         songs={artistSongs}
                         isLoading={isLoading}
+                        webSocket={webSocket}
                     />
                 )}
 
@@ -284,6 +298,7 @@ export function MainContent() {
                         songs={albumSongs}
                         isLoading={isLoading}
                         onBack={handleBackToNormal}
+                        webSocket={webSocket}
                     />
                 )}
 

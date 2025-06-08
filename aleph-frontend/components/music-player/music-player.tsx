@@ -1,18 +1,14 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { Play, SkipBack, SkipForward, Volume2, Repeat, Shuffle, Pause } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Song as SongType } from "./types"
 
-interface Song {
-    _id?: string;
-    id?: string;
-    title: string;
-    artist: string;
-    duration?: string;
-    image_url?: string;
-    album?: string;
+interface Song extends SongType {
+    // Extendemos la interfaz base para mantener compatibilidad con diferentes fuentes de datos
+    coverUrl?: string;
+    audioUrl?: string;
 }
 
 export function MusicPlayer() {
@@ -32,18 +28,97 @@ export function MusicPlayer() {
         return () => clearTimeout(timer)
     }, [])
 
+    // Función para obtener datos completos de la canción
+    const fetchCompleteSongData = async (songId: string) => {
+        try {
+            console.log('[MusicPlayer] Obteniendo datos completos para canción:', songId);
+            const response = await fetch(`/api/v1/music/songs/${songId}`);
+            
+            if (!response.ok) {
+                throw new Error('Error al obtener datos de la canción');
+            }
+            
+            const songData = await response.json();
+            console.log('[MusicPlayer] Datos completos obtenidos:', songData);
+            
+            return songData;
+        } catch (error) {
+            console.error('[MusicPlayer] Error al obtener datos completos:', error);
+            return null;
+        }
+    };
+
     // Escuchar eventos de reproducción de canciones
     useEffect(() => {
-        const handlePlaySong = (event: any) => {
+        const handlePlaySong = async (event: any) => {
             console.log('[MusicPlayer] Evento playSong recibido:', event.detail);
             
             // Manejar diferentes estructuras de datos
             const songData = event.detail.song || event.detail;
             
+            console.log('[MusicPlayer] Datos de la canción extraídos:', songData);
+            console.log('[MusicPlayer] Propiedades disponibles:', Object.keys(songData));
+            
             if (songData) {
                 console.log('[MusicPlayer] Actualizando canción actual:', songData);
-                setCurrentSong(songData);
+                
+                // Verificar si los datos están incompletos (falta artista, álbum, etc.)
+                const isIncomplete = !songData.artist || !songData.album || !songData.image_url;
+                
+                let completeSongData = songData;
+                
+                // Si los datos están incompletos, obtener datos completos
+                if (isIncomplete && (songData.id || songData._id)) {
+                    console.log('[MusicPlayer] Datos incompletos detectados, obteniendo datos completos...');
+                    const fetchedData = await fetchCompleteSongData(songData.id || songData._id);
+                    
+                    if (fetchedData) {
+                        // Combinar los datos del evento con los datos completos obtenidos
+                        completeSongData = {
+                            ...fetchedData,
+                            ...songData, // Mantener audio_url del evento original si está presente
+                        };
+                        console.log('[MusicPlayer] Datos completos combinados:', completeSongData);
+                    }
+                }
+                
+                // Asegurar que tenemos todos los campos necesarios
+                const normalizedSong: Song = {
+                    _id: completeSongData._id || completeSongData.id || '',
+                    id: completeSongData.id || completeSongData._id || '',
+                    title: completeSongData.title || 'Título desconocido',
+                    artist: completeSongData.artist || completeSongData.artists?.[0] || 'Artista desconocido',
+                    duration: completeSongData.duration || '0:00',
+                    image_url: completeSongData.image_url || completeSongData.cover_url || completeSongData.coverUrl || '/placeholder.svg',
+                    album: completeSongData.album || completeSongData.album_name || 'Álbum desconocido',
+                    audio_url: completeSongData.audio_url || completeSongData.audioUrl || completeSongData.audio || '',
+                    authors: completeSongData.authors || (completeSongData.artist ? [completeSongData.artist] : []),
+                    release_date: completeSongData.release_date || completeSongData.releaseDate || '',
+                    genre: completeSongData.genre || '',
+                    likes: completeSongData.likes || 0,
+                    plays: completeSongData.plays || 0,
+                    spotify_id: completeSongData.spotify_id || '',
+                    album_id: completeSongData.album_id || '',
+                    created_at: completeSongData.created_at || '',
+                    updated_at: completeSongData.updated_at || '',
+                };
+                
+                console.log('[MusicPlayer] Canción normalizada:', normalizedSong);
+                console.log('[MusicPlayer] Artista final:', normalizedSong.artist);
+                console.log('[MusicPlayer] Álbum final:', normalizedSong.album);
+                console.log('[MusicPlayer] Imagen final:', normalizedSong.image_url);
+                
+                setCurrentSong(normalizedSong);
                 setIsPlaying(true);
+
+                // Si hay una URL de audio, actualizar el elemento audio
+                if (audioRef.current && normalizedSong.audio_url) {
+                    audioRef.current.src = normalizedSong.audio_url;
+                    audioRef.current.load();
+                    audioRef.current.play().catch((error: Error) => {
+                        console.error('[MusicPlayer] Error al reproducir audio:', error);
+                    });
+                }
             }
         };
 
@@ -52,7 +127,7 @@ export function MusicPlayer() {
         return () => {
             window.removeEventListener('playSong', handlePlaySong);
         };
-    }, [])
+    }, []);
 
     // Configurar audio
     useEffect(() => {
@@ -99,11 +174,12 @@ export function MusicPlayer() {
     return (
         <div className="fixed bottom-0 left-0 w-full z-50 h-20 bg-zinc-900 border-t border-zinc-800 flex items-center px-4">
             {/* Audio element */}
-            {currentSong && (
+            {currentSong && currentSong.audio_url && (
                 <audio
                     ref={audioRef}
-                    src={currentSong.audio_url || "/placeholder.mp3"}
+                    src={currentSong.audio_url}
                     preload="metadata"
+                    onError={(e) => console.error('[MusicPlayer] Error de audio:', e)}
                 />
             )}
             
@@ -120,8 +196,8 @@ export function MusicPlayer() {
                 ) : currentSong ? (
                     <>
                         <img
-                            src={currentSong.image_url || currentSong.coverUrl || "/placeholder.svg?height=56&width=56"}
-                            alt="Album cover"
+                            src={currentSong.image_url}
+                            alt={`Portada de ${currentSong.title}`}
                             className="h-14 w-14 rounded object-cover mr-3"
                             onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                                 const target = e.target as HTMLImageElement;
@@ -129,12 +205,10 @@ export function MusicPlayer() {
                                 target.src = "/placeholder.svg?height=56&width=56";
                             }}
                         />
-                        <div>
-                            <h4 className="text-sm font-medium">{currentSong.title}</h4>
-                            <p className="text-xs text-zinc-400">{currentSong.artist}</p>
-                            {currentSong.duration && (
-                                <p className="text-xs text-zinc-400">{currentSong.duration}</p>
-                            )}
+                        <div className="overflow-hidden">
+                            <h4 className="text-sm font-medium truncate">{currentSong.title}</h4>
+                            <p className="text-xs text-zinc-400 truncate">{currentSong.artist}</p>
+                            <p className="text-xs text-zinc-400 truncate">{currentSong.album}</p>
                         </div>
                     </>
                 ) : (

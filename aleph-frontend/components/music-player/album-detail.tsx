@@ -2,17 +2,43 @@
 
 import { Play, Heart, Clock, Pause, Square } from "lucide-react"
 import { Album, Song } from "@/components/music-player/types"
-import { useWebSocket } from "@/hooks/useWebSocket"
 
 interface AlbumDetailProps {
     album: Album
     songs: Song[]
     isLoading: boolean
     onBack: () => void
+    webSocket: {
+        isConnected: boolean
+        isPlaying: boolean
+        currentSong: Song | null
+        error: string | null
+        playSong: (songId: string) => void
+        pauseSong: () => void
+        stopSong: () => void
+    }
 }
 
-export function AlbumDetail({ album, songs, isLoading, onBack }: AlbumDetailProps) {
-    // Hook para WebSocket streaming
+export function AlbumDetail({ album, songs, isLoading, onBack, webSocket }: AlbumDetailProps) {
+    // Validación de seguridad para webSocket
+    if (!webSocket) {
+        console.error('[AlbumDetail] webSocket prop es undefined')
+        return (
+            <div className="p-6">
+                <div className="text-center py-12 space-y-4">
+                    <div className="text-red-400">Error: Conexión de streaming no disponible</div>
+                    <button
+                        onClick={onBack}
+                        className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg"
+                    >
+                        Volver
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    // Extraer propiedades del WebSocket
     const { 
         isConnected, 
         isPlaying, 
@@ -21,7 +47,7 @@ export function AlbumDetail({ album, songs, isLoading, onBack }: AlbumDetailProp
         playSong, 
         pauseSong, 
         stopSong 
-    } = useWebSocket()
+    } = webSocket
 
     // Log de depuración para ver qué datos llegan
     console.log("[AlbumDetail] Álbum recibido:", album);
