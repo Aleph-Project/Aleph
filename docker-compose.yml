@@ -7,8 +7,8 @@ services:
     volumes:
       - ./profile-microservice:/usr/src/app
     environment:
-      - S3_ACCESS_KEY=secret
-      - S3_SECRET_KEY=secret
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
       - PROFILE_DB_USER=${PROFILE_DB_USER}
       - PROFILE_DB_PASSWORD=${PROFILE_DB_PASSWORD}
       - PROFILE_DB_HOST=${PROFILE_DB_HOST}
@@ -37,8 +37,8 @@ services:
       - MONGODB_URI=mongodb://mongo:27017
       - MONGODB_NAME=music_ms
       - MONGODB_TIMEOUT=10
-      - SPOTIFY_CLIENT_ID=secret
-      - SPOTIFY_CLIENT_SECRET=secret
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
     depends_on:
       - mongo
   mongo:
@@ -57,9 +57,9 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       - NEXTAUTH_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=secret
-      - GOOGLE_CLIENT_ID=secret
-      - GOOGLE_CLIENT_SECRET=secret
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     ports:
       - "3000:3000"
     depends_on:
@@ -81,16 +81,53 @@ services:
       - /app/node_modules
     environment:
       - PORT=4000
-      - JWT_SECRET=secret
+      - JWT_SECRET=${JWT_SECRET}
       - EMAIL_USER=alephmusicmanagement@gmail.com
-      - EMAIL_PASS=secret
+      - EMAIL_PASS=${EMAIL_PASS}
       - EMAIL_FROM=Aleph <alephmusicmanagement@gmail.com>
       - FRONTEND_URL=http://localhost:3000
-      - MONGO_URI=secret
+      - MONGO_URI=${MONGO_URI}
     ports:
       - "4000:4000"
+  aleph-frontend-dsk:
+    build:
+      context: ./aleph-frontend-dsk
+      dockerfile: Dockerfile
+    container_name: aleph-frontend-dsk
+    restart: unless-stopped
+    
+    # Configuración para GUI (X11 forwarding)
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - ELECTRON_DISABLE_SECURITY_WARNINGS=1
+      - NODE_ENV=production
+    
+    # Volúmenes para X11 y persistencia de datos
+    volumes:
+      # Socket X11 para mostrar GUI en host Linux
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # Directorio home del usuario para persistir datos
+      - electron-home:/home/electronuser
+      # Opcional: mapear directorio de descargas
+      - ./downloads:/home/electronuser/Downloads
+      # Opcional: mapear configuración de la app
+      - ./app-data:/home/electronuser/.config
+    
+    # Configuración de red
+    network_mode: host
+    
+    # Privilegios necesarios para GUI
+    privileged: false
+    security_opt:
+      - seccomp:unconfined
+    
+    # Dispositivos necesarios para audio/video
+    devices:
+      - /dev/dri:/dev/dri  # GPU access
       
 volumes:
+  electron-home:
+    driver: local
   profile_data:
   reviews_data:
   mongo-data:

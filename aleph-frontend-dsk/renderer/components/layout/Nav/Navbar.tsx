@@ -20,15 +20,15 @@ export default function Navbar() {
 
   const navigation = user
     ? [
-        { name: "Play now", href: "/music-player" },
-        { name: "Perfil", href: "/profile" },
-        { name: "Buscar canciones", href: "/reviews/browser" },
+        // { name: "Play now", href: "/music-player" },
+        // { name: "Perfil", href: "/profile" },
+        // { name: "Buscar canciones", href: "/reviews/browser" },
       ]
     : [
-        { name: "Lanzamientos", href: "/lanzamientos" },
-        { name: "Ranking", href: "/ranking" },
-        { name: "Albums", href: "/albums" },
-        { name: "Sobre Nosotros", href: "/sobre-nosotros" }
+        // { name: "Lanzamientos", href: "/lanzamientos" },
+        // { name: "Ranking", href: "/ranking" },
+        // { name: "Albums", href: "/albums" },
+        { name: "Sobre Nosotros", href: "/sobre-nosotros/page" }
       ];
 
   return (
@@ -39,7 +39,7 @@ export default function Navbar() {
       )}
     >
       {/* Logo */}
-      <Link href="/" className="text-2xl font-bold tracking-tight flex items-center gap-2 z-50">
+      <Link href="/home" className="text-2xl font-bold tracking-tight flex items-center gap-2 z-50">
       <Image src="/Logo.png" alt="Logo" width={150} height={100} style={{ height: "auto" }} />
       </Link>
       
