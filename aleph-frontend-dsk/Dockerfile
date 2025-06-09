@@ -17,6 +17,15 @@ RUN apt-get update && apt-get install -y \
     xvfb \
     x11-apps \
     libxshmfence1 \
+    # Agregar D-Bus y módulos GTK
+    dbus \
+    dbus-x11 \
+    libcanberra-gtk-module \
+    libcanberra-gtk3-module \
+    # Mesa para gráficos
+    mesa-utils \
+    libgl1-mesa-glx \
+    libgl1-mesa-dri \
     && rm -rf /var/lib/apt/lists/*
 
 # Crear directorio de trabajo
@@ -54,5 +63,8 @@ USER electronuser
 ENV DISPLAY=:0
 ENV ELECTRON_DISABLE_SECURITY_WARNINGS=1
 
-# Comando por defecto para ejecutar la aplicación con flags para Docker
+# # Comando por defecto para ejecutar la aplicación con flags para Docker
 CMD ["npx", "electron", ".", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--disable-software-rasterizer", "--disable-background-timer-throttling", "--disable-backgrounding-occluded-windows", "--disable-renderer-backgrounding"]
+
+
+
