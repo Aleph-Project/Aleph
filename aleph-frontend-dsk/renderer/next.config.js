@@ -22,4 +22,18 @@ module.exports = {
     
     return config;
   },
+
+  async rewrites() {
+    return [
+      // Excluye explícitamente las rutas de NextAuth del rewrite
+      {
+        source: '/api/auth/:path*',
+        destination: '/api/auth/:path*', // No reescribe, deja que Next.js maneje internamente
+      },
+      {
+        source: '/api/:path*',
+        destination: 'http://apigateway:8080/api/:path*',
+      },
+    ];
+  },
 }

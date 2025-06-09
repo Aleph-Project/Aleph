@@ -1,6 +1,3 @@
-const { Config } = require("tailwindcss")
-
-
 const config = {
   darkMode: ["class"],
   content: [
