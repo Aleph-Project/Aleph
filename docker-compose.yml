@@ -52,6 +52,10 @@ services:
     environment:
       - PORT=8080
       - API_GATEWAY_URL=http://apigateway:8080
+      - S3_ACCESS_KEY=${MUSIC_S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${MUSIC_S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${MUSIC_S3_BUCKET_NAME}
+      - AWS_REGION=${MUSIC_AWS_REGION}
     depends_on:
       - apigateway
       - music-ms
