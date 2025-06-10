@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/jhunter/dev/swarch2025i/project/prototype_1/1F/ApiGateway/ApiGateway.csproj": {}
+    "/home/jhunter/dev/Aleph/ApiGateway/ApiGateway.csproj": {}
   },
   "projects": {
-    "/home/jhunter/dev/swarch2025i/project/prototype_1/1F/ApiGateway/ApiGateway.csproj": {
+    "/home/jhunter/dev/Aleph/ApiGateway/ApiGateway.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/jhunter/dev/swarch2025i/project/prototype_1/1F/ApiGateway/ApiGateway.csproj",
+        "projectUniqueName": "/home/jhunter/dev/Aleph/ApiGateway/ApiGateway.csproj",
         "projectName": "ApiGateway",
-        "projectPath": "/home/jhunter/dev/swarch2025i/project/prototype_1/1F/ApiGateway/ApiGateway.csproj",
+        "projectPath": "/home/jhunter/dev/Aleph/ApiGateway/ApiGateway.csproj",
         "packagesPath": "/home/jhunter/.nuget/packages/",
-        "outputPath": "/home/jhunter/dev/swarch2025i/project/prototype_1/1F/ApiGateway/obj/",
+        "outputPath": "/home/jhunter/dev/Aleph/ApiGateway/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/jhunter/.nuget/NuGet/NuGet.Config"
@@ -38,6 +38,10 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "Confluent.Kafka": {
+              "target": "Package",
+              "version": "[2.10.0, )"
+            },
             "Yarp.ReverseProxy": {
               "target": "Package",
               "version": "[2.3.0, )"
@@ -62,7 +66,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.115/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.116/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
