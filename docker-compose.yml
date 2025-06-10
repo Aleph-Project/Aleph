@@ -39,7 +39,7 @@ services:
       - MONGODB_TIMEOUT=10
       - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
       - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
-streaming-ms:
+  streaming-ms:
     container_name: streaming-ms
     build:
       context: ./streaming-ms
@@ -83,8 +83,8 @@ streaming-ms:
     image: bitnami/kafka:latest
     container_name: kafka
     ports:
-      - "9092:9092"  
-      - "9093:9093"  
+      - "9092:9092"
+      - "9093:9093"
     environment:
       - KAFKA_KRAFT_MODE=true
       - KAFKA_CFG_NODE_ID=1
@@ -94,7 +94,7 @@ streaming-ms:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
       - ALLOW_PLAINTEXT_LISTENER=yes
-  aleph_kafka_consumer:
+  aleph-kafka-consumer:
     container_name: aleph_kafka_consumer
     build: 
       context: ./kafka-consumer
