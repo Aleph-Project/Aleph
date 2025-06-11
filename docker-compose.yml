@@ -89,41 +89,41 @@ services:
       - MONGO_URI=${MONGO_URI}
     ports:
       - "4000:4000"
-  aleph-frontend-dsk:
-    build:
-      context: ./aleph-frontend-dsk
-      dockerfile: Dockerfile
-    container_name: aleph-frontend-dsk
-    restart: unless-stopped
+  # aleph-frontend-dsk:
+  #   build:
+  #     context: ./aleph-frontend-dsk
+  #     dockerfile: Dockerfile
+  #   container_name: aleph-frontend-dsk
+  #   restart: unless-stopped
     
-    # Configuración para GUI (X11 forwarding)
-    environment:
-      - DISPLAY=${DISPLAY:-:0}
-      - ELECTRON_DISABLE_SECURITY_WARNINGS=1
-      - NODE_ENV=production
+  #   # Configuración para GUI (X11 forwarding)
+  #   environment:
+  #     - DISPLAY=${DISPLAY:-:0}
+  #     - ELECTRON_DISABLE_SECURITY_WARNINGS=1
+  #     - NODE_ENV=production
     
-    # Volúmenes para X11 y persistencia de datos
-    volumes:
-      # Socket X11 para mostrar GUI en host Linux
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      # Directorio home del usuario para persistir datos
-      - electron-home:/home/electronuser
-      # Opcional: mapear directorio de descargas
-      - ./downloads:/home/electronuser/Downloads
-      # Opcional: mapear configuración de la app
-      - ./app-data:/home/electronuser/.config
+  #   # Volúmenes para X11 y persistencia de datos
+  #   volumes:
+  #     # Socket X11 para mostrar GUI en host Linux
+  #     - /tmp/.X11-unix:/tmp/.X11-unix:rw
+  #     # Directorio home del usuario para persistir datos
+  #     - electron-home:/home/electronuser
+  #     # Opcional: mapear directorio de descargas
+  #     - ./downloads:/home/electronuser/Downloads
+  #     # Opcional: mapear configuración de la app
+  #     - ./app-data:/home/electronuser/.config
     
-    # Configuración de red
-    network_mode: host
+  #   # Configuración de red
+  #   network_mode: host
     
-    # Privilegios necesarios para GUI
-    privileged: false
-    security_opt:
-      - seccomp:unconfined
+  #   # Privilegios necesarios para GUI
+  #   privileged: false
+  #   security_opt:
+  #     - seccomp:unconfined
     
-    # Dispositivos necesarios para audio/video
-    devices:
-      - /dev/dri:/dev/dri  # GPU access
+  #   # Dispositivos necesarios para audio/video
+  #   devices:
+  #     - /dev/dri:/dev/dri  # GPU access
       
 volumes:
   electron-home:
