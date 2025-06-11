@@ -53,6 +53,17 @@ export function AlbumDetail({ album, songs, isLoading, onBack, webSocket }: Albu
     // Estado para tracking de playlist
     const [currentSongIndex, setCurrentSongIndex] = useState<number>(-1)
 
+    // Sincronizar currentSongIndex con la canción actual del WebSocket
+    useEffect(() => {
+        if (currentSong) {
+            const songIndex = songs.findIndex(song => (song._id || song.id) === (currentSong._id || currentSong.id));
+            if (songIndex !== -1 && songIndex !== currentSongIndex) {
+                console.log('[AlbumDetail] Sincronizando currentSongIndex:', songIndex, 'para canción:', currentSong.title);
+                setCurrentSongIndex(songIndex);
+            }
+        }
+    }, [currentSong, songs, currentSongIndex]);
+
     const handlePlaySong = (songId: string) => {
         console.log('[AlbumDetail] Reproduciendo canción con ID:', songId);
         
