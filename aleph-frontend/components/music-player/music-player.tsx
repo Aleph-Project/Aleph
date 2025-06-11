@@ -11,7 +11,20 @@ interface Song extends SongType {
     audioUrl?: string;
 }
 
-export function MusicPlayer() {
+interface MusicPlayerProps {
+    webSocket?: {
+        isConnected: boolean
+        isPlaying: boolean
+        currentSong: Song | null
+        error: string | null
+        playSong: (songId: string) => void
+        pauseSong: () => void
+        stopSong: () => void
+        resumeSong: (songId: string) => void
+    }
+}
+
+export function MusicPlayer({ webSocket }: MusicPlayerProps) {
     const [isLoading, setIsLoading] = useState(true)
     const [isPlaying, setIsPlaying] = useState(false)
     const [currentSong, setCurrentSong] = useState<Song | null>(null)
@@ -52,6 +65,17 @@ export function MusicPlayer() {
     useEffect(() => {
         const handlePlaySong = async (event: any) => {
             console.log('[MusicPlayer] Evento playSong recibido:', event.detail);
+            
+            // Si hay una canción reproduciendo actualmente, detenerla primero para enviar duración a Kafka
+            if (currentSong && isPlaying && webSocket?.stopSong) {
+                console.log('[MusicPlayer] Deteniendo canción anterior antes de cargar nueva:', currentSong.title);
+                webSocket.stopSong();
+                
+                // Pausar el audio actual
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                }
+            }
             
             // Manejar diferentes estructuras de datos
             const songData = event.detail.song || event.detail;
@@ -107,17 +131,34 @@ export function MusicPlayer() {
                 console.log('[MusicPlayer] Artista final:', normalizedSong.artist);
                 console.log('[MusicPlayer] Álbum final:', normalizedSong.album);
                 console.log('[MusicPlayer] Imagen final:', normalizedSong.image_url);
+                console.log('[MusicPlayer] Audio URL:', normalizedSong.audio_url);
                 
                 setCurrentSong(normalizedSong);
                 setIsPlaying(true);
 
-                // Si hay una URL de audio, actualizar el elemento audio
-                if (audioRef.current && normalizedSong.audio_url) {
-                    audioRef.current.src = normalizedSong.audio_url;
-                    audioRef.current.load();
-                    audioRef.current.play().catch((error: Error) => {
-                        console.error('[MusicPlayer] Error al reproducir audio:', error);
-                    });
+                // Si hay una URL de audio, actualizar el elemento audio y reproducir
+                if (normalizedSong.audio_url) {
+                    console.log('[MusicPlayer] Iniciando reproducción automática...');
+                    
+                    // Si el audioRef ya existe, configurarlo inmediatamente
+                    if (audioRef.current) {
+                        console.log('[MusicPlayer] AudioRef disponible, configurando reproducción inmediata');
+                        audioRef.current.src = normalizedSong.audio_url;
+                        audioRef.current.load();
+                        
+                        // Usar un pequeño timeout para asegurar que el audio esté listo
+                        setTimeout(() => {
+                            if (audioRef.current) {
+                                audioRef.current.play().catch((error: Error) => {
+                                    console.error('[MusicPlayer] Error al reproducir audio inmediatamente:', error);
+                                });
+                            }
+                        }, 100);
+                    } else {
+                        console.log('[MusicPlayer] AudioRef no disponible aún, se reproducirá cuando esté listo');
+                    }
+                } else {
+                    console.warn('[MusicPlayer] No hay audio_url disponible para la canción');
                 }
             }
         };
@@ -152,6 +193,42 @@ export function MusicPlayer() {
         }
     }, [currentSong])
 
+    // Efecto para manejar reproducción automática cuando se carga una nueva canción
+    useEffect(() => {
+        if (audioRef.current && currentSong && currentSong.audio_url && isPlaying) {
+            console.log('[MusicPlayer] useEffect de reproducción automática ejecutado');
+            console.log('[MusicPlayer] Current song:', currentSong.title);
+            console.log('[MusicPlayer] Audio URL:', currentSong.audio_url);
+            console.log('[MusicPlayer] Is playing:', isPlaying);
+            
+            const audio = audioRef.current;
+            
+            // Solo si la fuente del audio es diferente a la canción actual
+            if (audio.src !== currentSong.audio_url) {
+                console.log('[MusicPlayer] Cambiando fuente de audio y reproduciendo...');
+                audio.src = currentSong.audio_url;
+                audio.load();
+                
+                // Reproducir cuando esté cargado
+                const handleCanPlay = () => {
+                    console.log('[MusicPlayer] Audio listo para reproducir, iniciando...');
+                    audio.play().catch((error: Error) => {
+                        console.error('[MusicPlayer] Error en reproducción automática:', error);
+                    });
+                    audio.removeEventListener('canplay', handleCanPlay);
+                };
+                
+                audio.addEventListener('canplay', handleCanPlay);
+            } else if (audio.paused) {
+                // Si es la misma canción pero está pausada, simplemente reproducir
+                console.log('[MusicPlayer] Reanudando reproducción de la canción actual...');
+                audio.play().catch((error: Error) => {
+                    console.error('[MusicPlayer] Error al reanudar reproducción:', error);
+                });
+            }
+        }
+    }, [currentSong, isPlaying]);
+
     // Formatear tiempo
     const formatTime = (time: number) => {
         if (isNaN(time)) return '0:00';
@@ -161,27 +238,100 @@ export function MusicPlayer() {
     };
 
     const togglePlay = () => {
+        console.log('[MusicPlayer] togglePlay llamado');
+        console.log('[MusicPlayer] audioRef.current:', !!audioRef.current);
+        console.log('[MusicPlayer] currentSong:', !!currentSong);
+        console.log('[MusicPlayer] isPlaying:', isPlaying);
+        
         if (audioRef.current && currentSong) {
             if (isPlaying) {
+                console.log('[MusicPlayer] Pausando audio...');
+                // Pausar el audio HTML primero
                 audioRef.current.pause();
+                setIsPlaying(false);
+                
+                // Enviar evento de pausa al WebSocket para que se registre la duración en Kafka
+                if (webSocket?.pauseSong) {
+                    console.log('[MusicPlayer] Enviando evento pause al WebSocket...');
+                    webSocket.pauseSong();
+                }
             } else {
-                audioRef.current.play();
+                console.log('[MusicPlayer] Reanudando reproducción...');
+                // Reproducir el audio HTML desde la posición actual
+                audioRef.current.play().catch((error: Error) => {
+                    console.error('[MusicPlayer] Error al reanudar reproducción:', error);
+                });
+                setIsPlaying(true);
+                
+                // Enviar evento resume al WebSocket para reactivar la sesión en el backend
+                if (webSocket?.resumeSong && currentSong._id) {
+                    console.log('[MusicPlayer] Enviando evento resume al WebSocket...');
+                    webSocket.resumeSong(currentSong._id);
+                }
+                
+                console.log('[MusicPlayer] Audio reanudado desde la posición actual');
             }
-            setIsPlaying(!isPlaying);
+        } else {
+            console.warn('[MusicPlayer] No se puede reproducir: audioRef o currentSong no disponible');
         }
+    }
+
+    const playNext = () => {
+        console.log('[MusicPlayer] playNext llamado');
+        
+        // Primero enviar stop para registrar duración de canción actual en Kafka
+        if (webSocket?.stopSong && currentSong) {
+            const songId = currentSong._id || currentSong.id;
+            console.log('[MusicPlayer] Enviando stop antes de cambiar a siguiente canción, songId:', songId);
+            webSocket.stopSong();
+        }
+        
+        // Disparar evento para que el componente de álbum maneje la navegación
+        console.log('[MusicPlayer] Disparando evento nextSong');
+        window.dispatchEvent(new CustomEvent('nextSong'));
+    }
+
+    const playPrevious = () => {
+        console.log('[MusicPlayer] playPrevious llamado');
+        
+        // Primero enviar stop para registrar duración de canción actual en Kafka  
+        if (webSocket?.stopSong && currentSong) {
+            const songId = currentSong._id || currentSong.id;
+            console.log('[MusicPlayer] Enviando stop antes de cambiar a canción anterior, songId:', songId);
+            webSocket.stopSong();
+        }
+        
+        // Disparar evento para que el componente de álbum maneje la navegación
+        console.log('[MusicPlayer] Disparando evento previousSong');
+        window.dispatchEvent(new CustomEvent('previousSong'));
     }
 
     return (
         <div className="fixed bottom-0 left-0 w-full z-50 h-20 bg-zinc-900 border-t border-zinc-800 flex items-center px-4">
-            {/* Audio element */}
-            {currentSong && currentSong.audio_url && (
-                <audio
-                    ref={audioRef}
-                    src={currentSong.audio_url}
-                    preload="metadata"
-                    onError={(e) => console.error('[MusicPlayer] Error de audio:', e)}
-                />
-            )}
+            {/* Audio element - siempre renderizado para que audioRef esté disponible */}
+            <audio
+                ref={audioRef}
+                preload="metadata"
+                onError={(e) => console.error('[MusicPlayer] Error de audio:', e)}
+                onPlay={() => {
+                    console.log('[MusicPlayer] Audio iniciado');
+                    setIsPlaying(true);
+                }}
+                onPause={() => {
+                    console.log('[MusicPlayer] Audio pausado');
+                    setIsPlaying(false);
+                }}
+                onEnded={() => {
+                    console.log('[MusicPlayer] Audio terminado naturalmente');
+                    setIsPlaying(false);
+                    
+                    // Enviar stop al WebSocket para registrar duración final en Kafka
+                    if (webSocket?.stopSong && currentSong?._id) {
+                        console.log('[MusicPlayer] Enviando evento stop por finalización natural de canción');
+                        webSocket.stopSong();
+                    }
+                }}
+            />
             
             {/* Song Info */}
             <div className="flex items-center w-1/3">
@@ -242,7 +392,11 @@ export function MusicPlayer() {
                             <button className="text-zinc-400 hover:text-white">
                                 <Shuffle className="h-4 w-4" />
                             </button>
-                            <button className="text-zinc-400 hover:text-white">
+                            <button 
+                                className="text-zinc-400 hover:text-white"
+                                onClick={playPrevious}
+                                disabled={!currentSong}
+                            >
                                 <SkipBack className="h-5 w-5" />
                             </button>
                             <button 
@@ -252,7 +406,11 @@ export function MusicPlayer() {
                             >
                                 {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                             </button>
-                            <button className="text-zinc-400 hover:text-white">
+                            <button 
+                                className="text-zinc-400 hover:text-white"
+                                onClick={playNext}
+                                disabled={!currentSong}
+                            >
                                 <SkipForward className="h-5 w-5" />
                             </button>
                             <button className="text-zinc-400 hover:text-white">

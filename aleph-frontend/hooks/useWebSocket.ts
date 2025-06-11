@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
 import { Song } from '@/components/music-player/types'
 
 interface StreamRequest {
@@ -22,6 +23,7 @@ interface UseWebSocketReturn {
   playSong: (songId: string) => void
   pauseSong: () => void
   stopSong: () => void
+  resumeSong: (songId: string) => void
   connect: () => void
   disconnect: () => void
 }
@@ -32,28 +34,39 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
   const [currentSong, setCurrentSong] = useState<Song | null>(null)
   const [error, setError] = useState<string | null>(null)
   
+  const { data: session } = useSession()
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<number | undefined>()
 
   const sendMessage = useCallback((message: StreamRequest) => {
+    console.log('[useWebSocket] sendMessage llamado con:', message)
+    console.log('[useWebSocket] WebSocket estado:', wsRef.current?.readyState)
+    
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      console.log('[useWebSocket] Enviando mensaje:', JSON.stringify(message))
       wsRef.current.send(JSON.stringify(message))
     } else {
+      console.error('[useWebSocket] WebSocket no está conectado para enviar mensaje')
       setError('WebSocket no está conectado')
     }
   }, [])
 
   const handleMessage = useCallback((event: MessageEvent) => {
+    console.log('[useWebSocket] Mensaje recibido desde streaming-ms:', event.data)
+    
     try {
       const response: StreamResponse = JSON.parse(event.data)
+      console.log('[useWebSocket] Respuesta parseada:', response)
       
       switch (response.type) {
         case 'song_data':
+          console.log('[useWebSocket] Procesando song_data:', response.song)
           setCurrentSong(response.song || null)
           setIsPlaying(true)
           setError(null)
           // Emitir evento personalizado para MusicPlayer
           if (response.song) {
+            console.log('[useWebSocket] Disparando evento playSong personalizado:', response.song)
             const event = new CustomEvent('playSong', { detail: response.song })
             window.dispatchEvent(event)
           }
@@ -61,6 +74,7 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
           break
           
         case 'status':
+          console.log('[useWebSocket] Procesando status:', response.message)
           if (response.message.includes('pausada')) {
             setIsPlaying(false)
           } else if (response.message.includes('detenida')) {
@@ -71,6 +85,7 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
           break
           
         case 'error':
+          console.log('[useWebSocket] Procesando error:', response.message)
           setError(response.message)
           setIsPlaying(false)
           // Si es un error de audio no disponible, no mostrar como error crítico
@@ -92,8 +107,16 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
       return
     }
 
+    // Verificar que hay sesión activa antes de conectar
+    if (!session?.user?.id) {
+      setError('Debe iniciar sesión para usar el reproductor')
+      return
+    }
+
     try {
-      wsRef.current = new WebSocket(url)
+      // Agregar el user_id como query parameter para autenticación
+      const wsUrl = `${url}?user_id=${encodeURIComponent(session.user.id)}`
+      wsRef.current = new WebSocket(wsUrl)
       
       wsRef.current.onopen = () => {
         console.log('[WebSocket] Conectado a streaming-ms')
@@ -131,7 +154,7 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
       console.error('[WebSocket] Error al crear conexión:', errorMessage)
       setError('No se pudo establecer conexión WebSocket')
     }
-  }, [url, handleMessage])
+  }, [url, handleMessage, session])
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -149,6 +172,10 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
   }, [])
 
   const playSong = useCallback((songId: string) => {
+    console.log('[useWebSocket] playSong llamado con songId:', songId)
+    console.log('[useWebSocket] WebSocket conectado:', isConnected)
+    console.log('[useWebSocket] readyState:', wsRef.current?.readyState)
+    
     sendMessage({ type: 'play', songId })
   }, [sendMessage])
 
@@ -163,6 +190,14 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
       sendMessage({ type: 'stop', songId: currentSong._id })
     }
   }, [sendMessage, currentSong])
+
+  const resumeSong = useCallback((songId: string) => {
+    console.log('[useWebSocket] resumeSong llamado con songId:', songId)
+    console.log('[useWebSocket] WebSocket conectado:', isConnected)
+    console.log('[useWebSocket] readyState:', wsRef.current?.readyState)
+    
+    sendMessage({ type: 'resume', songId })
+  }, [sendMessage])
 
   useEffect(() => {
     // Delay pequeño para evitar conexiones muy agresivas al montar el componente
@@ -184,6 +219,7 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
     playSong,
     pauseSong,
     stopSong,
+    resumeSong,
     connect,
     disconnect
   }

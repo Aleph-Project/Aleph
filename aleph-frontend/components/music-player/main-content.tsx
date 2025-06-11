@@ -12,16 +12,29 @@ import { ArtistCard } from "./ui/artist-card"
 import { AlbumCard } from "./ui/album-card"
 import { GenreCard } from "./ui/genre-card"
 import { SongCard } from "./ui/song-card"
+import { MusicPlayer } from "./music-player"
 import { useArtists } from "@/hooks/useArtists"
 import { useAlbums } from "@/hooks/useAlbums"
 import { useSongs } from "@/hooks/useSongs"
 import { useGenres } from "@/hooks/useGenres"
-import { useWebSocket } from "@/hooks/useWebSocket"
 import { getArtistsByGenre } from "@/services/artistByGenreService"
 import { getArtistsBasicByGenre } from "@/services/optimizedGenreService"
 import type { Song, Album, Artist, Category, Genre } from "./types"
 
-export function MainContent() {
+interface MainContentProps {
+    webSocket?: {
+        isConnected: boolean
+        isPlaying: boolean
+        currentSong: Song | null
+        error: string | null
+        playSong: (songId: string) => void
+        pauseSong: () => void
+        stopSong: () => void
+        resumeSong: (songId: string) => void
+    }
+}
+
+export function MainContent({ webSocket }: MainContentProps) {
     const [activeTab, setActiveTab] = useState("artistas")
     const [searchTerm, setSearchTerm] = useState("")
     const [viewMode, setViewMode] = useState<"normal" | "artist-detail" | "genre-detail" | "album-detail">("normal")
@@ -30,9 +43,6 @@ export function MainContent() {
     const [isSearching, setIsSearching] = useState(false)
     const [isGenresModalOpen, setIsGenresModalOpen] = useState(false)
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
-
-    // Inicializar WebSocket en el componente principal
-    const webSocket = useWebSocket()
 
     // Hooks personalizados
     const { 
@@ -223,7 +233,16 @@ export function MainContent() {
                         albums={artistAlbums}
                         songs={artistSongs}
                         isLoading={isLoading}
-                        webSocket={webSocket}
+                        webSocket={webSocket || {
+                            isConnected: false,
+                            isPlaying: false,
+                            currentSong: null,
+                            error: null,
+                            playSong: () => {},
+                            pauseSong: () => {},
+                            stopSong: () => {},
+                            resumeSong: () => {}
+                        }}
                     />
                 )}
 
@@ -298,7 +317,16 @@ export function MainContent() {
                         songs={albumSongs}
                         isLoading={isLoading}
                         onBack={handleBackToNormal}
-                        webSocket={webSocket}
+                        webSocket={webSocket || {
+                            isConnected: false,
+                            isPlaying: false,
+                            currentSong: null,
+                            error: null,
+                            playSong: () => {},
+                            pauseSong: () => {},
+                            stopSong: () => {},
+                            resumeSong: () => {}
+                        }}
                     />
                 )}
 

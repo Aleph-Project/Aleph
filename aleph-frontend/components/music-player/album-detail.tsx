@@ -2,6 +2,7 @@
 
 import { Play, Heart, Clock, Pause, Square } from "lucide-react"
 import { Album, Song } from "@/components/music-player/types"
+import { useState, useEffect } from "react"
 
 interface AlbumDetailProps {
     album: Album
@@ -49,6 +50,64 @@ export function AlbumDetail({ album, songs, isLoading, onBack, webSocket }: Albu
         stopSong 
     } = webSocket
 
+    // Estado para tracking de playlist
+    const [currentSongIndex, setCurrentSongIndex] = useState<number>(-1)
+
+    const handlePlaySong = (songId: string) => {
+        console.log('[AlbumDetail] Reproduciendo canción con ID:', songId);
+        
+        // Encontrar el índice de la canción
+        const songIndex = songs.findIndex(song => (song._id || song.id) === songId);
+        if (songIndex !== -1) {
+            setCurrentSongIndex(songIndex);
+        }
+        
+        playSong(songId)
+    }
+
+    const handleNextSong = () => {
+        if (currentSongIndex < songs.length - 1) {
+            const nextIndex = currentSongIndex + 1;
+            const nextSong = songs[nextIndex];
+            console.log('[AlbumDetail] Cambiando a siguiente canción:', nextSong.title);
+            handlePlaySong(nextSong._id || nextSong.id);
+        } else {
+            console.log('[AlbumDetail] Ya es la última canción del álbum');
+        }
+    }
+
+    const handlePreviousSong = () => {
+        if (currentSongIndex > 0) {
+            const prevIndex = currentSongIndex - 1;
+            const prevSong = songs[prevIndex];
+            console.log('[AlbumDetail] Cambiando a canción anterior:', prevSong.title);
+            handlePlaySong(prevSong._id || prevSong.id);
+        } else {
+            console.log('[AlbumDetail] Ya es la primera canción del álbum');
+        }
+    }
+
+    // Agregar listeners para eventos de navegación de canciones
+    useEffect(() => {
+        const handleNextSongEvent = () => {
+            console.log('[AlbumDetail] Evento nextSong recibido');
+            handleNextSong();
+        };
+
+        const handlePreviousSongEvent = () => {
+            console.log('[AlbumDetail] Evento previousSong recibido');
+            handlePreviousSong();
+        };
+
+        window.addEventListener('nextSong', handleNextSongEvent);
+        window.addEventListener('previousSong', handlePreviousSongEvent);
+
+        return () => {
+            window.removeEventListener('nextSong', handleNextSongEvent);
+            window.removeEventListener('previousSong', handlePreviousSongEvent);
+        };
+    }, [currentSongIndex, songs]); // Dependencias para que tenga acceso a las funciones actualizadas
+
     // Log de depuración para ver qué datos llegan
     console.log("[AlbumDetail] Álbum recibido:", album);
     console.log("[AlbumDetail] Canciones recibidas:", songs);
@@ -60,11 +119,6 @@ export function AlbumDetail({ album, songs, isLoading, onBack, webSocket }: Albu
             console.log('[AlbumDetail] Reproduciendo álbum, primera canción:', songs[0]);
             playSong(songs[0]._id || songs[0].id)
         }
-    }
-
-    const handlePlaySong = (songId: string) => {
-        console.log('[AlbumDetail] Reproduciendo canción con ID:', songId);
-        playSong(songId)
     }
 
     const handlePauseResume = () => {
