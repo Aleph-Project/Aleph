@@ -1,7 +1,8 @@
 const path = require('path');
 /** @type {import('next').NextConfig} */
 module.exports = {
-  output: 'export',
+  // output: 'export',
+  ssr: true,
   distDir: process.env.NODE_ENV === 'production' ? '../app' : '.next',
   trailingSlash: true,
   images: {

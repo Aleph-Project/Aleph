@@ -23,6 +23,7 @@ export default function Navbar() {
         // { name: "Play now", href: "/music-player" },
         // { name: "Perfil", href: "/profile" },
         // { name: "Buscar canciones", href: "/reviews/browser" },
+        { name: "Sobre Nosotros", href: "/sobre-nosotros/page" }
       ]
     : [
         // { name: "Lanzamientos", href: "/lanzamientos" },

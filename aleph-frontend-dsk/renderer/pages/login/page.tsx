@@ -27,7 +27,7 @@ export default function LoginPage() {
             redirect: false,
             email,
             password,
-            callbackUrl: "/",
+            callbackUrl: "/home",
         });
         setLoading(false)
         if (res?.error) {
@@ -49,7 +49,7 @@ export default function LoginPage() {
         } else {
             setError("")
             // Redirige si es exitoso
-            window.location.href = res.url || "/"
+            window.location.href = res.url || "/home"
         }
     };
 

@@ -1,7 +1,6 @@
 import axios from "axios";
 
-// const API_URL = "http://localhost:4000/api/v1/auth";
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = "/api/v1/auth";
 
 // Solicita el envío del código de recuperación
 export async function requestResetCode(email: string) {
@@ -20,7 +19,7 @@ export async function resetPassword(email: string, code: string, newPassword: st
 
 // Login con email y password (para NextAuth)
 export function loginWithCredentials(email?: string, password?: string) {
-    return axios.post(`${API_URL}/login`, { email, password });
+    return axios.post(`http://localhost:8080/api/v1/auth/login`, { email, password });
 }
 
 // Registro de usuario

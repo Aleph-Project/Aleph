@@ -36,7 +36,7 @@ export default function AuthButtons() {
     return (
         <div className="flex gap-2 items-center">
             <span className="text-sm mr-2">Hola, {user.name || user.email}!</span>
-            <button className={buttonClass} onClick={() => signOut({ callbackUrl: "/" })}>
+            <button className={buttonClass} onClick={() => signOut({ callbackUrl: "/home" })}>
                 Cerrar sesión
             </button>
         </div>
