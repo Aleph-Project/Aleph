@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, type FormEvent, type ChangeEvent } from "react"
 import { getAllCities, City } from "@/services/cityService"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
+  import Image from "next/image"
 import { useSession } from "next-auth/react";
 import { CreateProfile } from "@/services/profileService";
 
