@@ -91,7 +91,7 @@ export default function RegisterPage() {
 
     const handleDialogContinue = () => {
         setSuccessDialogOpen(false)
-        router.push("/login")
+        router.push("/login/page")
     }
 
     return (
@@ -227,7 +227,7 @@ export default function RegisterPage() {
                         <div className="text-center text-sm text-gray-600 space-y-2 mt-6">
                             <p>
                                 ¿Ya tienes una cuenta?{" "}
-                                <Link href="/login" className="text-purple-600 hover:underline">
+                                <Link href="/login/page" className="text-purple-600 hover:underline">
                                     Inicia sesión
                                 </Link>
                             </p>
