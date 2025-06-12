@@ -19,12 +19,12 @@ export default function AuthButtons() {
     if (!user) {
         return (
             <div className="flex gap-2">
-                <a href="/login">
+                <a href="/login/page">
                     <button className={buttonClass}>
                         Iniciar sesión
                     </button>
                 </a>
-                <a href="/register">
+                <a href="/register/page">
                     <button className={buttonClass}>
                         Regístrate
                     </button>

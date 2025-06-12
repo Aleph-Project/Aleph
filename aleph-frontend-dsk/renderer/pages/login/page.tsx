@@ -149,7 +149,7 @@ export default function LoginPage() {
                                 variant="outline"
                                 className="w-full border-gray-300 text-black"
                                 type="button"
-                                onClick={() => signIn("google", { callbackUrl: "/" })}
+                                onClick={() => signIn("google", { callbackUrl: "/home" })}
                             >
                                 <Image src="/placeholder.svg?height=20&width=20" alt="Google" width={20} height={20} className="mr-2" />
                                 Google
@@ -159,12 +159,12 @@ export default function LoginPage() {
                         <div className="text-center text-sm text-gray-600 space-y-2 mt-6">
                             <p>
                                 ¿No tienes una cuenta?{" "}
-                                <Link href="/register" className="text-purple-600 hover:underline">
+                                <Link href="/register/page" className="text-purple-600 hover:underline">
                                     Regístrate
                                 </Link>
                             </p>
                             <p>
-                                <Link href="/forgot-password" className="text-purple-600 hover:underline">
+                                <Link href="/forgot-password/page" className="text-purple-600 hover:underline">
                                     ¿Olvidaste tu contraseña?
                                 </Link>
                             </p>
