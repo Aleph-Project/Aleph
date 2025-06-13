@@ -71,19 +71,14 @@ export default function RegisterPage() {
 
         setLoading(true)
         try {
-            await register({ name, email, password }) 
-            setSuccessDialogOpen(true)
-        } catch (err: any) {
-            // Manejo específico del error del microservicio
-            const apiError = err?.response?.data?.error
-            if (apiError === "Email already registered") {
-                setError("El correo electrónico ya está registrado.")
+            const res = await register({ name, email, password }); // Usar del contexto
+            if (res.success) {
+                setSuccessDialogOpen(true);
             } else {
-                setError(
-                    err?.response?.data?.message ||
-                    "Error al registrar. Intenta con otro correo o revisa los datos."
-                )
+                setError(res.message || "Error al registrar. Intenta con otro correo o revisa los datos.");
             }
+        } catch (err: any) {
+            setError("Error inesperado al registrar.");
         } finally {
             setLoading(false)
         }

@@ -120,12 +120,19 @@ export const login = async (email: string, password: string) => {
 // Registro de usuario
 export const register = async (data: { name: string, email: string, password: string }) => {
     try {
-        const res = await axios.post(`${API_URL}/register`, data);
-        return { success: true, message: 'User registered successfully' };
+        console.log('Calling IPC register with:', data); // Debug log
+        const res = await window.ipc.invoke('auth:register', data);
+        console.log('IPC register response:', res); // Debug log
+        
+        if (res.success) {
+            return { success: true, message: res.message || 'User registered successfully' };
+        }
+        return { success: false, message: res.message || 'Registration failed' };
     } catch (error: any) {
+        console.error('Register error:', error);
         return {
             success: false,
-            message: error.response?.data?.error || 'An error occurred during registration'
+            message: 'An error occurred during registration'
         }
     }
 }
