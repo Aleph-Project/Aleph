@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
         try {
             await verifyResetCode(email, otp)
             setIsDialogOpen(false)
-            router.push(`/new-password?email=${encodeURIComponent(email)}&code=${otp}`)
+            router.push(`/new-password/page?email=${encodeURIComponent(email)}&code=${otp}`)
         } catch (err: any) {
             setOtpError(true)
         }

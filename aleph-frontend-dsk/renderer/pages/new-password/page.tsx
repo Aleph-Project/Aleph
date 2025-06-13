@@ -48,7 +48,7 @@ export default function NewPasswordPage() {
         try {
             await resetPassword(email, code, password)
             setSuccess(true)
-            setTimeout(() => router.push("/login"), 2000)
+            setTimeout(() => router.push("/login/page"), 2000)
         } catch (err: any) {
             setError(err?.response?.data?.error || "No se pudo cambiar la contraseña.")
         }
