@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog"
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp"
 import { requestResetCode, verifyResetCode } from "@/renderer/services/authService"
+import OtpModal from "@/renderer/components/codigo-otp/page"
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("")
@@ -110,7 +109,7 @@ export default function ForgotPasswordPage() {
             </div>
 
             {/* OTP Dialog */}
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            {/* <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Verificación de código</DialogTitle>
@@ -149,7 +148,16 @@ export default function ForgotPasswordPage() {
                         </DialogClose>
                     </DialogFooter>
                 </DialogContent>
-            </Dialog>
+            </Dialog> */}
+            <OtpModal 
+                isDialogOpen={isDialogOpen}
+                setIsDialogOpen={setIsDialogOpen}
+                otp={otp}
+                setOtp={setOtp}
+                otpError={otpError}
+                handleOtpSubmit={handleOtpSubmit}
+                handleResendCode={handleResendCode}
+            />
         </div>
     )
 }
