@@ -9,8 +9,10 @@ public static class PublishToSongPlayedKafkaEndpoint
             [FromBody] SongPlayedEventDto payload,
             [FromServices] PublishToSongPlayedKafkaService service) =>
         {
-            await service.PublishToSongPlayedKafka(payload);
-            return Results.Ok();
+            var result = await service.PublishToSongPlayedKafka(payload);
+            return result.Success
+                ? Results.Ok(result)
+                : Results.BadRequest(new { error = result.Error, message = result.Message });
         });
     }
 }

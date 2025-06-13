@@ -35,10 +35,10 @@ def handle_play_event(message: bytes):
         print(f"Parsed time dimension: {time_dim}")
         
         conn = psycopg2.connect(
-            host=os.environ["PROFILE_DB_HOST"],
-            dbname=os.environ["PROFILE_DB_NAME"],
-            user=os.environ["PROFILE_DB_USER"],
-            password=os.environ["PROFILE_DB_PASSWORD"]
+            host=os.environ["ANALYSIS_DB_HOST"],
+            dbname=os.environ["ANALYSIS_DB_NAME"],
+            user=os.environ["ANALYSIS_DB_USER"],
+            password=os.environ["ANALYSIS_DB_PASSWORD"]
         )
 
         cursor = conn.cursor()

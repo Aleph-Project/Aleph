@@ -86,7 +86,7 @@ def get_top_artists(limit: int = 10):
     cursor.close()
     conn.close()
 
-    return [{"artist": r[0], "plays": r[1]} for r in rows]
+    return [{"artist": r[0], "image": r[1], "plays": r[2]} for r in rows]
 
 
 
