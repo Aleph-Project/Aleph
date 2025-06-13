@@ -1,6 +1,7 @@
 "use client"
 
-import { signIn } from "next-auth/react";
+// import { signIn } from "next-auth/react";
+import { login } from "@/renderer/services/electronAuthService";
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
@@ -19,39 +20,63 @@ export default function LoginPage() {
         setShowPassword(!showPassword)
     }
 
+    // const handleSubmit = async (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     setError("");
+    //     setLoading(true)
+    //     const res = await signIn("credentials", {
+    //         redirect: false,
+    //         email,
+    //         password,
+    //         callbackUrl: "/home",
+    //     });
+    //     setLoading(false)
+    //     if (res?.error) {
+    //         // Manejo de error personalizado
+    //         try {
+    //             const errObj = JSON.parse(res.error)
+    //             if (errObj?.error === "Invalid credentials") {
+    //                 setError("Correo o contraseña incorrectos.")
+    //             } else if (errObj?.error === "Account not activated") {
+    //                 setError("Tu cuenta no está activada. Por favor revisa tu correo para activarla.")
+    //             } else {
+    //                 setError("No se pudo iniciar sesión. Intenta de nuevo.")
+    //             }
+    //         } catch {
+    //             setError("No se pudo iniciar sesión. Intenta de nuevo.")
+    //         }
+    //     } else if (!res?.ok) {
+    //         setError("No se pudo iniciar sesión. Intenta de nuevo.")
+    //     } else {
+    //         setError("")
+    //         // Redirige si es exitoso
+    //         window.location.href = res.url || "/home"
+    //     }
+    // };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
-        setLoading(true)
-        const res = await signIn("credentials", {
-            redirect: false,
-            email,
-            password,
-            callbackUrl: "/home",
-        });
-        setLoading(false)
-        if (res?.error) {
-            // Manejo de error personalizado
-            try {
-                const errObj = JSON.parse(res.error)
-                if (errObj?.error === "Invalid credentials") {
-                    setError("Correo o contraseña incorrectos.")
-                } else if (errObj?.error === "Account not activated") {
-                    setError("Tu cuenta no está activada. Por favor revisa tu correo para activarla.")
-                } else {
-                    setError("No se pudo iniciar sesión. Intenta de nuevo.")
-                }
-            } catch {
-                setError("No se pudo iniciar sesión. Intenta de nuevo.")
+        setLoading(true);
+        
+        console.log("Attempting to login with:", { email });
+
+        try {
+            const res = await login(email, password);
+            setLoading(false);
+            console.log("Login response:", res);
+
+            if (res.success) {
+                // Redirige a la página de inicio si el login es exitoso
+                window.location.href = "/home";
+            } else {
+                setError(res.message || "No se pudo iniciar sesión. Intenta de nuevo.");
             }
-        } else if (!res?.ok) {
-            setError("No se pudo iniciar sesión. Intenta de nuevo.")
-        } else {
-            setError("")
-            // Redirige si es exitoso
-            window.location.href = res.url || "/home"
+        } catch (error: any) {
+            setLoading(false);
+            setError(error.message || "No se pudo iniciar sesión. Intenta de nuevo.");
         }
-    };
+    }
 
     return (
         <div className="min-h-screen bg-black text-white relative overflow-hidden">
@@ -149,7 +174,10 @@ export default function LoginPage() {
                                 variant="outline"
                                 className="w-full border-gray-300 text-black"
                                 type="button"
-                                onClick={() => signIn("google", { callbackUrl: "/home" })}
+                                // onClick={() => login("google", { callbackUrl: "/home" })}
+                                onClick={() => {
+                                    console.log("Google login clicked");
+                                }}
                             >
                                 <Image src="/placeholder.svg?height=20&width=20" alt="Google" width={20} height={20} className="mr-2" />
                                 Google

@@ -2,6 +2,8 @@ import path from 'path'
 import { app, ipcMain } from 'electron'
 import serve from 'electron-serve'
 import { createWindow } from './helpers'
+import * as keytar from 'keytar';
+import axios from 'axios'
 
 const isProd = process.env.NODE_ENV === 'production'
 
@@ -38,3 +40,47 @@ app.on('window-all-closed', () => {
 ipcMain.on('message', async (event, arg) => {
   event.reply('message', `${arg} World!`)
 })
+
+ipcMain.handle('store-auth-token', async (_, token: string) => {
+  try {
+    await keytar.setPassword('aleph-frontend-dsk', 'auth-token', token);
+  } catch (error: any) {
+    console.error('Error storing auth token:', error);
+    throw new Error('Failed to store auth token');
+  }
+})
+
+ipcMain.handle('get-auth-token', async () => {
+  try {
+    const token = await keytar.getPassword('aleph-frontend-dsk', 'auth-token');
+    return token;
+  } catch (error: any) {
+    console.error('Error retrieving auth token:', error);
+    throw new Error('Failed to retrieve auth token');
+  }
+})
+
+ipcMain.handle('clear-auth-token', async () => {
+  try {
+    await keytar.deletePassword('aleph-frontend-dsk', 'auth-token');
+  } catch (error: any) {
+    console.error('Error clearing auth token:', error);
+    throw new Error('Failed to clear auth token');
+  }
+})
+
+ipcMain.handle('auth:login', async (_, email: string, password: string) => {
+  try {
+    const response = await axios.post('http://localhost:8080/api/v1/auth/login', { 
+      email, 
+      password 
+    });
+    if (response.data.token) {
+      await keytar.setPassword('aleph-frontend-dsk', 'auth-token', response.data.token);
+      return { success: true, user: response.data.user };
+    }
+  } catch (error: any) {
+    console.error('Login error:', error);
+    return { success: false, message: error.response?.data?.error || 'Login failed' };
+  }
+});

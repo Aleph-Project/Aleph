@@ -11,6 +11,7 @@ module.exports = {
   experimental: {
     outputFileTracingRoot: __dirname,
   },
+  output: 'export',
   webpack: (config, { isServer }) => {
     // Agregar aliases
     config.resolve.alias = {

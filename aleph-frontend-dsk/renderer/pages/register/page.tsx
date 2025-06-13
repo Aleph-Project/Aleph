@@ -15,7 +15,7 @@ import {
     AlertDialogDescription,
     AlertDialogAction,
 } from "@/components/ui/alert-dialog"
-import { registerUser } from "../../services/authService"; // Importa la función de registro
+import { register } from "@/renderer/services/electronAuthService"; // Importa la función de registro
 
 export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false)
@@ -71,7 +71,7 @@ export default function RegisterPage() {
 
         setLoading(true)
         try {
-            await registerUser({ name, email, password }) // Usa authService
+            await register({ name, email, password }) 
             setSuccessDialogOpen(true)
         } catch (err: any) {
             // Manejo específico del error del microservicio

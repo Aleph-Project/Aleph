@@ -13,6 +13,13 @@ const handler = {
       ipcRenderer.removeListener(channel, subscription)
     }
   },
+  async invoke(channel: string, ...args: unknown[]){
+    const validChannels = ['store-auth-token', 'get-auth-token', 'clear-auth-token', 'auth:login', 'auth:logout', 'auth:register', 'auth:activate-account', 'auth:request-reset-code', 'auth:verify-reset-code', 'auth:reset-password', 'auth:token-is-valid']
+    if (validChannels.includes(channel)) {
+      return await ipcRenderer.invoke(channel, ...args)
+    }
+    return Promise.reject(new Error(`Channel "${channel}" is not valid`))
+  }
 }
 
 contextBridge.exposeInMainWorld('ipc', handler)

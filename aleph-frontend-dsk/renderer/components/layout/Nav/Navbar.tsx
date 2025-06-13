@@ -7,16 +7,18 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useNavbarScroll, useMobileMenu } from "./NavVisualEffect";
 import AuthButtons from "./AuthButtons";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/renderer/contexts/authContext";
 
 export default function Navbar() {
   const isScrolled = useNavbarScroll();
   const { isMenuOpen, toggleMenu, closeMenu } = useMobileMenu();
-  const { data: session, status } = useSession();
+  // const { data: session, status } = useSession();
   // Obtener el id del usuario desde session.user.id si existe
-  const user = session?.user;
-  const userId = user?.email;
-  const isLoading = status === "loading";
+  // const user = session?.user;
+  // const userId = user?.email;
+  // const isLoading = status === "loading";
+  const { authenticated, user } = useAuth();
 
   const navigation = user
     ? [
