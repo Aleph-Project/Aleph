@@ -29,10 +29,10 @@ export default function Home() {
                 Descubra nuevos artistas y redescubra clásicos.
               </p>
               <div className="flex space-x-4 mt-8">
-                <Link href="/auth/login" className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-md transition-colors font-medium">
+                <Link href="/login/page" className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-md transition-colors font-medium">
                   Explorar Biblioteca
                 </Link>
-                <Link href="/auth/login?screen_hint=signup" className="px-6 py-3 border border-white/30 hover:bg-white/10 rounded-md transition-colors font-medium">
+                <Link href="/register/page" className="px-6 py-3 border border-white/30 hover:bg-white/10 rounded-md transition-colors font-medium">
                   Crear Cuenta
                 </Link>
               </div>
