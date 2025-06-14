@@ -15,7 +15,9 @@ import {
     AlertDialogDescription,
     AlertDialogAction,
 } from "@/components/ui/alert-dialog"
-import { register } from "@/renderer/services/electronAuthService"; // Importa la función de registro
+import { register, activateUserDsk } from "@/renderer/services/electronAuthService";
+import OtpModal from "@/renderer/components/codigo-otp/page";
+
 
 export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false)
@@ -28,6 +30,12 @@ export default function RegisterPage() {
     const [loading, setLoading] = useState(false)
     const [successDialogOpen, setSuccessDialogOpen] = useState(false)
     const router = useRouter()
+
+    const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
+    const [otpError, setOtpError] = useState(false);
+    const [otpErrorMessage, setOtpErrorMessage] = useState("");
+    const [otp, setOtp] = useState("");
+    const [otpLoading, setOtpLoading] = useState(false);
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword)
@@ -71,23 +79,78 @@ export default function RegisterPage() {
 
         setLoading(true)
         try {
-            const res = await register({ name, email, password }); // Usar del contexto
+            const res = await register({ name, email, password }); 
+            console.log('Registration response:', res);
+            
             if (res.success) {
-                setSuccessDialogOpen(true);
+                console.log('Registration successful, opening OTP modal');
+                //abrir modal OTP para verificar
+                setIsOtpDialogOpen(true);
+                setOtpError(false);
+                setOtpErrorMessage("");
+                setOtp("");
             } else {
                 setError(res.message || "Error al registrar. Intenta con otro correo o revisa los datos.");
             }
         } catch (err: any) {
+            console.error('Registration error:', err);
             setError("Error inesperado al registrar.");
         } finally {
             setLoading(false)
         }
     }
 
-    const handleDialogContinue = () => {
-        setSuccessDialogOpen(false)
-        router.push("/login/page")
-    }
+    const handleOtpSubmit = async () => {
+        console.log('OTP Submit called with:', otp);
+        
+        if (!otp.trim()) {
+            setOtpError(true);
+            setOtpErrorMessage("Por favor ingresa el código de verificación");
+            return;
+        }
+
+        setOtpError(false);
+        setOtpLoading(true);
+        setOtpErrorMessage("");
+        
+        try {
+            console.log('Attempting to activate user with OTP...');
+            const result = await activateUserDsk(email, otp.trim());
+            console.log('Activation result:', result);
+            
+            if (result.success) {
+                console.log('Account activated successfully, redirecting to home');
+                // Activación exitosa - redirigir directamente a home
+                setIsOtpDialogOpen(false);
+                router.push('/home');
+            } else {
+                console.log('Activation failed:', result.message);
+                // Error en la activación - mantener modal abierto
+                setOtpError(true);
+                setOtpErrorMessage(result.message || "Código inválido o expirado");
+            }
+        } catch (err: any) {
+            console.error("Error en activación:", err);
+            setOtpError(true);
+            setOtpErrorMessage("Error al verificar el código");
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
+    const handleOtpModalClose = () => {
+        console.log('Closing OTP modal');
+        setIsOtpDialogOpen(false);
+        setOtp("");
+        setOtpError(false);
+        setOtpErrorMessage("");
+    };
+
+    /*const handleSuccessDialogContinue = () => {
+        console.log('Success dialog continue clicked');
+        setSuccessDialogOpen(false);
+        router.push("/login/page");
+    } */
 
     return (
         <div className="min-h-screen bg-black text-white relative overflow-hidden">
@@ -139,6 +202,7 @@ export default function RegisterPage() {
                                 value={name}
                                 onChange={e => setName(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                         </div>
 
@@ -154,6 +218,7 @@ export default function RegisterPage() {
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                         </div>
 
@@ -170,12 +235,14 @@ export default function RegisterPage() {
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
                                     required
+                                    disabled={loading}
                                 />
                                 <button
                                     type="button"
                                     onClick={togglePasswordVisibility}
                                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                                     tabIndex={-1}
+                                    disabled={loading}
                                 >
                                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                 </button>
@@ -195,12 +262,14 @@ export default function RegisterPage() {
                                     value={confirmPassword}
                                     onChange={e => setConfirmPassword(e.target.value)}
                                     required
+                                    disabled={loading}
                                 />
                                 <button
                                     type="button"
                                     onClick={toggleConfirmPasswordVisibility}
                                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                                     tabIndex={-1}
+                                    disabled={loading}
                                 >
                                     {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                 </button>
@@ -231,7 +300,7 @@ export default function RegisterPage() {
                 </div>
             </div>
 
-            <AlertDialog open={successDialogOpen}>
+            {/*<AlertDialog open={successDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-gray-700">¡Cuenta creada exitosamente!</AlertDialogTitle>
@@ -243,7 +312,19 @@ export default function RegisterPage() {
                         Ir a iniciar sesión
                     </AlertDialogAction>
                 </AlertDialogContent>
-            </AlertDialog>
+            </AlertDialog>*/}
+
+             <OtpModal 
+                isDialogOpen={isOtpDialogOpen}
+                setIsDialogOpen={setIsOtpDialogOpen}
+                otp={otp}
+                setOtp={setOtp}
+                otpError={otpError}
+                handleOtpSubmit={handleOtpSubmit}
+                loading={otpLoading}
+                errorMessage={otpErrorMessage}
+                onClose={handleOtpModalClose}
+            />
         </div>
     )
 }

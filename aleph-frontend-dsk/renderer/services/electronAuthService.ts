@@ -137,6 +137,25 @@ export const register = async (data: { name: string, email: string, password: st
     }
 }
 
+export const activateUserDsk = async (email: string, code: string) => {
+    try {
+        console.log('Calling IPC activate with:', { email, code: code ? 'PROVIDED' : 'MISSING' }); // Debug log
+        const res = await window.ipc.invoke('auth:activate', { email, code });
+        console.log('IPC activate response:', res); // Debug log
+        
+        if (res.success) {
+            return { success: true, message: res.message || 'Account activated successfully', user: res.user, token: res.token };
+        }
+        return { success: false, message: res.message || 'Activation failed' };
+    } catch (error: any) {
+        console.error('Activate error:', error);
+        return {
+            success: false,
+            message: 'An error occurred during activation'
+        }
+    }
+}
+
 
 export const logout = async () => {
     await clearAuthToken();

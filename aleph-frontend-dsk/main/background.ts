@@ -86,7 +86,7 @@ ipcMain.handle('auth:login', async (_, email: string, password: string) => {
 });
 
 //user registration
-ipcMain.handle('auth:register', async (_, data) => {
+{/*ipcMain.handle('auth:register', async (_, data) => {
     console.log('=== REGISTER HANDLER START ===');
     console.log('Received data:', data);
     
@@ -129,5 +129,97 @@ ipcMain.handle('auth:register', async (_, data) => {
         };
     } finally {
         console.log('=== REGISTER HANDLER END ===');
+    }
+});*/}
+
+ipcMain.handle('auth:register', async (_, data) => {
+    console.log('=== REGISTER DSK HANDLER START ===');
+    console.log('Received data:', data);
+    
+    try {
+        console.log('Making API call to: http://localhost:8080/api/v1/auth/registerdsk');
+        const response = await axios.post('http://localhost:8080/api/v1/auth/registerdsk', data);
+        console.log('Registration response:', response.data);
+        //No se espera al token para que el usuario active primero su cuenta
+        if (response.data.user) {
+            console.log('User created successfully, activation required');
+            return { 
+                success: true, 
+                message: response.data.message || 'User registered successfully. Check your email for activation code.',
+                user: response.data.user,
+                code: response.data.code, 
+                autoLogin: false 
+            };
+        } else {
+            console.log('Unexpected response format');
+            return { 
+                success: false, 
+                message: 'Unexpected response from server'
+            };
+        }
+    } catch (error: any) {
+        console.log('=== ERROR CAUGHT ===');
+        console.log('Error details:', error.message);
+        console.log('Error response:', error.response?.data);
+        console.log('Error status:', error.response?.status);
+        
+        const errorMessage = error.response?.data?.error || error.message || 'An error occurred during registration';
+        console.log('Returning error result:', { success: false, message: errorMessage });
+        
+        return {
+            success: false,
+            message: errorMessage
+        };
+    } finally {
+        console.log('=== REGISTER DSK HANDLER END ===');
+    }
+});
+
+ipcMain.handle('auth:activate', async (_, { email, code }) => {
+    console.log('=== ACTIVATE USER HANDLER START ===');
+    console.log('Activating user:', { email, code: code ? 'PROVIDED' : 'MISSING' });
+    
+    try {
+        console.log('Making API call to: http://localhost:8080/api/v1/auth/activateDsk');
+        const response = await axios.post('http://localhost:8080/api/v1/auth/activateDsk', { email, code });
+        console.log('Activation response:', response.data);
+        
+        if (response.data.user) {
+            console.log('User activated successfully');
+            
+            //Si se recibe un token se almacena
+            if (response.data.token) {
+                console.log('Token received after activation, storing...');
+                await keytar.setPassword('aleph-frontend-dsk', 'auth-token', response.data.token);
+                console.log('Token stored successfully');
+            }
+            
+            return { 
+                success: true, 
+                message: response.data.message || 'Account activated successfully',
+                user: response.data.user,
+                token: response.data.token || null
+            };
+        } else {
+            return { 
+                success: false, 
+                message: 'Unexpected response from server'
+            };
+        }
+    } catch (error: any) {
+        console.log('=== ACTIVATION ERROR CAUGHT ===');
+        console.log('Error details:', error.message);
+        console.log('Error response:', error.response?.data);
+        console.log('Error status:', error.response?.status);
+        
+        const errorMessage = error.response?.data?.error || error.message || 'Invalid or expired code';
+        console.log('Returning error result:', { success: false, message: errorMessage });
+        
+        return {
+            success: false,
+            message: errorMessage
+        };
+    } finally {
+        console.log('=== ACTIVATE USER HANDLER END ===');
     }
 });
