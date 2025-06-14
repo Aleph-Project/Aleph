@@ -2,6 +2,7 @@
 
 // import { signIn } from "next-auth/react";
 import { login } from "@/renderer/services/electronAuthService";
+import { loginAuth0 } from "@/renderer/services/auth0Service";
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
@@ -175,9 +176,9 @@ export default function LoginPage() {
                                 className="w-full border-gray-300 text-black"
                                 type="button"
                                 // onClick={() => login("google", { callbackUrl: "/home" })}
-                                onClick={() => {
-                                    console.log("Google login clicked");
-                                }}
+                                onClick={(() => {
+                                    loginAuth0();
+                                })}
                             >
                                 <Image src="/placeholder.svg?height=20&width=20" alt="Google" width={20} height={20} className="mr-2" />
                                 Google

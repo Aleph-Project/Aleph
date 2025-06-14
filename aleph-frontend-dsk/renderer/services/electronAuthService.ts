@@ -1,9 +1,8 @@
 import axios from 'axios';
-import { ipcRenderer } from 'electron';
 import { jwtDecode } from 'jwt-decode';
 
-
 const API_URL = "/api/v1/auth";
+
 
 // Esto almacena el token de autenticación en el almacenamiento local de Electron
 const storeAuthToken = async (token: string) => {

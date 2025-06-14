@@ -4,6 +4,23 @@ import serve from 'electron-serve'
 import { createWindow } from './helpers'
 import * as keytar from 'keytar';
 import axios from 'axios'
+import { openAuth0LoginWin, refreshToken, logoutAuth0 } from './auth/auth0';
+// import { refreshAuth0Token } from '@/renderer/services/auth0Service';
+import dotenv from 'dotenv';
+import { loadEnv } from './utils/env';
+const envLoaded = loadEnv();
+console.log('Variables de entorno cargadas:', envLoaded);
+
+// Carga adicional con dotenv como respaldo
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+// Verifica las variables críticas
+console.log('Auth0 config disponible:', {
+  domain: process.env.AUTH0_DOMAIN ? 'Sí' : 'No',
+  clientId: process.env.AUTH0_CLIENT_ID ? 'Sí' : 'No'
+});
+
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const isProd = process.env.NODE_ENV === 'production'
 
@@ -13,7 +30,24 @@ if (isProd) {
   app.setPath('userData', `${app.getPath('userData')} (development)`)
 }
 
-;(async () => {
+// Función para inicializar Auth0
+const setupAuth0 = () => {
+  // Registra el protocolo custom para Auth0
+  if (!app.isDefaultProtocolClient('aleph')) {
+    const success = app.setAsDefaultProtocolClient('aleph');
+    console.log('Setting Aleph as default protocol client:', success ? 'Success' : 'Failed');
+  }
+
+  // Para macOS, registra el manejador open-url
+  app.on('will-finish-launching', () => {
+    app.on('open-url', (event, url) => {
+      event.preventDefault();
+      console.log('Open URL event received:', url);
+    });
+  });
+};
+
+(async () => {
   await app.whenReady()
 
   const mainWindow = createWindow('main', {
@@ -31,7 +65,7 @@ if (isProd) {
     await mainWindow.loadURL(`http://localhost:${port}/home`)
     mainWindow.webContents.openDevTools()
   }
-})()
+})();
 
 app.on('window-all-closed', () => {
   app.quit()
@@ -40,6 +74,15 @@ app.on('window-all-closed', () => {
 ipcMain.on('message', async (event, arg) => {
   event.reply('message', `${arg} World!`)
 })
+
+// Añade esto a tu archivo background.ts
+ipcMain.handle('get-auth0-config', () => {
+  return {
+    domain: process.env.AUTH0_DOMAIN,
+    clientId: process.env.AUTH0_CLIENT_ID,
+    redirectUri: process.env.AUTH0_REDIRECT_URI || 'aleph://auth/callback'
+  };
+});
 
 ipcMain.handle('store-auth-token', async (_, token: string) => {
   try {
@@ -130,6 +173,66 @@ ipcMain.handle('auth:login', async (_, email: string, password: string) => {
     } finally {
         console.log('=== REGISTER HANDLER END ===');
     }
+});
+
+// Manejadores IPC para autenticación
+ipcMain.handle('auth0-login', async () => {
+  try {
+    console.log('Auth0 login requested');
+    return await openAuth0LoginWin();
+  } catch (error: any) {
+    console.error('Auth0 login error:', error);
+    return { success: false, error: error.message || 'Failed to authenticate with Auth0' };
+  }
+});
+
+ipcMain.handle('auth0-refresh-token', async (_, refreshTokenParam) => {
+  try {
+    return await refreshToken(refreshTokenParam);
+  } catch (error: any) {
+    console.error('Error refreshing token:', error);
+    return { success: false, error: error.message || 'Failed to refresh token' };
+  }
+});
+
+ipcMain.handle('auth0-logout', async () => {
+  try {
+    return await logoutAuth0();
+  } catch (error: any) {
+    console.error('Auth0 logout error:', error);
+    return { success: false, error: error.message || 'Failed to logout properly' };
+  }
+});
+
+
+
+ipcMain.handle('store-refresh-token', async (_, token: string) => {
+  try {
+    await keytar.setPassword('aleph-frontend-dsk', 'refresh-token', token);
+  } catch (error: any) {
+    console.error('Error storing refresh token:', error);
+    throw new Error('Failed to store refresh token');
+  }
+});
+
+ipcMain.handle('get-refresh-token', async () => {
+  try {
+    const token = await keytar.getPassword('aleph-frontend-dsk', 'refresh-token');
+    return token;
+  } catch (error: any) {
+    console.error('Error retrieving refresh token:', error);
+    throw new Error('Failed to retrieve refresh token');
+  }
+});
+
+// Manejador para eliminar el refresh token
+ipcMain.handle('clear-refresh-token', async () => {
+  try {
+    await keytar.deletePassword('aleph-frontend-dsk', 'refresh-token');
+  } catch (error: any) {
+    console.error('Error clearing refresh token:', error);
+    throw new Error('Failed to clear refresh token');
+  }
 });*/}
 
 ipcMain.handle('auth:register', async (_, data) => {
