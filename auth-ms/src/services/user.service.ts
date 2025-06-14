@@ -1,14 +1,15 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { sendActivationEmail, sendResetCodeEmail } from "./email.service";
+import { sendActivationEmail, sendResetCodeEmail, sendActivationEmailDsk } from "./email.service";
 import { UserRepository } from "../repository/user.repository";
 import { IUser } from "../models/user.mongo.model";
 
 const JWT_SECRET = process.env.JWT_SECRET || "changeme";
 const userRepository = new UserRepository();
 
-// Almacén temporal de códigos de recuperación
+// Almacén temporal de códigos de recuperación y DSK
 const resetCodes: { [email: string]: { code: string, expires: number } } = {};
+const dskCodes: { [email: string]: { code: string, expires: number } } = {};
 
 export async function register(name: string, email: string, password: string) {
   const exists = await userRepository.findByEmail(email);
@@ -67,4 +68,27 @@ export async function resetPassword(email: string, code: string, newPassword: st
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
   delete resetCodes[email];
+}
+
+export async function registerdsk(name: string, email: string, password: string) {
+  const exists = await userRepository.findByEmail(email);
+  if (exists) throw new Error("Email already registered");
+  const hashed = await bcrypt.hash(password, 10);
+  const user = await userRepository.create({ name, email, password: hashed, active: false });
+  // Generar código de 6 dígitos
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  dskCodes[email] = { code, expires: Date.now() + 10 * 60 * 1000 }; // 10 minutos
+  await sendActivationEmailDsk(email, code);
+  return { id: user._id, name: user.name, email: user.email, code };
+}
+
+export async function activateUserDsk(email: string, code: string) {
+  const entry = dskCodes[email];
+  if (!entry || entry.code !== code || entry.expires < Date.now()) throw new Error("Código inválido o expirado");
+  const user = await userRepository.findByEmail(email);
+  if (!user) throw new Error("Correo no registrado");
+  if (user.active) return { id: user._id, name: user.name, email: user.email };
+  await userRepository.updateActive((user._id as any).toString(), true);
+  delete dskCodes[email];
+  return { id: user._id, name: user.name, email: user.email };
 }

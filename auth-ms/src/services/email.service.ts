@@ -31,3 +31,13 @@ export async function sendResetCodeEmail(to: string, code: string) {
     };
     await transporter.sendMail(mailOptions);
 }
+
+export async function sendActivationEmailDsk(to: string, code: string) {
+    const mailOptions = {
+        from: EMAIL_FROM,
+        to,
+        subject: "Código de activación Aleph",
+        html: `<p>Este es tu código de activación: <b>${code}</b></p>`
+    };
+    await transporter.sendMail(mailOptions);
+}

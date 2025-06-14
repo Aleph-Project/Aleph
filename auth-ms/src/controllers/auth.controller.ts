@@ -60,3 +60,24 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
     next(err);
   }
 }
+
+export async function registerdsk(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { name, email, password } = req.body;
+    const result = await userService.registerdsk(name, email, password);
+    // Devuelve el código en la respuesta
+    res.status(201).json({ user: { id: result.id, name: result.name, email: result.email }, code: result.code });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function activateDsk(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email, code } = req.body;
+    const user = await userService.activateUserDsk(email, code);
+    res.json({ user, message: "Cuenta activada correctamente" });
+  } catch (err) {
+    next(err);
+  }
+}
