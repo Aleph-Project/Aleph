@@ -27,9 +27,9 @@ RUN apk --no-cache add ca-certificates
 COPY --from=builder /app/music-ms .
 
 # Variables de entorno por defecto
-ENV MONGODB_URI="mongodb://mongo:27017" \
-    MONGODB_NAME="music_ms" \
-    MONGODB_TIMEOUT=10
+# ENV MONGODB_URI="mongodb://mongo:27017" \
+#     MONGODB_NAME="music_ms" \
+#     MONGODB_TIMEOUT=10
 
 # EXPOSE 3002
 

@@ -16,6 +16,9 @@ type Song struct {
 	ArtistIDs   []primitive.ObjectID `bson:"artist_ids" json:"artist_ids"` // IDs de los artistas asociados a la canción
 	TrackNumber int                  `bson:"track_number" json:"track_number"`
 	AudioURL    string               `bson:"audio_url" json:"audio_url"`
+	AudioPath   string               `bson:"audio_path" json:"audio_path"` // Para compatibilidad con código existente
+	S3Bucket    string               `bson:"s3_bucket" json:"s3_bucket,omitempty"`
+	S3Key       string               `bson:"s3_key" json:"s3_key,omitempty"`
 	CreatedAt   time.Time            `bson:"created_at" json:"created_at"`
 	UpdatedAt   time.Time            `bson:"updated_at" json:"updated_at"`
 }
@@ -23,6 +26,6 @@ type Song struct {
 // SongWithDetails representa una canción con detalles del álbum y artista
 type SongWithDetails struct {
 	Song
-	Album   Album   `json:"album"`
+	Album   Album    `json:"album"`
 	Artists []Artist `json:"artists"`
 }

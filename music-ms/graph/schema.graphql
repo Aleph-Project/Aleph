@@ -56,6 +56,20 @@ type Category {
   genres: [Genre!]!
 }
 
+# Tipo optimizado para artistas básicos sin consultas anidadas profundas
+type ArtistBasic {
+  id: ID!
+  name: String!
+  spotify_id: String
+  image_url: String
+  genres: [String!]
+  popularity: Int
+  created_at: String
+  updated_at: String
+  album_count: Int
+  song_count: Int
+}
+
 type Query {
   songs: [Song!]!
   song(id: ID!): Song
@@ -68,4 +82,7 @@ type Query {
   categories: [Category!]!
   category(id: ID!): Category
   artistsByGenre(genre: String!): [Artist!]!
+  # Nueva consulta optimizada
+  artistsByGenreBasic(genre: String!, limit: Int = 20, offset: Int = 0): [ArtistBasic!]!
+  artistsByGenreCount(genre: String!): Int!
 }

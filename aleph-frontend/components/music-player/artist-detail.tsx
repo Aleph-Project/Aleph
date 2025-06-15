@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { 
   Album, 
   Song, 
-  Artist 
+  Artist,
+  getAlbumDetailsGraphQL
 } from "@/services/songService";
 import { AlbumDetail } from "@/components/music-player/album-detail";
 
@@ -18,10 +19,21 @@ interface ArtistDetailProps {
   albums: Album[];
   songs: Song[];
   isLoading: boolean;
+  webSocket: {
+    isConnected: boolean
+    isPlaying: boolean
+    currentSong: Song | null
+    error: string | null
+    playSong: (songId: string) => void
+    pauseSong: () => void
+    stopSong: () => void
+  }
 }
 
-export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailProps) {
+export function ArtistDetail({ artist, albums, songs, isLoading, webSocket }: ArtistDetailProps) {
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
+  const [albumSongs, setAlbumSongs] = useState<Song[]>([]);
+  const [isLoadingAlbum, setIsLoadingAlbum] = useState(false);
   
   // Depuración mejorada - mostrar los datos recibidos en la consola con información detallada
   // console.log("============ ARTIST DETAIL COMPONENT - PROPS RECIBIDOS =============");
@@ -83,8 +95,21 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
     </div>
   );
   
+  const handleAlbumSelect = async (album: Album) => {
+    setIsLoadingAlbum(true);
+    try {
+      const { songs: songsData } = await getAlbumDetailsGraphQL(album.id);
+      setAlbumSongs(songsData);
+      setSelectedAlbum(album);
+    } catch (error) {
+      console.error('Error al cargar las canciones del álbum:', error);
+    } finally {
+      setIsLoadingAlbum(false);
+    }
+  };
+
   return (
-    <div>
+    <div className="pb-24">
       <div className="space-y-6">
         {isLoading ? (
           <ArtistHeaderSkeleton />
@@ -142,7 +167,7 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
                   <div
                     key={`artist-album-${album.id}-${index}`}
                     className="group cursor-pointer"
-                    onClick={() => setSelectedAlbum(album)}
+                    onClick={() => handleAlbumSelect(album)}
                   >
                     <div className="relative group-hover:bg-zinc-800 p-3 rounded-lg transition-colors">
                       <img
@@ -212,24 +237,16 @@ export function ArtistDetail({ artist, albums, songs, isLoading }: ArtistDetailP
             </div>
           </div>
         ) : (
-          (() => {
-            // Procesar canciones para formato mm:ss y autor correcto
-            const albumSongs = songs
-              .filter(song => song.album === selectedAlbum.title)
-              .map(song => ({
-                ...song,
-                duration: formatDuration(song.duration),
-                artist: song.artist || artist.name
-              }));
-            return (
-              <AlbumDetail
-                album={selectedAlbum}
-                songs={albumSongs}
-                isLoading={isLoading}
-                onBack={() => setSelectedAlbum(null)}
-              />
-            );
-          })()
+          <AlbumDetail
+            album={selectedAlbum}
+            songs={albumSongs}
+            isLoading={isLoadingAlbum}
+            onBack={() => {
+              setSelectedAlbum(null);
+              setAlbumSongs([]);
+            }}
+            webSocket={webSocket}
+          />
         )}
       </div>
     </div>

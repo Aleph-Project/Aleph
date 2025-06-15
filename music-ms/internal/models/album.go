@@ -17,6 +17,7 @@ type Album struct {
 	Year        int                  `bson:"year" json:"year"`
 	CreatedAt   time.Time            `bson:"created_at" json:"created_at"`
 	UpdatedAt   time.Time            `bson:"updated_at" json:"updated_at"`
+	Songs       []Song               `bson:"-" json:"songs,omitempty"`
 }
 
 // AlbumWithDetails representa un álbum con detalles de artistas y canciones

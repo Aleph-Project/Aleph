@@ -54,6 +54,7 @@ func SetupRouter(db *mongo.Database) *gin.Engine {
 			music.GET("/songs", handler.GetSongs)
 			music.GET("/songs/:id", handler.GetSong)
 			music.GET("/songs/:id/audio", handler.GetSongAudio)
+			music.PUT("/songs/:id/audio-url", handler.UpdateSongAudioURL)
 			music.GET("/songs/search", handler.SearchSongsByName)
 
 			// Rutas de álbumes

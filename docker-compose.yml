@@ -9,9 +9,8 @@ services:
     environment:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - PROFILE_DB_USER=${PROFILE_DB_USER}
-      - PROFILE_DB_PASSWORD=${PROFILE_DB_PASSWORD}
-      - PROFILE_DB_HOST=${PROFILE_DB_HOST}
+      - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
+      - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
   reviews-ms:
     container_name: reviews-ms
     build: 
@@ -20,9 +19,9 @@ services:
     volumes:
       - ./reviews-microservice:/usr/src/app
     environment:
-      - PROFILE_DB_USER=${PROFILE_DB_USER}
-      - PROFILE_DB_PASSWORD=${PROFILE_DB_PASSWORD}
-      - PROFILE_DB_HOST=${PROFILE_DB_HOST}
+      - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
+      - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
+      - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
   music-ms:
     container_name: music-ms
     build:
@@ -41,15 +40,24 @@ services:
       - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
     depends_on:
       - mongo
-  mongo:
-    container_name: music-db
-    image: mongo:6
+  streaming-ms:
+    container_name: streaming-ms
+    build:
+      context: ./streaming-ms
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "27018:27017"  # Exponer en un puerto distinto para evitar conflictos
-    volumes:
-      - mongo-data:/data/db
-    command: mongod --quiet --logpath /dev/null  # Reducir logs
+      - "8081:8080"  # Exponer WebSocket para conexión directa desde el frontend
+    environment:
+      - PORT=8080
+      - API_GATEWAY_URL=http://apigateway:8080
+      - S3_ACCESS_KEY=${MUSIC_S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${MUSIC_S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${MUSIC_S3_BUCKET_NAME}
+      - AWS_REGION=${MUSIC_AWS_REGION}
+    depends_on:
+      - apigateway
+      - music-ms
   aleph-frontend:
     container_name: aleph-frontend
     build: 
@@ -64,6 +72,7 @@ services:
       - "3000:3000"
     depends_on:
       - music-ms
+      - streaming-ms      
   apigateway:
     container_name: apigateway
     build: 
@@ -71,6 +80,48 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"  
+      - "9093:9093"  
+    environment:
+      - KAFKA_KRAFT_MODE=true
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - ALLOW_PLAINTEXT_LISTENER=yes
+  aleph_kafka_consumer:
+    container_name: aleph_kafka_consumer
+    build: 
+      context: ./kafka-consumer
+      dockerfile: Dockerfile
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - TOPIC_SONG_PLAYED_NAME=song-played-topic
+      - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
+      - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
+      - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
+      - ANALYSIS_DB_NAME=${ANALYSIS_DB_NAME} 
+  analysis-ms:
+    container_name: analysis-ms
+    build:
+      context: ./analysis-ms
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"  
+    environment:
+      - DB_HOST=${ANALYSIS_DB_HOST}
+      - DB_PORT=5432
+      - DB_NAME=${ANALYSIS_DB_NAME}
+      - DB_USER=${ANALYSIS_DB_USER}
+      - DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
   auth-ms:
     container_name: auth-ms
     build:
@@ -89,45 +140,3 @@ services:
       - MONGO_URI=${MONGO_URI}
     ports:
       - "4000:4000"
-  # aleph-frontend-dsk:
-  #   build:
-  #     context: ./aleph-frontend-dsk
-  #     dockerfile: Dockerfile
-  #   container_name: aleph-frontend-dsk
-  #   restart: unless-stopped
-    
-  #   # Configuración para GUI (X11 forwarding)
-  #   environment:
-  #     - DISPLAY=${DISPLAY:-:0}
-  #     - ELECTRON_DISABLE_SECURITY_WARNINGS=1
-  #     - NODE_ENV=production
-    
-  #   # Volúmenes para X11 y persistencia de datos
-  #   volumes:
-  #     # Socket X11 para mostrar GUI en host Linux
-  #     - /tmp/.X11-unix:/tmp/.X11-unix:rw
-  #     # Directorio home del usuario para persistir datos
-  #     - electron-home:/home/electronuser
-  #     # Opcional: mapear directorio de descargas
-  #     - ./downloads:/home/electronuser/Downloads
-  #     # Opcional: mapear configuración de la app
-  #     - ./app-data:/home/electronuser/.config
-    
-  #   # Configuración de red
-  #   network_mode: host
-    
-  #   # Privilegios necesarios para GUI
-  #   privileged: false
-  #   security_opt:
-  #     - seccomp:unconfined
-    
-  #   # Dispositivos necesarios para audio/video
-  #   devices:
-  #     - /dev/dri:/dev/dri  # GPU access
-      
-volumes:
-  electron-home:
-    driver: local
-  profile_data:
-  reviews_data:
-  mongo-data:

@@ -78,7 +78,7 @@ Letra de EL CLúB © Universal Music Corp., Straight From The Art Music, Songs O
                 <Sidebar />
                 <div className="flex-1 flex flex-col overflow-hidden text-white ">
                     {/*contenedor de toda la información con su titulo */}
-                    <div className="relative flex-1 overflow-auto bg-gray-700/45 rounded-xl m-4 overflow-scroll hide-scrollbar">
+                    <div className="relative flex-1 overflow-auto bg-gray-700/45 rounded-xl m-4 overflow-scroll hide-scrollbar pb-24">
                         <div className="grid grid-cols-[1fr_2fr] gap-4 m-9">
                             <div className="flex place-items-end">
                                 <h1 className="text-left text-7xl font-extrabold ">{songInfo.title}</h1>

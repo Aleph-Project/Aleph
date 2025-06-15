@@ -1,7 +1,8 @@
 // Tipos principales para el reproductor de música
 
 export interface Song {
-    id: string;
+    _id: string;  // Cambiado de id a _id para consistencia con MongoDB
+    id: string;   // Mantenido para compatibilidad
     title: string;
     duration: string;
     artist: string;
@@ -20,10 +21,12 @@ export interface Song {
 }
 
 export interface Album {
+    _id: string;   // Agregado para consistencia con MongoDB
     id: string;
     title: string;
     artist: string;
     image_url?: string;
+    release_date?: string;   // Agregado para consistencia
     releaseDate?: string;
     songsCount: number;
 }

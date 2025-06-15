@@ -29,6 +29,19 @@ type Artist struct {
 	Songs      []*Song  `json:"songs,omitempty"`
 }
 
+type ArtistBasic struct {
+	ID         string   `json:"id"`
+	Name       string   `json:"name"`
+	SpotifyID  *string  `json:"spotify_id,omitempty"`
+	ImageURL   *string  `json:"image_url,omitempty"`
+	Genres     []string `json:"genres,omitempty"`
+	Popularity *int     `json:"popularity,omitempty"`
+	CreatedAt  *string  `json:"created_at,omitempty"`
+	UpdatedAt  *string  `json:"updated_at,omitempty"`
+	AlbumCount *int     `json:"album_count,omitempty"`
+	SongCount  *int     `json:"song_count,omitempty"`
+}
+
 type Category struct {
 	ID       string   `json:"id"`
 	Name     string   `json:"name"`

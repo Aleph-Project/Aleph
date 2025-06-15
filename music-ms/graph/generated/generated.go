@@ -72,6 +72,19 @@ type ComplexityRoot struct {
 		UpdatedAt  func(childComplexity int) int
 	}
 
+	ArtistBasic struct {
+		AlbumCount func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
+		Genres     func(childComplexity int) int
+		ID         func(childComplexity int) int
+		ImageURL   func(childComplexity int) int
+		Name       func(childComplexity int) int
+		Popularity func(childComplexity int) int
+		SongCount  func(childComplexity int) int
+		SpotifyID  func(childComplexity int) int
+		UpdatedAt  func(childComplexity int) int
+	}
+
 	Category struct {
 		Genres   func(childComplexity int) int
 		ID       func(childComplexity int) int
@@ -88,17 +101,19 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Album          func(childComplexity int, id string) int
-		Albums         func(childComplexity int) int
-		Artist         func(childComplexity int, id string) int
-		Artists        func(childComplexity int) int
-		ArtistsByGenre func(childComplexity int, genre string) int
-		Categories     func(childComplexity int) int
-		Category       func(childComplexity int, id string) int
-		Genre          func(childComplexity int, id string) int
-		Genres         func(childComplexity int) int
-		Song           func(childComplexity int, id string) int
-		Songs          func(childComplexity int) int
+		Album               func(childComplexity int, id string) int
+		Albums              func(childComplexity int) int
+		Artist              func(childComplexity int, id string) int
+		Artists             func(childComplexity int) int
+		ArtistsByGenre      func(childComplexity int, genre string) int
+		ArtistsByGenreBasic func(childComplexity int, genre string, limit *int, offset *int) int
+		ArtistsByGenreCount func(childComplexity int, genre string) int
+		Categories          func(childComplexity int) int
+		Category            func(childComplexity int, id string) int
+		Genre               func(childComplexity int, id string) int
+		Genres              func(childComplexity int) int
+		Song                func(childComplexity int, id string) int
+		Songs               func(childComplexity int) int
 	}
 
 	Song struct {
@@ -128,6 +143,8 @@ type QueryResolver interface {
 	Categories(ctx context.Context) ([]*model.Category, error)
 	Category(ctx context.Context, id string) (*model.Category, error)
 	ArtistsByGenre(ctx context.Context, genre string) ([]*model.Artist, error)
+	ArtistsByGenreBasic(ctx context.Context, genre string, limit *int, offset *int) ([]*model.ArtistBasic, error)
+	ArtistsByGenreCount(ctx context.Context, genre string) (int, error)
 }
 
 type executableSchema struct {
@@ -296,6 +313,76 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Artist.UpdatedAt(childComplexity), true
 
+	case "ArtistBasic.album_count":
+		if e.complexity.ArtistBasic.AlbumCount == nil {
+			break
+		}
+
+		return e.complexity.ArtistBasic.AlbumCount(childComplexity), true
+
+	case "ArtistBasic.created_at":
+		if e.complexity.ArtistBasic.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ArtistBasic.CreatedAt(childComplexity), true
+
+	case "ArtistBasic.genres":
+		if e.complexity.ArtistBasic.Genres == nil {
+			break
+		}
+
+		return e.complexity.ArtistBasic.Genres(childComplexity), true
+
+	case "ArtistBasic.id":
+		if e.complexity.ArtistBasic.ID == nil {
+			break
+		}
+
+		return e.complexity.ArtistBasic.ID(childComplexity), true
+
+	case "ArtistBasic.image_url":
+		if e.complexity.ArtistBasic.ImageURL == nil {
+			break
+		}
+
+		return e.complexity.ArtistBasic.ImageURL(childComplexity), true
+
+	case "ArtistBasic.name":
+		if e.complexity.ArtistBasic.Name == nil {
+			break
+		}
+
+		return e.complexity.ArtistBasic.Name(childComplexity), true
+
+	case "ArtistBasic.popularity":
+		if e.complexity.ArtistBasic.Popularity == nil {
+			break
+		}
+
+		return e.complexity.ArtistBasic.Popularity(childComplexity), true
+
+	case "ArtistBasic.song_count":
+		if e.complexity.ArtistBasic.SongCount == nil {
+			break
+		}
+
+		return e.complexity.ArtistBasic.SongCount(childComplexity), true
+
+	case "ArtistBasic.spotify_id":
+		if e.complexity.ArtistBasic.SpotifyID == nil {
+			break
+		}
+
+		return e.complexity.ArtistBasic.SpotifyID(childComplexity), true
+
+	case "ArtistBasic.updated_at":
+		if e.complexity.ArtistBasic.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.ArtistBasic.UpdatedAt(childComplexity), true
+
 	case "Category.genres":
 		if e.complexity.Category.Genres == nil {
 			break
@@ -408,6 +495,30 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.ArtistsByGenre(childComplexity, args["genre"].(string)), true
+
+	case "Query.artistsByGenreBasic":
+		if e.complexity.Query.ArtistsByGenreBasic == nil {
+			break
+		}
+
+		args, err := ec.field_Query_artistsByGenreBasic_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ArtistsByGenreBasic(childComplexity, args["genre"].(string), args["limit"].(*int), args["offset"].(*int)), true
+
+	case "Query.artistsByGenreCount":
+		if e.complexity.Query.ArtistsByGenreCount == nil {
+			break
+		}
+
+		args, err := ec.field_Query_artistsByGenreCount_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ArtistsByGenreCount(childComplexity, args["genre"].(string)), true
 
 	case "Query.categories":
 		if e.complexity.Query.Categories == nil {
@@ -690,6 +801,20 @@ type Category {
   genres: [Genre!]!
 }
 
+# Tipo optimizado para artistas básicos sin consultas anidadas profundas
+type ArtistBasic {
+  id: ID!
+  name: String!
+  spotify_id: String
+  image_url: String
+  genres: [String!]
+  popularity: Int
+  created_at: String
+  updated_at: String
+  album_count: Int
+  song_count: Int
+}
+
 type Query {
   songs: [Song!]!
   song(id: ID!): Song
@@ -702,6 +827,9 @@ type Query {
   categories: [Category!]!
   category(id: ID!): Category
   artistsByGenre(genre: String!): [Artist!]!
+  # Nueva consulta optimizada
+  artistsByGenreBasic(genre: String!, limit: Int = 20, offset: Int = 0): [ArtistBasic!]!
+  artistsByGenreCount(genre: String!): Int!
 }
 `, BuiltIn: false},
 }
@@ -789,6 +917,108 @@ func (ec *executionContext) field_Query_artist_argsID(
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
 		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_artistsByGenreBasic_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_artistsByGenreBasic_argsGenre(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["genre"] = arg0
+	arg1, err := ec.field_Query_artistsByGenreBasic_argsLimit(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
+	arg2, err := ec.field_Query_artistsByGenreBasic_argsOffset(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Query_artistsByGenreBasic_argsGenre(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["genre"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("genre"))
+	if tmp, ok := rawArgs["genre"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_artistsByGenreBasic_argsLimit(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["limit"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+	if tmp, ok := rawArgs["limit"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_artistsByGenreBasic_argsOffset(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["offset"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+	if tmp, ok := rawArgs["offset"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_artistsByGenreCount_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_artistsByGenreCount_argsGenre(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["genre"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_artistsByGenreCount_argsGenre(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["genre"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("genre"))
+	if tmp, ok := rawArgs["genre"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
 	var zeroVal string
@@ -1994,6 +2224,422 @@ func (ec *executionContext) fieldContext_Artist_songs(_ context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _ArtistBasic_id(ctx context.Context, field graphql.CollectedField, obj *model.ArtistBasic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ArtistBasic_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ArtistBasic_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ArtistBasic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ArtistBasic_name(ctx context.Context, field graphql.CollectedField, obj *model.ArtistBasic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ArtistBasic_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ArtistBasic_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ArtistBasic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ArtistBasic_spotify_id(ctx context.Context, field graphql.CollectedField, obj *model.ArtistBasic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ArtistBasic_spotify_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SpotifyID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ArtistBasic_spotify_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ArtistBasic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ArtistBasic_image_url(ctx context.Context, field graphql.CollectedField, obj *model.ArtistBasic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ArtistBasic_image_url(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ImageURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ArtistBasic_image_url(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ArtistBasic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ArtistBasic_genres(ctx context.Context, field graphql.CollectedField, obj *model.ArtistBasic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ArtistBasic_genres(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Genres, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ArtistBasic_genres(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ArtistBasic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ArtistBasic_popularity(ctx context.Context, field graphql.CollectedField, obj *model.ArtistBasic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ArtistBasic_popularity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Popularity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ArtistBasic_popularity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ArtistBasic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ArtistBasic_created_at(ctx context.Context, field graphql.CollectedField, obj *model.ArtistBasic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ArtistBasic_created_at(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ArtistBasic_created_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ArtistBasic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ArtistBasic_updated_at(ctx context.Context, field graphql.CollectedField, obj *model.ArtistBasic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ArtistBasic_updated_at(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ArtistBasic_updated_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ArtistBasic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ArtistBasic_album_count(ctx context.Context, field graphql.CollectedField, obj *model.ArtistBasic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ArtistBasic_album_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AlbumCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ArtistBasic_album_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ArtistBasic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ArtistBasic_song_count(ctx context.Context, field graphql.CollectedField, obj *model.ArtistBasic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ArtistBasic_song_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SongCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ArtistBasic_song_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ArtistBasic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Category_id(ctx context.Context, field graphql.CollectedField, obj *model.Category) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Category_id(ctx, field)
 	if err != nil {
@@ -3126,6 +3772,138 @@ func (ec *executionContext) fieldContext_Query_artistsByGenre(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_artistsByGenre_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_artistsByGenreBasic(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_artistsByGenreBasic(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ArtistsByGenreBasic(rctx, fc.Args["genre"].(string), fc.Args["limit"].(*int), fc.Args["offset"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ArtistBasic)
+	fc.Result = res
+	return ec.marshalNArtistBasic2ᚕᚖgithubᚗcomᚋangelᚋmusicᚑmsᚋgraphᚋmodelᚐArtistBasicᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_artistsByGenreBasic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ArtistBasic_id(ctx, field)
+			case "name":
+				return ec.fieldContext_ArtistBasic_name(ctx, field)
+			case "spotify_id":
+				return ec.fieldContext_ArtistBasic_spotify_id(ctx, field)
+			case "image_url":
+				return ec.fieldContext_ArtistBasic_image_url(ctx, field)
+			case "genres":
+				return ec.fieldContext_ArtistBasic_genres(ctx, field)
+			case "popularity":
+				return ec.fieldContext_ArtistBasic_popularity(ctx, field)
+			case "created_at":
+				return ec.fieldContext_ArtistBasic_created_at(ctx, field)
+			case "updated_at":
+				return ec.fieldContext_ArtistBasic_updated_at(ctx, field)
+			case "album_count":
+				return ec.fieldContext_ArtistBasic_album_count(ctx, field)
+			case "song_count":
+				return ec.fieldContext_ArtistBasic_song_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ArtistBasic", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_artistsByGenreBasic_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_artistsByGenreCount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_artistsByGenreCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ArtistsByGenreCount(rctx, fc.Args["genre"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_artistsByGenreCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_artistsByGenreCount_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5850,6 +6628,66 @@ func (ec *executionContext) _Artist(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var artistBasicImplementors = []string{"ArtistBasic"}
+
+func (ec *executionContext) _ArtistBasic(ctx context.Context, sel ast.SelectionSet, obj *model.ArtistBasic) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, artistBasicImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ArtistBasic")
+		case "id":
+			out.Values[i] = ec._ArtistBasic_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._ArtistBasic_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "spotify_id":
+			out.Values[i] = ec._ArtistBasic_spotify_id(ctx, field, obj)
+		case "image_url":
+			out.Values[i] = ec._ArtistBasic_image_url(ctx, field, obj)
+		case "genres":
+			out.Values[i] = ec._ArtistBasic_genres(ctx, field, obj)
+		case "popularity":
+			out.Values[i] = ec._ArtistBasic_popularity(ctx, field, obj)
+		case "created_at":
+			out.Values[i] = ec._ArtistBasic_created_at(ctx, field, obj)
+		case "updated_at":
+			out.Values[i] = ec._ArtistBasic_updated_at(ctx, field, obj)
+		case "album_count":
+			out.Values[i] = ec._ArtistBasic_album_count(ctx, field, obj)
+		case "song_count":
+			out.Values[i] = ec._ArtistBasic_song_count(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var categoryImplementors = []string{"Category"}
 
 func (ec *executionContext) _Category(ctx context.Context, sel ast.SelectionSet, obj *model.Category) graphql.Marshaler {
@@ -6188,6 +7026,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_artistsByGenre(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "artistsByGenreBasic":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_artistsByGenreBasic(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "artistsByGenreCount":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_artistsByGenreCount(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -6737,6 +7619,60 @@ func (ec *executionContext) marshalNArtist2ᚖgithubᚗcomᚋangelᚋmusicᚑms�
 		return graphql.Null
 	}
 	return ec._Artist(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNArtistBasic2ᚕᚖgithubᚗcomᚋangelᚋmusicᚑmsᚋgraphᚋmodelᚐArtistBasicᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ArtistBasic) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNArtistBasic2ᚖgithubᚗcomᚋangelᚋmusicᚑmsᚋgraphᚋmodelᚐArtistBasic(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNArtistBasic2ᚖgithubᚗcomᚋangelᚋmusicᚑmsᚋgraphᚋmodelᚐArtistBasic(ctx context.Context, sel ast.SelectionSet, v *model.ArtistBasic) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ArtistBasic(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {

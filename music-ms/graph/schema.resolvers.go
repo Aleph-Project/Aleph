@@ -162,6 +162,21 @@ func (r *queryResolver) Album(ctx context.Context, id string) (*model.Album, err
 		}
 	}
 
+	// Obtener artistas del álbum
+	var artists []*model.Artist
+	for _, a := range album.Artists {
+		artists = append(artists, &model.Artist{
+			ID:         a.ID.Hex(),
+			Name:       a.Name,
+			SpotifyID:  strPtr(a.SpotifyID),
+			ImageURL:   strPtr(a.ImageURL),
+			Genres:     a.Genres,
+			Popularity: &a.Popularity,
+			CreatedAt:  strPtr(a.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			UpdatedAt:  strPtr(a.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		})
+	}
+
 	return &model.Album{
 		ID:          album.ID.Hex(),
 		Title:       album.Title,
@@ -172,7 +187,8 @@ func (r *queryResolver) Album(ctx context.Context, id string) (*model.Album, err
 		UpdatedAt:   strPtr(album.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		ArtistIds:   artistIDs,
 		ImageURL:    strPtr(album.ImageURL),
-		Songs:       songs, // <-- Agregado el listado de canciones
+		Songs:       songs,
+		Artists:     artists,
 	}, nil
 }
 
@@ -200,7 +216,7 @@ func (r *queryResolver) Artists(ctx context.Context) ([]*model.Artist, error) {
 
 // Artist is the resolver for the artist field.
 func (r *queryResolver) Artist(ctx context.Context, id string) (*model.Artist, error) {
-	artist, err := r.Resolver.MusicService.GetArtist(ctx, id)
+	artist, err := r.Resolver.MusicService.GetArtistWithDetails(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -213,15 +229,9 @@ func (r *queryResolver) Artist(ctx context.Context, id string) (*model.Artist, e
 			artistIDs[i] = aid.Hex()
 		}
 
-		// Obtener detalles completos del álbum incluyendo canciones
-		albumDetails, err := r.Resolver.MusicService.GetAlbum(ctx, a.ID.Hex())
-		if err != nil {
-			continue
-		}
-
 		// Mapear las canciones del álbum
 		var albumSongs []*model.Song
-		for _, s := range albumDetails.Songs {
+		for _, s := range a.Songs {
 			albumSongs = append(albumSongs, &model.Song{
 				ID:          s.ID.Hex(),
 				Title:       s.Title,
@@ -232,6 +242,25 @@ func (r *queryResolver) Artist(ctx context.Context, id string) (*model.Artist, e
 				AudioURL:    strPtr(s.AudioURL),
 				CreatedAt:   strPtr(s.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
 				UpdatedAt:   strPtr(s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			})
+		}
+
+		// Obtener los artistas del álbum
+		var albumArtists []*model.Artist
+		for _, artistID := range a.ArtistIDs {
+			artistDetails, err := r.Resolver.MusicService.GetArtistByID(ctx, artistID)
+			if err != nil {
+				continue
+			}
+			albumArtists = append(albumArtists, &model.Artist{
+				ID:         artistDetails.ID.Hex(),
+				Name:       artistDetails.Name,
+				SpotifyID:  strPtr(artistDetails.SpotifyID),
+				ImageURL:   strPtr(artistDetails.ImageURL),
+				Genres:     artistDetails.Genres,
+				Popularity: &artistDetails.Popularity,
+				CreatedAt:  strPtr(artistDetails.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+				UpdatedAt:  strPtr(artistDetails.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 			})
 		}
 
@@ -246,41 +275,7 @@ func (r *queryResolver) Artist(ctx context.Context, id string) (*model.Artist, e
 			ArtistIds:   artistIDs,
 			ImageURL:    strPtr(a.ImageURL),
 			Songs:       albumSongs,
-		})
-	}
-
-	// Map songs
-	var songs []*model.Song
-	for _, s := range artist.Songs {
-		// Obtener información del álbum para cada canción
-		var album *model.Album
-		if s.AlbumID != primitive.NilObjectID {
-			albumData, err := r.Resolver.MusicService.GetAlbum(ctx, s.AlbumID.Hex())
-			if err == nil {
-				album = &model.Album{
-					ID:          albumData.ID.Hex(),
-					Title:       albumData.Title,
-					ReleaseDate: strPtr(albumData.ReleaseDate),
-					SpotifyID:   strPtr(albumData.SpotifyID),
-					Year:        &albumData.Year,
-					CreatedAt:   strPtr(albumData.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
-					UpdatedAt:   strPtr(albumData.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-					ImageURL:    strPtr(albumData.ImageURL),
-				}
-			}
-		}
-
-		songs = append(songs, &model.Song{
-			ID:          s.ID.Hex(),
-			Title:       s.Title,
-			Duration:    s.Duration,
-			SpotifyID:   strPtr(s.SpotifyID),
-			AlbumID:     strPtr(s.AlbumID.Hex()),
-			TrackNumber: &s.TrackNumber,
-			AudioURL:    strPtr(s.AudioURL),
-			CreatedAt:   strPtr(s.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
-			UpdatedAt:   strPtr(s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-			Album:       album,
+			Artists:     albumArtists,
 		})
 	}
 
@@ -294,7 +289,7 @@ func (r *queryResolver) Artist(ctx context.Context, id string) (*model.Artist, e
 		CreatedAt:  strPtr(artist.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		UpdatedAt:  strPtr(artist.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		Albums:     albums,
-		Songs:      songs,
+		Songs:      []*model.Song{}, // Las canciones se resuelven por separado si es necesario
 	}, nil
 }
 
@@ -526,6 +521,63 @@ func (r *queryResolver) ArtistsByGenre(ctx context.Context, genre string) ([]*mo
 		})
 	}
 	return result, nil
+}
+
+// ArtistsByGenreBasic is the resolver for the artistsByGenreBasic field.
+func (r *queryResolver) ArtistsByGenreBasic(ctx context.Context, genre string, limit *int, offset *int) ([]*model.ArtistBasic, error) {
+	// Valores por defecto
+	defaultLimit := 20
+	defaultOffset := 0
+
+	if limit != nil {
+		defaultLimit = *limit
+	}
+	if offset != nil {
+		defaultOffset = *offset
+	}
+
+	// Obtener artistas básicos sin consultas anidadas profundas
+	artists, err := r.Resolver.MusicService.GetArtistsByGenreWithPagination(ctx, genre, defaultLimit, defaultOffset)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*model.ArtistBasic
+	for _, artist := range artists {
+		// Contar álbumes y canciones de forma eficiente
+		albumCount, err := r.Resolver.MusicService.CountAlbumsByArtist(ctx, artist.ID.Hex())
+		if err != nil {
+			albumCount = 0 // Si falla, asignar 0
+		}
+
+		songCount, err := r.Resolver.MusicService.CountSongsByArtist(ctx, artist.ID.Hex())
+		if err != nil {
+			songCount = 0 // Si falla, asignar 0
+		}
+
+		result = append(result, &model.ArtistBasic{
+			ID:         artist.ID.Hex(),
+			Name:       artist.Name,
+			SpotifyID:  strPtr(artist.SpotifyID),
+			ImageURL:   strPtr(artist.ImageURL),
+			Genres:     artist.Genres,
+			Popularity: &artist.Popularity,
+			CreatedAt:  strPtr(artist.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			UpdatedAt:  strPtr(artist.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			AlbumCount: &albumCount,
+			SongCount:  &songCount,
+		})
+	}
+	return result, nil
+}
+
+// ArtistsByGenreCount is the resolver for the artistsByGenreCount field.
+func (r *queryResolver) ArtistsByGenreCount(ctx context.Context, genre string) (int, error) {
+	count, err := r.Resolver.MusicService.CountArtistsByGenre(ctx, genre)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 // Query returns generated.QueryResolver implementation.

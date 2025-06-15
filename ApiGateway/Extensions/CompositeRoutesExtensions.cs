@@ -4,5 +4,6 @@ public static class CompositeRoutesExtensions
     {
         app.MapReviewsBySongWithProfilesEndpoint();
         app.MapDeleteProfileAllinfoEndpoint();
+        app.MapPublishToSongPlayedKafkaEndpoint();
     }
 }
