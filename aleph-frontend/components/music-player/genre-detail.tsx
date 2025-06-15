@@ -214,7 +214,7 @@ export function GenreDetail({ genre, artists, albums, songs, isLoading, onSelect
   )
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6 w-full pb-24">
       {/* Cabecera del género */}
       {isLoading ? (
         <GenreHeaderSkeleton />

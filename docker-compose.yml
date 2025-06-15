@@ -1,140 +1,144 @@
-  services:
-    profile-ms:
-      container_name: profile-ms
-      build: 
-        context: ./profile-microservice
-        dockerfile: Dockerfile-dev
-      volumes:
-        - ./profile-microservice:/usr/src/app
-      environment:
-        - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-        - S3_SECRET_KEY=${S3_SECRET_KEY}
-        - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
-        - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
-        - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
-    reviews-ms:
-      container_name: reviews-ms
-      build: 
-        context: ./reviews-microservice
-        dockerfile: Dockerfile-dev
-      volumes:
-        - ./reviews-microservice:/usr/src/app
-      environment:
-        - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
-        - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
-        - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
-    music-ms:
-      container_name: music-ms
-      build:
-        context: ./music-ms
-        dockerfile: Dockerfile
-      restart: unless-stopped
-      # Puerto comentado para que solo sea accesible a través del API Gateway
-      # ports:
-      #   - "3002:3002"
-      environment:
-        # - PORT=3002
-        - MONGODB_URI=${MONGODB_URI}
-        - MONGODB_NAME=${MONGODB_NAME}
-        - MONGODB_TIMEOUT=10
-        - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
-        - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
-      depends_on:
-        - mongo
-    mongo:
-      container_name: music-db
-      image: mongo:6
-      restart: unless-stopped
-      ports:
-        - "27018:27017"  # Exponer en un puerto distinto para evitar conflictos
-      volumes:
-        - mongo-data:/data/db
-      command: mongod --quiet --logpath /dev/null  # Reducir logs
-    aleph-frontend:
-      container_name: aleph-frontend
-      build: 
-        context: ./aleph-frontend
-        dockerfile: Dockerfile.dev
-      environment:
-        - NEXTAUTH_URL=${NEXTAUTH_URL}
-        - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-        - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-        - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      ports:
-        - "3000:3000"
-      depends_on:
-        - music-ms
-    apigateway:
-      container_name: apigateway
-      build: 
-        context: ./ApiGateway
-        dockerfile: Dockerfile
-      ports:
-        - "8080:8080"
-    kafka:
-      image: bitnami/kafka:latest
-      container_name: kafka
-      ports:
-        - "9092:9092"  
-        - "9093:9093"  
-      environment:
-        - KAFKA_KRAFT_MODE=true
-        - KAFKA_CFG_NODE_ID=1
-        - KAFKA_CFG_PROCESS_ROLES=broker,controller
-        - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-        - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-        - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-        - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
-        - ALLOW_PLAINTEXT_LISTENER=yes
-    aleph_kafka_consumer:
-      container_name: aleph_kafka_consumer
-      build: 
-        context: ./kafka-consumer
-        dockerfile: Dockerfile
-      depends_on:
-        - kafka
-      environment:
-        - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-        - TOPIC_SONG_PLAYED_NAME=song-played-topic
-        - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
-        - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
-        - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
-        - ANALYSIS_DB_NAME=${ANALYSIS_DB_NAME} 
+services:
+  profile-ms:
+    container_name: profile-ms
+    build: 
+      context: ./profile-microservice
+      dockerfile: Dockerfile-dev
+    volumes:
+      - ./profile-microservice:/usr/src/app
+    environment:
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
+      - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
+      - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
+  reviews-ms:
+    container_name: reviews-ms
+    build: 
+      context: ./reviews-microservice
+      dockerfile: Dockerfile-dev
+    volumes:
+      - ./reviews-microservice:/usr/src/app
+    environment:
+      - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
+      - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
+      - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
+  music-ms:
+    container_name: music-ms
+    build:
+      context: ./music-ms
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # Puerto comentado para que solo sea accesible a través del API Gateway
+    # ports:
+    #   - "3002:3002"
+    environment:
+      # - PORT=3002
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_NAME=${MONGODB_NAME}
+      - MONGODB_TIMEOUT=10
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+    depends_on:
+      - mongo
+  streaming-ms:
+    container_name: streaming-ms
+    build:
+      context: ./streaming-ms
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8081:8080"  # Exponer WebSocket para conexión directa desde el frontend
+    environment:
+      - PORT=8080
+      - API_GATEWAY_URL=http://apigateway:8080
+      - S3_ACCESS_KEY=${MUSIC_S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${MUSIC_S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${MUSIC_S3_BUCKET_NAME}
+      - AWS_REGION=${MUSIC_AWS_REGION}
+    depends_on:
+      - apigateway
+      - music-ms
+  aleph-frontend:
+    container_name: aleph-frontend
+    build: 
+      context: ./aleph-frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - music-ms
+      - streaming-ms      
+  apigateway:
+    container_name: apigateway
+    build: 
+      context: ./ApiGateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"  
+      - "9093:9093"  
+    environment:
+      - KAFKA_KRAFT_MODE=true
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - ALLOW_PLAINTEXT_LISTENER=yes
+  aleph_kafka_consumer:
+    container_name: aleph_kafka_consumer
+    build: 
+      context: ./kafka-consumer
+      dockerfile: Dockerfile
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - TOPIC_SONG_PLAYED_NAME=song-played-topic
+      - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
+      - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
+      - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
+      - ANALYSIS_DB_NAME=${ANALYSIS_DB_NAME} 
+  analysis-ms:
+    container_name: analysis-ms
+    build:
+      context: ./analysis-ms
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"  
+    environment:
+      - DB_HOST=${ANALYSIS_DB_HOST}
+      - DB_PORT=5432
+      - DB_NAME=${ANALYSIS_DB_NAME}
+      - DB_USER=${ANALYSIS_DB_USER}
+      - DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
 
-    analysis-ms:
-      container_name: analysis-ms
-      build:
-        context: ./analysis-ms
-        dockerfile: Dockerfile
-      ports:
-        - "8001:8000"  
-      environment:
-        - DB_HOST=${ANALYSIS_DB_HOST}
-        - DB_PORT=5432
-        - DB_NAME=${ANALYSIS_DB_NAME}
-        - DB_USER=${ANALYSIS_DB_USER}
-        - DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
-
-    auth-ms:
-      container_name: auth-ms
-      build:
-        context: ./auth-ms
-        dockerfile: Dockerfile
-      volumes:
-        - ./auth-ms:/app
-        - /app/node_modules
-      environment:
-        - PORT=${PORT}
-        - JWT_SECRET=${JWT_SECRET}
-        - EMAIL_USER=${EMAIL_USER}
-        - EMAIL_PASS=${EMAIL_PASS}
-        - EMAIL_FROM=${EMAIL_FROM}
-        - FRONTEND_URL=${FRONTEND_URL}
-        - MONGO_URI=${AUTH_MONGO_URI}
-      ports:
-        - "4000:4000"
-        
-  volumes:
-    profile_data:
-    reviews_data:
-    mongo-data:
+  auth-ms:
+    container_name: auth-ms
+    build:
+      context: ./auth-ms
+      dockerfile: Dockerfile
+    volumes:
+      - ./auth-ms:/app
+      - /app/node_modules
+    environment:
+      - PORT=${PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - MONGO_URI=${AUTH_MONGO_URI}
+    ports:
+      - "4000:4000"

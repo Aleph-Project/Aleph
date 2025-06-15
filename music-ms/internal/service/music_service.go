@@ -263,21 +263,21 @@ func (s *MusicService) GetAlbums(ctx context.Context) ([]models.Album, error) {
 	return albums, nil
 }
 
-// GetAlbum obtiene un álbum por ID
+// GetAlbum obtiene un álbum por ID con todos sus detalles
 func (s *MusicService) GetAlbum(ctx context.Context, id string) (*models.AlbumWithDetails, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
-	collection := s.db.Collection("albums")
+	// Obtener el álbum
+	albumCollection := s.db.Collection("albums")
 	var album models.Album
-
-	if err := collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&album); err != nil {
+	if err := albumCollection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&album); err != nil {
 		return nil, err
 	}
 
-	// Obtener canciones del álbum
+	// Obtener las canciones del álbum
 	songCollection := s.db.Collection("songs")
 	songCursor, err := songCollection.Find(ctx, bson.M{"album_id": objectID})
 	if err != nil {
@@ -290,38 +290,11 @@ func (s *MusicService) GetAlbum(ctx context.Context, id string) (*models.AlbumWi
 		return nil, err
 	}
 
-	// Obtener artistas del álbum y de las canciones
-	var artistIDs []primitive.ObjectID
-
-	// Agregar artistas del álbum
-	if len(album.ArtistIDs) > 0 {
-		artistIDs = append(artistIDs, album.ArtistIDs...)
-	}
-
-	// Recolectar artistas de las canciones
-	for _, song := range songs {
-		if len(song.ArtistIDs) > 0 {
-			for _, artistID := range song.ArtistIDs {
-				// Verificar si ya existe para no duplicar
-				exists := false
-				for _, existingID := range artistIDs {
-					if existingID == artistID {
-						exists = true
-						break
-					}
-				}
-				if !exists {
-					artistIDs = append(artistIDs, artistID)
-				}
-			}
-		}
-	}
-
-	// Consultar los artistas
+	// Obtener los artistas del álbum
+	artistCollection := s.db.Collection("artists")
 	var artists []models.Artist
-	if len(artistIDs) > 0 {
-		artistCollection := s.db.Collection("artists")
-		artistCursor, err := artistCollection.Find(ctx, bson.M{"_id": bson.M{"$in": artistIDs}})
+	if len(album.ArtistIDs) > 0 {
+		artistCursor, err := artistCollection.Find(ctx, bson.M{"_id": bson.M{"$in": album.ArtistIDs}})
 		if err != nil {
 			return nil, err
 		}
@@ -839,4 +812,160 @@ func (s *MusicService) GetArtistsByGenre(ctx context.Context, genreName string) 
 	}
 
 	return artists, nil
+}
+
+// GetArtistWithDetails obtiene un artista con todos sus detalles en una sola consulta
+func (s *MusicService) GetArtistWithDetails(ctx context.Context, id string) (*models.ArtistWithDetails, error) {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Obtener el artista
+	artistCollection := s.db.Collection("artists")
+	var artist models.Artist
+	if err := artistCollection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&artist); err != nil {
+		return nil, err
+	}
+
+	// Obtener todos los álbumes del artista con sus canciones
+	albumCollection := s.db.Collection("albums")
+	albumCursor, err := albumCollection.Find(ctx, bson.M{"artist_ids": objectID})
+	if err != nil {
+		return nil, err
+	}
+	defer albumCursor.Close(ctx)
+
+	var albums []models.Album
+	if err := albumCursor.All(ctx, &albums); err != nil {
+		return nil, err
+	}
+
+	// Obtener todas las canciones de los álbumes
+	songCollection := s.db.Collection("songs")
+	var albumIDs []primitive.ObjectID
+	for _, album := range albums {
+		albumIDs = append(albumIDs, album.ID)
+	}
+
+	songCursor, err := songCollection.Find(ctx, bson.M{"album_id": bson.M{"$in": albumIDs}})
+	if err != nil {
+		return nil, err
+	}
+	defer songCursor.Close(ctx)
+
+	var songs []models.Song
+	if err := songCursor.All(ctx, &songs); err != nil {
+		return nil, err
+	}
+
+	// Organizar las canciones por álbum
+	albumSongs := make(map[primitive.ObjectID][]models.Song)
+	for _, song := range songs {
+		albumSongs[song.AlbumID] = append(albumSongs[song.AlbumID], song)
+	}
+
+	// Agregar las canciones a sus respectivos álbumes
+	for i := range albums {
+		albums[i].Songs = albumSongs[albums[i].ID]
+	}
+
+	return &models.ArtistWithDetails{
+		Artist: artist,
+		Albums: albums,
+		Songs:  songs,
+	}, nil
+}
+
+// GetArtistsByGenreWithPagination obtiene artistas por género con paginación
+func (s *MusicService) GetArtistsByGenreWithPagination(ctx context.Context, genreName string, limit, offset int) ([]models.Artist, error) {
+	collection := s.db.Collection("artists")
+
+	// Opciones para paginación
+	findOptions := options.Find()
+	findOptions.SetSkip(int64(offset))
+	findOptions.SetLimit(int64(limit))
+	findOptions.SetSort(bson.D{{"name", 1}}) // Ordenar por nombre
+
+	// Buscar artistas que tengan el nombre del género en su array de géneros
+	cursor, err := collection.Find(ctx, bson.M{"genres": genreName}, findOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var artists []models.Artist
+	if err := cursor.All(ctx, &artists); err != nil {
+		return nil, err
+	}
+
+	return artists, nil
+}
+
+// CountArtistsByGenre cuenta el número total de artistas para un género específico
+func (s *MusicService) CountArtistsByGenre(ctx context.Context, genreName string) (int, error) {
+	collection := s.db.Collection("artists")
+
+	count, err := collection.CountDocuments(ctx, bson.M{"genres": genreName})
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
+}
+
+// CountAlbumsByArtist cuenta el número de álbumes de un artista específico
+func (s *MusicService) CountAlbumsByArtist(ctx context.Context, artistID string) (int, error) {
+	objectID, err := primitive.ObjectIDFromHex(artistID)
+	if err != nil {
+		return 0, err
+	}
+
+	collection := s.db.Collection("albums")
+	count, err := collection.CountDocuments(ctx, bson.M{"artist_ids": objectID})
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
+}
+
+// CountSongsByArtist cuenta el número de canciones de un artista específico
+func (s *MusicService) CountSongsByArtist(ctx context.Context, artistID string) (int, error) {
+	objectID, err := primitive.ObjectIDFromHex(artistID)
+	if err != nil {
+		return 0, err
+	}
+
+	// Primero obtener todos los álbumes del artista
+	albumCollection := s.db.Collection("albums")
+	albumCursor, err := albumCollection.Find(ctx, bson.M{"artist_ids": objectID})
+	if err != nil {
+		return 0, err
+	}
+	defer albumCursor.Close(ctx)
+
+	var albums []models.Album
+	if err := albumCursor.All(ctx, &albums); err != nil {
+		return 0, err
+	}
+
+	// Obtener IDs de los álbumes
+	var albumIDs []primitive.ObjectID
+	for _, album := range albums {
+		albumIDs = append(albumIDs, album.ID)
+	}
+
+	if len(albumIDs) == 0 {
+		return 0, nil
+	}
+
+	// Contar canciones en esos álbumes
+	songCollection := s.db.Collection("songs")
+	count, err := songCollection.CountDocuments(ctx, bson.M{"album_id": bson.M{"$in": albumIDs}})
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
 }
