@@ -11,6 +11,7 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
       - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
+      - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
   reviews-ms:
     container_name: reviews-ms
     build: 
@@ -38,8 +39,6 @@ services:
       - MONGODB_TIMEOUT=10
       - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
       - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
-    depends_on:
-      - mongo
   streaming-ms:
     container_name: streaming-ms
     build:
@@ -137,6 +136,6 @@ services:
       - EMAIL_PASS=${EMAIL_PASS}
       - EMAIL_FROM=Aleph <alephmusicmanagement@gmail.com>
       - FRONTEND_URL=http://localhost:3000
-      - MONGO_URI=${MONGO_URI}
+      - AUTH_MONGO_URI=${AUTH_MONGO_URI}
     ports:
       - "4000:4000"
