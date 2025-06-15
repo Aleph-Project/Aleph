@@ -1,0 +1,17 @@
+appId: com.aleph.frontend.desktop
+productName: Aleph Frontend Desktop
+copyright: Copyright © 2025 Aleph Team
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - from: .
+    filter:
+      - package.json
+      - app
+linux:
+  executableArgs:
+    - "--no-sandbox"
+    - "--disable-gpu"
+    - "--disable-dev-shm-usage"
+publish: null

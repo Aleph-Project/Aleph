@@ -11,7 +11,6 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
       - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
-      - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
   reviews-ms:
     container_name: reviews-ms
     build: 
@@ -123,7 +122,6 @@ services:
       - DB_NAME=${ANALYSIS_DB_NAME}
       - DB_USER=${ANALYSIS_DB_USER}
       - DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
-
   auth-ms:
     container_name: auth-ms
     build:
@@ -133,12 +131,12 @@ services:
       - ./auth-ms:/app
       - /app/node_modules
     environment:
-      - PORT=${PORT}
+      - PORT=4000
       - JWT_SECRET=${JWT_SECRET}
-      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_USER=alephmusicmanagement@gmail.com
       - EMAIL_PASS=${EMAIL_PASS}
-      - EMAIL_FROM=${EMAIL_FROM}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - MONGO_URI=${AUTH_MONGO_URI}
+      - EMAIL_FROM=Aleph <alephmusicmanagement@gmail.com>
+      - FRONTEND_URL=http://localhost:3000
+      - MONGO_URI=${MONGO_URI}
     ports:
       - "4000:4000"
