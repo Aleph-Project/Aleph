@@ -72,9 +72,6 @@ export default function AnalisisPage() {
           <div className="inline-block mb-6 relative">
             <div className="flex items-center justify-center mb-4">
               <BarChart3 className="h-20 w-20 text-purple-500 mr-4" />
-              <div className="animate-bounce">
-                <Crown className="h-16 w-16 text-yellow-400" fill="#FBBF24" />
-              </div>
             </div>
             <h1 className="text-6xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 text-transparent bg-clip-text">
               ANÁLISIS
@@ -123,14 +120,14 @@ export default function AnalisisPage() {
                     <p className="text-sm text-zinc-300">{option.preview}</p>
                   </div>
 
-                  {/* Estadísticas */}
+                  {/* Estadísticas
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-zinc-500">{option.stats}</span>
                     <div className="flex items-center text-purple-400 group-hover:text-purple-300 transition-colors">
                       <span className="text-sm font-medium mr-2">Explorar</span>
                       <Play className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </div>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Efecto de brillo */}

@@ -12,9 +12,6 @@ def handle_play_event(message: bytes):
         user_info = get_user_profile(data['User_Id'])
         song_info = get_song_by_id(data['Song_Id'])
 
-        print(f"User info: {user_info}")
-        print(f"Song info: {song_info}")
-
         if not user_info or not song_info:
             print("User or song information not found, skipping event.")
             return
@@ -27,13 +24,6 @@ def handle_play_event(message: bytes):
         country = user_info["profile"]["city"]["country"]["name"]
         time_dim = parse_time_dim(data["Played_At"])
 
-        print(f"User dimension: {user_dim}")
-        print(f"Song dimension: {song_dim}")
-        print(f"Album dimension: {album_dim}")
-        print(f"Artists dimension: {artists_dim}")
-        print(f"City: {city}, Country: {country}")
-        print(f"Parsed time dimension: {time_dim}")
-        
         conn = psycopg2.connect(
             host=os.environ["ANALYSIS_DB_HOST"],
             dbname=os.environ["ANALYSIS_DB_NAME"],
