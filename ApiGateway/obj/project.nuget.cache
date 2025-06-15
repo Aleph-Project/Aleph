@@ -1,9 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "lxVHmD/wEfw2LbblDQRLfgowVocSBDGjfNDjcKEVrNdPPl6yuswFA9RArCKX5ne0wEcVJsMGMvyFg600ZC2MZw==",
+  "dgSpecHash": "qABQOirWco9brVcIIUPeBTB5Lm0w8kn+ZslyzqEXc/l+5fuyLN5xi/Ppse2Is6VIVxyxLh4caUVAXsf+cRwmlw==",
   "success": true,
-  "projectFilePath": "/home/jhunter/dev/swarch2025i/project/prototype_1/1F/ApiGateway/ApiGateway.csproj",
+  "projectFilePath": "/home/jhunter/dev/Aleph/ApiGateway/ApiGateway.csproj",
   "expectedPackageFiles": [
+    "/home/jhunter/.nuget/packages/confluent.kafka/2.10.0/confluent.kafka.2.10.0.nupkg.sha512",
+    "/home/jhunter/.nuget/packages/librdkafka.redist/2.10.0/librdkafka.redist.2.10.0.nupkg.sha512",
     "/home/jhunter/.nuget/packages/system.io.hashing/8.0.0/system.io.hashing.8.0.0.nupkg.sha512",
     "/home/jhunter/.nuget/packages/yarp.reverseproxy/2.3.0/yarp.reverseproxy.2.3.0.nupkg.sha512"
   ],

@@ -495,6 +495,28 @@ export async function getCategoryByIdGraphQL(id: string) {
   return data.category;
 }
 
+export async function getReviewsAndProfileBySong(id: string): Promise<ReviewsWithProfilesResponse> {
+  try {
+    const response = await fetch(`${COMPOSED_API_URL}/reviews-with-profile/${id}`);
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!Array.isArray(data.reviewsWithProfiles)) {
+      throw new Error("Formato inesperado en la respuesta del backend");
+    }
+    return {
+      reviewsWithProfiles: data.reviewsWithProfiles
+    };
+  } catch (error) {
+    console.error("Error fetching reviews with profiles:", error);
+    return { reviewsWithProfiles: [] };
+  }
+}
+
 // GraphQL
 
 export const GET_ALL_SONGS = gql`
