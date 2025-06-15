@@ -1,5 +1,14 @@
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
+import { 
+    storeAccessToken, 
+    storeRefreshToken, 
+    getAccessToken, 
+    clearAccessToken, 
+    clearRefreshToken,
+    isTokenValid,
+    decodeToken
+} from './tokenService';
 
 const API_URL = "/api/v1/auth";
 
@@ -40,11 +49,14 @@ export const tokenIsValid = async (token: string | null) => {
 
 export const checkAuth = async () => {
     try {
-        const token = await getAuthToken();
-        if (!token || !tokenIsValid(token)) {
+        const token = await getAccessToken();
+        if (!token || !isTokenValid(token)) {
             return { authenticated: false };
         }
-        const decoded: any = jwtDecode(token);
+        const decoded: any = decodeToken(token);
+        if (!decoded){
+            return { authenticated: false };
+        }
         return {
             authenticated: true,
             user: {
@@ -55,7 +67,7 @@ export const checkAuth = async () => {
         }
     } catch (error: any) {
         console.error('Error checking authentication:', error);
-        await clearAuthToken();
+        await clearAccessToken();
         return { authenticated: false, message: 'An error occurred while checking authentication' };
     }
 }
@@ -103,6 +115,9 @@ export const login = async (email: string, password: string) => {
     try {
         const res = await window.ipc.invoke('auth:login', email, password);
         if (res.success !== false) {
+            if (res.refreshToken) {
+                await storeRefreshToken(res.refreshToken);
+            }
             return { success: true, user: res.user };
         }
         return { success: false, message: res.message || 'Login failed' };
@@ -157,7 +172,8 @@ export const activateUserDsk = async (email: string, code: string) => {
 
 
 export const logout = async () => {
-    await clearAuthToken();
+    await clearAccessToken();
+    await clearRefreshToken();
     return { success: true, message: 'Logged out successfully' };
 }
 

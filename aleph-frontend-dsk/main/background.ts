@@ -3,13 +3,16 @@ import { app, ipcMain } from 'electron'
 import serve from 'electron-serve'
 import { createWindow } from './helpers'
 import * as keytar from 'keytar';
+import { BrowserWindow } from 'electron';
 import axios from 'axios'
 import { openAuth0LoginWin, refreshToken, logoutAuth0 } from './auth/auth0';
 // import { refreshAuth0Token } from '@/renderer/services/auth0Service';
 import dotenv from 'dotenv';
 import { loadEnv } from './utils/env';
+import { redirect } from 'next/dist/server/api-utils';
 const envLoaded = loadEnv();
 console.log('Variables de entorno cargadas:', envLoaded);
+
 
 // Carga adicional con dotenv como respaldo
 dotenv.config({ path: path.join(__dirname, '../.env') });
@@ -17,10 +20,9 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 // Verifica las variables críticas
 console.log('Auth0 config disponible:', {
   domain: process.env.AUTH0_DOMAIN ? 'Sí' : 'No',
-  clientId: process.env.AUTH0_CLIENT_ID ? 'Sí' : 'No'
+  clientId: process.env.AUTH0_CLIENT_ID ? 'Sí' : 'No',
+  redirectUri: process.env.AUTH0_REDIRECT_URI ? 'Sí' : 'No'
 });
-
-dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const isProd = process.env.NODE_ENV === 'production'
 
@@ -75,12 +77,11 @@ ipcMain.on('message', async (event, arg) => {
   event.reply('message', `${arg} World!`)
 })
 
-// Añade esto a tu archivo background.ts
 ipcMain.handle('get-auth0-config', () => {
   return {
     domain: process.env.AUTH0_DOMAIN,
     clientId: process.env.AUTH0_CLIENT_ID,
-    redirectUri: process.env.AUTH0_REDIRECT_URI || 'aleph://auth/callback'
+    redirectUri: process.env.AUTH0_REDIRECT_URI || "http://localhost/callback"
   };
 });
 
@@ -120,7 +121,16 @@ ipcMain.handle('auth:login', async (_, email: string, password: string) => {
     });
     if (response.data.token) {
       await keytar.setPassword('aleph-frontend-dsk', 'auth-token', response.data.token);
-      return { success: true, user: response.data.user };
+      // Almacena el refresh token si existe (asegurándote que tu API lo devuelve)
+      if (response.data.refreshToken) {
+        await keytar.setPassword('aleph-frontend-dsk', 'refresh-token', response.data.refreshToken);
+      }
+      return { success: true, user: response.data.user, token: response.data.refreshToken };
+    } else {
+      return { 
+        success: false, 
+        message: 'No token received from server' 
+      };
     }
   } catch (error: any) {
     console.error('Login error:', error);
@@ -128,52 +138,6 @@ ipcMain.handle('auth:login', async (_, email: string, password: string) => {
   }
 });
 
-//user registration
-{/*ipcMain.handle('auth:register', async (_, data) => {
-    console.log('=== REGISTER HANDLER START ===');
-    console.log('Received data:', data);
-    
-    try {
-        console.log('Making API call to: http://localhost:8080/api/v1/auth/register');
-        const response = await axios.post('http://localhost:8080/api/v1/auth/register', data);
-        console.log('Registration response:', response.data);
-        
-        
-        if (response.data.token) {
-            console.log('Token found in registration response, storing in keytar...');
-            await keytar.setPassword('aleph-frontend-dsk', 'auth-token', response.data.token);
-            console.log('Token stored successfully');
-            return { 
-                success: true, 
-                message: response.data.message || 'User registered successfully',
-                user: response.data.user,
-                autoLogin: true 
-            };
-        } else {
-            console.log('Registration successful, no token provided');
-            return { 
-                success: true, 
-                message: response.data.message || 'User registered successfully',
-                autoLogin: false 
-            };
-        }
-    } catch (error: any) {
-        console.log('=== ERROR CAUGHT ===');
-        console.log('Error details:', error.message);
-        console.log('Error response:', error.response?.data);
-        console.log('Error status:', error.response?.status);
-        
-        const errorMessage = error.response?.data?.error || error.message || 'An error occurred during registration';
-        console.log('Returning error result:', { success: false, message: errorMessage });
-        
-        return {
-            success: false,
-            message: errorMessage
-        };
-    } finally {
-        console.log('=== REGISTER HANDLER END ===');
-    }
-});
 
 // Manejadores IPC para autenticación
 ipcMain.handle('auth0-login', async () => {
@@ -233,15 +197,15 @@ ipcMain.handle('clear-refresh-token', async () => {
     console.error('Error clearing refresh token:', error);
     throw new Error('Failed to clear refresh token');
   }
-});*/}
+});
 
 ipcMain.handle('auth:register', async (_, data) => {
     console.log('=== REGISTER DSK HANDLER START ===');
     console.log('Received data:', data);
     
     try {
-        console.log('Making API call to: http://localhost:8080/api/v1/auth/registerdsk');
-        const response = await axios.post('http://localhost:8080/api/v1/auth/registerdsk', data);
+        console.log('Making API call to: http://localhost:8080/api/v1/auth/register-dsk');
+        const response = await axios.post('http://localhost:8080/api/v1/auth/register-dsk', data);
         console.log('Registration response:', response.data);
         //No se espera al token para que el usuario active primero su cuenta
         if (response.data.user) {
@@ -283,8 +247,8 @@ ipcMain.handle('auth:activate', async (_, { email, code }) => {
     console.log('Activating user:', { email, code: code ? 'PROVIDED' : 'MISSING' });
     
     try {
-        console.log('Making API call to: http://localhost:8080/api/v1/auth/activateDsk');
-        const response = await axios.post('http://localhost:8080/api/v1/auth/activateDsk', { email, code });
+        console.log('Making API call to: http://localhost:8080/api/v1/auth/activate-dsk');
+        const response = await axios.post('http://localhost:8080/api/v1/auth/activate-dsk', { email, code });
         console.log('Activation response:', response.data);
         
         if (response.data.user) {

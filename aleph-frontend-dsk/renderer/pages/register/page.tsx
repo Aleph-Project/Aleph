@@ -100,6 +100,7 @@ export default function RegisterPage() {
         }
     }
 
+
     const handleOtpSubmit = async () => {
         console.log('OTP Submit called with:', otp);
         
@@ -122,7 +123,7 @@ export default function RegisterPage() {
                 console.log('Account activated successfully, redirecting to home');
                 // Activación exitosa - redirigir directamente a home
                 setIsOtpDialogOpen(false);
-                router.push('/home');
+                router.push('/login/page');
             } else {
                 console.log('Activation failed:', result.message);
                 // Error en la activación - mantener modal abierto

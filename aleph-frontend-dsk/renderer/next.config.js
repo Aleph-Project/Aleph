@@ -2,7 +2,6 @@ const path = require('path');
 /** @type {import('next').NextConfig} */
 module.exports = {
   // output: 'export',
-  ssr: true,
   distDir: process.env.NODE_ENV === 'production' ? '../app' : '.next',
   trailingSlash: true,
   images: {
@@ -27,7 +26,6 @@ module.exports = {
 
   async rewrites() {
     return [
-      // Excluye explícitamente las rutas de NextAuth del rewrite
       {
         source: '/api/auth/:path*',
         destination: '/api/auth/:path*', // No reescribe, deja que Next.js maneje internamente

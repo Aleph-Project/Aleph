@@ -14,7 +14,28 @@ const handler = {
     }
   },
   async invoke(channel: string, ...args: unknown[]){
-    const validChannels = ['store-auth-token', 'get-auth-token', 'clear-auth-token', 'auth:login', 'auth:logout', 'auth:register', 'auth:activate-account', 'auth:request-reset-code', 'auth:verify-reset-code', 'auth:reset-password', 'auth:token-is-valid', 'auth:refresh-token', 'auth0-login', 'auth0-logout', 'auth0-refresh-token', 'auth0:refresh-token', 'get-auth0-config', 'get-refresh-token', 'clear-refresh-token', 'message']
+    const validChannels = [
+      'store-auth-token', 
+      'get-auth-token', 
+      'clear-auth-token', 
+      'auth:login', 
+      'auth:logout', 
+      'auth:register', 
+      'auth:activate', 
+      'auth:request-reset-code', 
+      'auth:verify-reset-code', 
+      'auth:reset-password', 
+      'auth:token-is-valid', 
+      'auth:refresh-token', 
+      'auth0-login', 
+      'auth0-logout', 
+      'auth0-refresh-token', 
+      'get-auth0-config', 
+      'get-refresh-token', 
+      'clear-refresh-token', 
+      'store-auth-token', 
+      'store-refresh-token', 
+      'message']
     if (validChannels.includes(channel)) {
       return await ipcRenderer.invoke(channel, ...args)
     }

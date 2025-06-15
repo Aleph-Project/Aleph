@@ -79,6 +79,22 @@ export default function LoginPage() {
         }
     }
 
+    const handleAuth0Login = async () => {
+        setError("");
+        setLoading(true);
+
+        try {
+            const res = await loginAuth0();
+            if (res.success) {
+                // Redirige a la página de inicio si el login es exitoso
+                window.location.href = "/home";
+            }
+        } catch (error: any) {
+            setLoading(false);
+            setError(error.message || "No se pudo iniciar sesión con Auth0. Intenta de nuevo.");
+        }
+    }
+
     return (
         <div className="min-h-screen bg-black text-white relative overflow-hidden">
             {/* Welcome title */}
@@ -177,7 +193,7 @@ export default function LoginPage() {
                                 type="button"
                                 // onClick={() => login("google", { callbackUrl: "/home" })}
                                 onClick={(() => {
-                                    loginAuth0();
+                                    handleAuth0Login();
                                 })}
                             >
                                 <Image src="/placeholder.svg?height=20&width=20" alt="Google" width={20} height={20} className="mr-2" />

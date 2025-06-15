@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { resetPassword } from "@/renderer/services/authService"
+import { resetPassword } from "@/renderer/services/electronAuthService"
 
 export default function NewPasswordPage() {
     const [showPassword, setShowPassword] = useState(false)

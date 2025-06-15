@@ -3,10 +3,14 @@
   "name": "aleph-frontend-dsk",
   "description": "Aleph Frontend Desktop App",
   "version": "1.0.0",
-  "author": "Aleph",
+  "author": {
+    "name": "Aleph Team",
+    "email": "alephmusicmanagement@gmail.com"
+  },
+  "homepage": "http://localhost:3000",
   "main": "app/background.js",
   "build": {
-    "appId": "com.yourcompany.aleph",
+    "appId": "com.aleph.frontend",
     "productName": "Aleph",
     "protocols": [
       {
@@ -24,7 +28,14 @@
     },
     "extraResources": [
       ".env"
-    ]
+    ],
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Development",
+      "executableName": "Aleph",
+      "asarUnpack": ["**/*.node"]
+    }
+
   },
   "scripts": {
     "dev": "nextron",

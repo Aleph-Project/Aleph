@@ -1,6 +1,8 @@
 import { jwtDecode } from 'jwt-decode';
 import { JWT } from 'next-auth/jwt';
 import { redirect } from 'next/dist/server/api-utils';
+import { decodeToken } from '@/renderer/services/tokenService';
+import { get } from 'http';
 
 // Obtiene la configuración de Auth0 desde el proceso principal
 const getAuth0Config = async () => {
@@ -16,32 +18,91 @@ const getAuth0Config = async () => {
   }
 };
 
-type Auth0JwtPayload = {
-    sub: string;
-    name?: string;
-    email?: string;
-    exp: number;
-    [key: string]: any;
-};
+// type Auth0JwtPayload = {
+//     sub: string;
+//     name?: string;
+//     email?: string;
+//     exp: number;
+//     [key: string]: any;
+// };
+interface Auth0JwtPayload {
+  sub: string;
+  name?: string;
+  email?: string;
+  [key: string]: any; 
+}
+
+async function checkOnlineStatus() {
+    try {
+        
+        const response = await fetch('https://www.google.com', { 
+            mode: 'no-cors',
+            cache: 'no-cache',
+            method: 'HEAD',
+            // Timeout corto para no bloquear la interfaz
+            signal: AbortSignal.timeout(3000)
+        });
+        return true;
+    } catch (error) {
+        console.error('Error checking online status:', error);
+        return false;
+    }
+}
 
 export const loginAuth0 = async () => {
     try {
+        console.log('Starting Auth0 login process...');
+        const auth0Config = await getAuth0Config();
+        console.log('Auth0 Config:', auth0Config);
+
+        // Añade este código al inicio de loginAuth0()
+        const isOnline = await checkOnlineStatus();
+        
+        if (!isOnline) {
+            console.error('No hay conexión a Internet disponible');
+            return {
+                success: false,
+                error: 'No hay conexión a Internet. Por favor, verifica tu conexión e intenta nuevamente.'
+            };
+        }
+
         console.log('Initiating Auth0 login from renderer...');
         const res = await window.ipc.invoke('auth0-login');
         
         console.log('Auth0 login response:', res.success ? 'Success' : 'Failed');
+        console.log('Response details:', res);
         
         if (res.success) {
+
+            const accessToken = res.token || res.accessToken;
+            const idToken = res.idToken;
+
+            if (!accessToken) {
+                console.error('No access token received from Auth0');
+                return {
+                    success: false,
+                    error: 'No access token received from Auth0'
+                }
+            }
+
+            console.log('Access Token:', accessToken);
+            console.log('ID Token:', idToken);
+
+            const tokenToStore = idToken || accessToken;
             // Almacena tokens en el proceso principal
-            await window.ipc.invoke('store-auth-token', res.token || res.accessToken);
+            await window.ipc.invoke('store-auth-token', tokenToStore);
             if (res.refreshToken) {
                 await window.ipc.invoke('store-refresh-token', res.refreshToken);
             }
             
-            // Decodifica el token para obtener información del usuario
-            const token = res.idToken || res.token || res.accessToken;
-            const decodedUser = jwtDecode<Auth0JwtPayload>(token);
+            const decodedUser = decodeToken(tokenToStore);
 
+            if(!decodedUser){
+                return {
+                    success: false,
+                    error: 'Failed to decode Auth0 token'
+                }
+            }
             return {
                 success: true,
                 user: {

@@ -18,8 +18,29 @@ import {
 } from "@/components/ui/input-otp";
 
 import { Button } from "@/components/ui/button"
+import { sq } from "date-fns/locale";
 
-export default function OtpModal({isDialogOpen, setIsDialogOpen, otp, setOtp, otpError, handleOtpSubmit, handleResendCode}) {
+interface modalProps {
+  isDialogOpen: boolean;
+  setIsDialogOpen: (open: boolean) => void;
+  otp: string;
+  setOtp: (value: string) => void;
+  otpError: boolean;
+  handleOtpSubmit: () => void;
+  handleResendCode?: () => void; 
+  loading?: boolean;
+  errorMessage?: string;
+  onClose?: () => void;
+}
+
+export default function OtpModal({isDialogOpen, setIsDialogOpen, otp, setOtp, otpError, handleOtpSubmit, handleResendCode, loading=false, errorMessage="", onClose}: modalProps) {
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } 
+    setIsDialogOpen(false);
+  }
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogContent>
