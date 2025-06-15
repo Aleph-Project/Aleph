@@ -10,7 +10,7 @@ public class PublishToSongPlayedKafkaService
         _producer = producer;
     }
 
-    public async Task PublishToSongPlayedKafka(SongPlayedEventDto payload)
+    public async Task<KafkaPublishResult> PublishToSongPlayedKafka(SongPlayedEventDto payload)
     {
         var message = new Message<string, string>
         {
@@ -21,11 +21,21 @@ public class PublishToSongPlayedKafkaService
         try
         {
             await _producer.ProduceAsync("song-played-topic", message);
+
+            return new KafkaPublishResult
+            {
+                Success = true,
+                Message = "Message published successfully"
+            };
         }
         catch (ProduceException<string, string> ex)
         {
-            // Handle the exception (e.g., log it)
-            throw new Exception("Error publishing message to Kafka", ex);
+            return new KafkaPublishResult
+            {
+                Success = false,
+                Message = "Failed to publish message to Kafka.",
+                Error = ex.Message
+            };
         }
     }
 }

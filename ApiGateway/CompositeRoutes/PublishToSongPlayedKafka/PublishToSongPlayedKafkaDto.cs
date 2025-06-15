@@ -6,3 +6,10 @@ public class SongPlayedEventDto
     public DateTime Played_At { get; set; }
     public int? Duration_Played { get; set; }
 }
+
+public class KafkaPublishResult
+{
+    public bool Success { get; set; }
+    public string? Message { get; set; }
+    public string? Error { get; set; }
+}

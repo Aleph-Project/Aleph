@@ -15,9 +15,9 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  username: <%= ENV['PROFILE_DB_USER'] %>
-  password: <%= ENV['PROFILE_DB_PASSWORD'] %>
-  host: <%= ENV['PROFILE_DB_HOST'] %>
+  username: <%= ENV['ANALYSIS_DB_USER'] %>
+  password: <%= ENV['ANALYSIS_DB_PASSWORD'] %>
+  host: <%= ENV['ANALYSIS_DB_HOST'] %>
   sslmode: require
   pool: 5
 
