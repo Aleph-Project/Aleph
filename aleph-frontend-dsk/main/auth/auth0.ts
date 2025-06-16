@@ -105,7 +105,6 @@ function generateState() {
 
 async function loadAuth0Config() {
   try {
-    // En el proceso principal, debes usar ipcMain, no window.ipc
     if (!ipcMain) {
       console.error("Esta función debe ejecutarse en el proceso principal");
       return config;
