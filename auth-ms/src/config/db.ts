@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
-const MONGO_URI = process.env.MONGO_URI || "";
+const AUTH_MONGO_URI = process.env.AUTH_MONGO_URI || "";
 
 export const connectDB = async () => {
     try {
-        await mongoose.connect(MONGO_URI);
+        await mongoose.connect(AUTH_MONGO_URI);
         console.log("MongoDB connected");
     } catch (error) {
         console.error("MongoDB connection error:", error);
