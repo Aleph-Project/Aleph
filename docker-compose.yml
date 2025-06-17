@@ -79,9 +79,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
-  kafka:
+  aleph_message_queue:
     image: bitnami/kafka:latest
-    container_name: kafka
+    container_name: aleph_message_queue
     ports:
       - "9092:9092"  
       - "9093:9093"  
@@ -91,8 +91,8 @@ services:
       - KAFKA_CFG_PROCESS_ROLES=broker,controller
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://aleph_message_queue:9092
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@aleph_message_queue:9093
       - ALLOW_PLAINTEXT_LISTENER=yes
   aleph_kafka_consumer:
     container_name: aleph_kafka_consumer
@@ -100,9 +100,9 @@ services:
       context: ./kafka-consumer
       dockerfile: Dockerfile
     depends_on:
-      - kafka
+      - aleph_message_queue
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_BOOTSTRAP_SERVERS=aleph_message_queue:9092
       - TOPIC_SONG_PLAYED_NAME=song-played-topic
       - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
       - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}

@@ -10,7 +10,7 @@ builder.Services.AddSingleton<IProducer<string, string>>(sp =>
 {
     var config = new ProducerConfig
     {
-        BootstrapServers = "kafka:9092"
+        BootstrapServers = "aleph_message_queue:9092"
     };
     return new ProducerBuilder<string, string>(config).Build();
 });
