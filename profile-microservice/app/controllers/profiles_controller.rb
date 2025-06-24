@@ -19,7 +19,10 @@ class ProfilesController < ApplicationController
 
     def show_my_profile
       auth_id = params[:auth_id]
-      @profile = Profile.joins(city: :country).find_by(auth_id: auth_id)
+      @profile = Profile
+        .includes(:avatar_file_attachment, :avatar_file_blob, :background_file_attachment, :background_file_blob, city: :country)
+        .find_by(auth_id: auth_id)
+        
       if @profile.nil?
         render json: { error: 'No se encontró el perfil' }, status: :not_found
       else
@@ -42,7 +45,7 @@ class ProfilesController < ApplicationController
 
     def show_others_profiles
       auth_id = params[:auth_id]
-      @profiles = Profile.joins(city: :country).where.not(auth_id: auth_id)
+      @profiles = Profile.includes(city: :country).where.not(auth_id: auth_id)
       if @profiles.nil?
         render json: { error: 'No se encontró el perfil' }, status: :not_found
       else
@@ -55,8 +58,6 @@ class ProfilesController < ApplicationController
     end
 
     def update_my_profile
-      auth_id = params[:auth_id]
-      @profile = Profile.joins(city: :country).find_by(auth_id: auth_id)
       if @profile.nil?
         render json: { error: 'No se encontró el perfil' }, status: :not_found
       else
@@ -72,8 +73,6 @@ class ProfilesController < ApplicationController
     end
 
     def delete_profile
-      auth_id = params[:auth_id]
-      @profile = Profile.joins(city: :country).find_by(auth_id: auth_id)
       if @profile.nil?
         render json: { error: 'No se encontró el perfil' }, status: :not_found
       else

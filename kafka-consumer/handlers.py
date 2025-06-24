@@ -25,10 +25,10 @@ def handle_play_event(message: bytes):
         time_dim = parse_time_dim(data["Played_At"])
 
         conn = psycopg2.connect(
-            host=os.environ["ANALYSIS_DB_HOST"],
+            host=os.environ["AZURE_DB_HOST"],
             dbname=os.environ["ANALYSIS_DB_NAME"],
-            user=os.environ["ANALYSIS_DB_USER"],
-            password=os.environ["ANALYSIS_DB_PASSWORD"]
+            user=os.environ["AZURE_DB_USER"],
+            password=os.environ["AZURE_DB_PASSWORD"]
         )
 
         cursor = conn.cursor()

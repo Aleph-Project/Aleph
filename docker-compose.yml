@@ -9,9 +9,9 @@ services:
     environment:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
-      - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
-      - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
+      - AZURE_DB_USER=${AZURE_DB_USER}
+      - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
+      - AZURE_DB_HOST=${AZURE_DB_HOST}
   reviews-ms:
     container_name: reviews-ms
     build: 
@@ -20,9 +20,9 @@ services:
     volumes:
       - ./reviews-microservice:/usr/src/app
     environment:
-      - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
-      - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
-      - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
+      - AZURE_DB_USER=${AZURE_DB_USER}
+      - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
+      - AZURE_DB_HOST=${AZURE_DB_HOST}
   music-ms:
     container_name: music-ms
     build:
@@ -104,9 +104,9 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=aleph_message_queue:9092
       - TOPIC_SONG_PLAYED_NAME=song-played-topic
-      - ANALYSIS_DB_USER=${ANALYSIS_DB_USER}
-      - ANALYSIS_DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
-      - ANALYSIS_DB_HOST=${ANALYSIS_DB_HOST}
+      - AZURE_DB_USER=${AZURE_DB_USER}
+      - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
+      - AZURE_DB_HOST=${AZURE_DB_HOST}
       - ANALYSIS_DB_NAME=${ANALYSIS_DB_NAME} 
   analysis-ms:
     container_name: analysis-ms
@@ -116,11 +116,11 @@ services:
     ports:
       - "8001:8000"  
     environment:
-      - DB_HOST=${ANALYSIS_DB_HOST}
+      - DB_HOST=${AZURE_DB_HOST}
       - DB_PORT=5432
       - DB_NAME=${ANALYSIS_DB_NAME}
-      - DB_USER=${ANALYSIS_DB_USER}
-      - DB_PASSWORD=${ANALYSIS_DB_PASSWORD}
+      - DB_USER=${AZURE_DB_USER}
+      - DB_PASSWORD=${AZURE_DB_PASSWORD}
   auth-ms:
     container_name: auth-ms
     build:
