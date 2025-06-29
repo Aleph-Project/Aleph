@@ -39,11 +39,7 @@ services:
       context: ./music-ms
       dockerfile: Dockerfile
     restart: unless-stopped
-    # Puerto comentado para que solo sea accesible a través del API Gateway
-    # ports:
-    #   - "3002:3002"
     environment:
-      # - PORT=3002
       - MONGODB_URI=${MONGODB_URI}
       - MONGODB_NAME=${MONGODB_NAME}
       - MONGODB_TIMEOUT=10
