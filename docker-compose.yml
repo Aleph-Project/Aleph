@@ -12,6 +12,12 @@ services:
       - AZURE_DB_USER=${AZURE_DB_USER}
       - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
       - AZURE_DB_HOST=${AZURE_DB_HOST}
+      - RAILS_ENV=test
+    networks:
+      private_net: 
+        ipv4_address: 172.20.1.3
+      # data_net: 
+      #   ipv4_address: 172.20.2.2
   reviews-ms:
     container_name: reviews-ms
     build: 
@@ -23,6 +29,12 @@ services:
       - AZURE_DB_USER=${AZURE_DB_USER}
       - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
       - AZURE_DB_HOST=${AZURE_DB_HOST}
+      - RAILS_ENV=test
+    networks:
+      private_net: 
+        ipv4_address: 172.20.1.4
+      # data_net:
+      #   ipv4_address: 172.20.2.3
   music-ms:
     container_name: music-ms
     build:
@@ -39,12 +51,18 @@ services:
       - MONGODB_TIMEOUT=10
       - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
       - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.6
   streaming-ms:
     container_name: streaming-ms
     build:
       context: ./streaming-ms
       dockerfile: Dockerfile
     restart: unless-stopped
+    networks:
+      public_net:
+        ipv4_address: 172.20.0.5
     ports:
       - "8081:8080"  # Exponer WebSocket para conexión directa desde el frontend
     environment:
@@ -67,6 +85,9 @@ services:
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+    networks:
+      public_net:
+        ipv4_address: 172.20.0.2
     ports:
       - "3000:3000"
     depends_on:
@@ -77,14 +98,22 @@ services:
     build: 
       context: ./ApiGateway
       dockerfile: Dockerfile
+    networks:
+      public_net:
+        ipv4_address: 172.20.0.3
+      private_net: 
+        ipv4_address: 172.20.1.2
     ports:
       - "8080:8080"
   aleph_message_queue:
     image: bitnami/kafka:latest
     container_name: aleph_message_queue
-    ports:
-      - "9092:9092"  
-      - "9093:9093"  
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.9
+    # ports:
+    #   - "9092:9092"  
+    #   - "9093:9093"  
     environment:
       - KAFKA_KRAFT_MODE=true
       - KAFKA_CFG_NODE_ID=1
@@ -107,14 +136,20 @@ services:
       - AZURE_DB_USER=${AZURE_DB_USER}
       - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
       - AZURE_DB_HOST=${AZURE_DB_HOST}
-      - ANALYSIS_DB_NAME=${ANALYSIS_DB_NAME} 
+      - ANALYSIS_DB_NAME=${ANALYSIS_DB_NAME}
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.10
   analysis-ms:
     container_name: analysis-ms
     build:
       context: ./analysis-ms
       dockerfile: Dockerfile
-    ports:
-      - "8001:8000"  
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.8
+    # ports:
+    #   - "8001:8000"  
     environment:
       - DB_HOST=${AZURE_DB_HOST}
       - DB_PORT=5432
@@ -137,5 +172,34 @@ services:
       - EMAIL_FROM=Aleph <alephmusicmanagement@gmail.com>
       - FRONTEND_URL=http://localhost:3000
       - AUTH_MONGO_URI=${AUTH_MONGO_URI}
-    ports:
-      - "4000:4000"
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.5
+    # ports:
+    #   - "4000:4000"
+
+networks:
+  public_net:
+    driver: bridge
+    ipam: 
+      config:
+        - subnet: 172.20.0.0/26
+          gateway: 172.20.0.1
+  
+  private_net: 
+    driver: bridge
+    internal: false
+    ipam:
+      config: 
+        - subnet: 172.20.1.0/26
+          gateway: 172.20.1.1
+  
+  # data_net: 
+  #   driver: bridge
+  #   internal: true
+  #   ipam:
+  #     config:
+  #       - subnet: 172.20.2.0/26
+  #         gateway: 172.20.2.1
+
+
