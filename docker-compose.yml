@@ -71,6 +71,8 @@ services:
     build: 
       context: ./ApiGateway
       dockerfile: Dockerfile
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
   aleph_message_queue:
     image: bitnami/kafka:latest
     container_name: aleph_message_queue

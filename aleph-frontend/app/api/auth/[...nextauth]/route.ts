@@ -80,6 +80,31 @@ const handler = NextAuth({
             if (account?.provider === "google" && profile) {
                 token.googleId = profile.sub;
                 token.image = (profile as { picture?: string }).picture; // Guarda la imagen de Google
+                
+                // ✅ NUEVO: Crear/obtener token del auth-ms para usuarios de Google
+                try {
+                    const googleUserData = {
+                        email: profile.email,
+                        name: profile.name,
+                        googleId: profile.sub,
+                        provider: 'google'
+                    };
+                    
+                    // Llamar al auth-ms para crear/obtener token
+                    const authResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/v1/auth/google-login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(googleUserData)
+                    });
+                    
+                    if (authResponse.ok) {
+                        const authData = await authResponse.json();
+                        token.backendToken = authData.token;
+                        token.id = authData.user.id;
+                    }
+                } catch (error) {
+                    console.error('Error obteniendo token para usuario de Google:', error);
+                }
             }
             // Si viene de credentials, user tendrá backendToken y datos del usuario
             if (user) {

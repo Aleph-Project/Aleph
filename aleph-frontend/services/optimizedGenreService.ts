@@ -1,5 +1,6 @@
 import { gql } from '@apollo/client';
 import client from './graphqlClient';
+import { authHttpClient } from '@/lib/httpClient';
 
 // Interface para artista básico optimizado
 export interface ArtistBasic {
@@ -154,19 +155,13 @@ export async function getArtistsBasicByGenreFetch(genreName: string): Promise<Ar
       }
     `;
 
-    const response = await fetch('/api/v1/music/graphql', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-        variables: {
-          genre: genreName,
-          limit: 100,
-          offset: 0
-        }
-      })
+    const response = await authHttpClient.post('/api/v1/music/graphql', {
+      query,
+      variables: {
+        genre: genreName,
+        limit: 100,
+        offset: 0
+      }
     });
 
     if (!response.ok) {

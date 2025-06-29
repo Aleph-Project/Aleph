@@ -92,3 +92,37 @@ export async function activateUserDsk(email: string, code: string) {
   delete dskCodes[email];
   return { id: user._id, name: user.name, email: user.email };
 }
+
+export async function googleLogin(email: string, name: string, googleId: string) {
+  let user = await userRepository.findByEmail(email);
+  
+  if (!user) {
+    // Crear nuevo usuario para Google OAuth
+    user = await userRepository.create({ 
+      name, 
+      email, 
+      password: "", // Sin contraseña para usuarios de Google
+      active: true, // Google ya verificó el email
+      googleId 
+    });
+  } else if (!user.active) {
+    // Activar usuario existente si no estaba activo
+    await userRepository.updateActive((user._id as any).toString(), true);
+  }
+  
+  // Generar token JWT
+  const token = jwt.sign({ 
+    id: user._id, 
+    email: user.email, 
+    name: user.name 
+  }, JWT_SECRET, { expiresIn: "1h" });
+  
+  return { 
+    user: { 
+      id: user._id, 
+      name: user.name, 
+      email: user.email 
+    }, 
+    token 
+  };
+}

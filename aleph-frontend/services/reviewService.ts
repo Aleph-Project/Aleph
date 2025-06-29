@@ -25,6 +25,8 @@ export interface Replica {
   updated_at: string
 }
 
+import { authHttpClient } from '@/lib/httpClient';
+
 // URL base del microservicio de Reviews
 const REVIEWS_API_URL = '/api/v1/reviews';
 
@@ -35,7 +37,7 @@ const REVIEWS_API_URL = '/api/v1/reviews';
  */
 export async function getReviewsByProfile(authId: string): Promise<Review[]> {
   try {
-    const response = await fetch(`${REVIEWS_API_URL}/by_profile?auth_id=${authId}`);
+    const response = await authHttpClient.get(`${REVIEWS_API_URL}/by_profile?auth_id=${authId}`);
     
     if (!response.ok) {
       throw new Error(`Error: ${response.status} ${response.statusText}`);
@@ -51,7 +53,7 @@ export async function getReviewsByProfile(authId: string): Promise<Review[]> {
 
 export async function getAllReviewsByProfile(authId: string): Promise<Review[]> {
   try {
-    const response = await fetch(`${REVIEWS_API_URL}/by_profile_all?auth_id=${authId}`);
+    const response = await authHttpClient.get(`${REVIEWS_API_URL}/by_profile_all?auth_id=${authId}`);
 
     if(!response.ok){
       if (response.status === 404) {
@@ -69,7 +71,7 @@ export async function getAllReviewsByProfile(authId: string): Promise<Review[]> 
        
 export async function getReviewsBySong(songId: string): Promise<Review[] | null> {
   try {
-    const response = await fetch(`${REVIEWS_API_URL}/by_song?reviewed_object_id=${songId}`);
+    const response = await authHttpClient.get(`${REVIEWS_API_URL}/by_song?reviewed_object_id=${songId}`);
 
     if (response.ok) {
       return response.json();
@@ -103,13 +105,7 @@ export async function createReview(review: {
   is_song: boolean;
 }): Promise<Review> {
   try {
-    const response = await fetch(`${REVIEWS_API_URL}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(review),
-    });
+    const response = await authHttpClient.post(`${REVIEWS_API_URL}`, review);
     
     if (!response.ok) {
       const errorData = await response.json();
@@ -131,13 +127,7 @@ export async function createReview(review: {
  */
 export async function updateReview(id: string, reviewData: Partial<Review>): Promise<Review> {
   try {
-    const response = await fetch(`${REVIEWS_API_URL}/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(reviewData),
-    });
+    const response = await authHttpClient.put(`${REVIEWS_API_URL}/${id}`, reviewData);
     
     if (!response.ok) {
       const errorData = await response.json();
@@ -158,9 +148,7 @@ export async function updateReview(id: string, reviewData: Partial<Review>): Pro
  */
 export async function deleteReview(id: string): Promise<{ message: string }> {
   try {
-    const response = await fetch(`${REVIEWS_API_URL}/${id}`, {
-      method: 'DELETE',
-    });
+    const response = await authHttpClient.delete(`${REVIEWS_API_URL}/${id}`);
     
     if (!response.ok) {
       const errorData = await response.json();
@@ -185,13 +173,7 @@ export async function createReplica(replica: {
   replica_body: string;
 }): Promise<Replica> {
   try {
-    const response = await fetch(`${REVIEWS_API_URL}/replicas`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(replica),
-    });
+    const response = await authHttpClient.post(`${REVIEWS_API_URL}/replicas`, replica);
     
     if (!response.ok) {
       const errorData = await response.json();
@@ -212,7 +194,7 @@ export async function createReplica(replica: {
  */
 export async function getReplicasByReview(reviewId: string): Promise<Replica[]> {
   try {
-    const response = await fetch(`${REVIEWS_API_URL}/replicas/by_review?review_id=${reviewId}`);
+    const response = await authHttpClient.get(`${REVIEWS_API_URL}/replicas/by_review?review_id=${reviewId}`);
     
     if (response.status === 404) {
       return [];
@@ -232,9 +214,7 @@ export async function getReplicasByReview(reviewId: string): Promise<Replica[]> 
  */
 export async function deleteReviewsBySong(songId: string): Promise<{ message: string }> {
   try {
-    const response = await fetch(`${REVIEWS_API_URL}/delete_reviews_by_song?reviewed_object_id=${songId}`, {
-      method: 'DELETE',
-    });
+    const response = await authHttpClient.delete(`${REVIEWS_API_URL}/delete_reviews_by_song?reviewed_object_id=${songId}`);
     
     if (!response.ok) {
       const errorData = await response.json();
@@ -255,9 +235,7 @@ export async function deleteReviewsBySong(songId: string): Promise<{ message: st
  */
 export async function deleteReviewsByAlbum(albumId: string): Promise<{ message: string }> {
   try {
-    const response = await fetch(`${REVIEWS_API_URL}/delete_reviews_by_album?reviewed_object_id=${albumId}`, {
-      method: 'DELETE',
-    });
+    const response = await authHttpClient.delete(`${REVIEWS_API_URL}/delete_reviews_by_album?reviewed_object_id=${albumId}`);
     
     if (!response.ok) {
       const errorData = await response.json();
