@@ -29,11 +29,7 @@ services:
       context: ./music-ms
       dockerfile: Dockerfile
     restart: unless-stopped
-    # Puerto comentado para que solo sea accesible a través del API Gateway
-    # ports:
-    #   - "3002:3002"
     environment:
-      # - PORT=3002
       - MONGODB_URI=${MONGODB_URI}
       - MONGODB_NAME=${MONGODB_NAME}
       - MONGODB_TIMEOUT=10
@@ -67,8 +63,6 @@ services:
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-    ports:
-      - "3000:3000"
     depends_on:
       - music-ms
       - streaming-ms      
@@ -77,14 +71,12 @@ services:
     build: 
       context: ./ApiGateway
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
   aleph_message_queue:
     image: bitnami/kafka:latest
     container_name: aleph_message_queue
     ports:
-      - "9092:9092"  
-      - "9093:9093"  
+      - "9092"  
+      - "9093"  
     environment:
       - KAFKA_KRAFT_MODE=true
       - KAFKA_CFG_NODE_ID=1
@@ -113,8 +105,6 @@ services:
     build:
       context: ./analysis-ms
       dockerfile: Dockerfile
-    ports:
-      - "8001:8000"  
     environment:
       - DB_HOST=${AZURE_DB_HOST}
       - DB_PORT=5432
@@ -139,3 +129,13 @@ services:
       - AUTH_MONGO_URI=${AUTH_MONGO_URI}
     ports:
       - "4000:4000"
+  reverse-proxy:
+    container_name: reverse-proxy
+    build:
+      context: ./reverse-proxy
+      dockerfile: Dockerfile
+    ports:
+      - "443:443"
+    depends_on:
+      - apigateway
+      - aleph-frontend
