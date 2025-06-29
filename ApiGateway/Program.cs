@@ -59,6 +59,13 @@ app.Use(async (context, next) =>
         return;
     }
     
+    // Excluir peticiones de servicios internos
+    if (context.Request.Headers.ContainsKey("X-Internal-Service"))
+    {
+        await next();
+        return;
+    }
+    
     // Para todas las demás rutas API, verificar el token
     if (path.StartsWith("/api/"))
     {

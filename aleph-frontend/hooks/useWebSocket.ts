@@ -5,8 +5,9 @@ import { useSession } from 'next-auth/react'
 import { Song } from '@/components/music-player/types'
 
 interface StreamRequest {
-  type: 'play' | 'pause' | 'stop'
+  type: 'play' | 'pause' | 'stop' | 'resume'
   songId: string
+  userToken?: string
 }
 
 interface StreamResponse {
@@ -36,20 +37,25 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
   
   const { data: session } = useSession()
   const wsRef = useRef<WebSocket | null>(null)
-  const reconnectTimeoutRef = useRef<number | undefined>()
+  const reconnectTimeoutRef = useRef<number | undefined>(undefined)
 
   const sendMessage = useCallback((message: StreamRequest) => {
     console.log('[useWebSocket] sendMessage llamado con:', message)
     console.log('[useWebSocket] WebSocket estado:', wsRef.current?.readyState)
     
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      console.log('[useWebSocket] Enviando mensaje:', JSON.stringify(message))
-      wsRef.current.send(JSON.stringify(message))
+      // Agregar token del usuario al mensaje
+      const messageWithToken = {
+        ...message,
+        userToken: session?.user?.backendToken
+      };
+      console.log('[useWebSocket] Enviando mensaje:', JSON.stringify(messageWithToken))
+      wsRef.current.send(JSON.stringify(messageWithToken))
     } else {
       console.error('[useWebSocket] WebSocket no está conectado para enviar mensaje')
       setError('WebSocket no está conectado')
     }
-  }, [])
+  }, [session])
 
   const handleMessage = useCallback((event: MessageEvent) => {
     console.log('[useWebSocket] Mensaje recibido desde streaming-ms:', event.data)
@@ -134,7 +140,7 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
         // Reconexión automática después de 5 segundos (aumentado de 3)
         // Solo reconectar si no fue una desconexión intencional
         if (wsRef.current) {
-          reconnectTimeoutRef.current = setTimeout(() => {
+          reconnectTimeoutRef.current = window.setTimeout(() => {
             console.log('[WebSocket] Intentando reconectar...')
             connect()
           }, 5000)
@@ -201,7 +207,7 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
 
   useEffect(() => {
     // Delay pequeño para evitar conexiones muy agresivas al montar el componente
-    const initialConnectionTimeout = setTimeout(() => {
+    const initialConnectionTimeout = window.setTimeout(() => {
       connect()
     }, 100)
     
