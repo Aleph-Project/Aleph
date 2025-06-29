@@ -123,13 +123,14 @@ export async function getAllSongs(): Promise<Song | null> {
 // Función para obtener una canción por su ID
 export async function getSongById(id: string): Promise<Song | null> {
   try {
-    // Usar la nueva estructura de URL
-    const response = await fetch(`${MUSIC_API_URL}/songs/${id}`);
+    // Usar la nueva estructura de URL con autenticación
+    const response = await authHttpClient.get(`${MUSIC_API_URL}/songs/${id}`);
     
     if (!response.ok) {
       if (response.status === 404) {
        return null ; // Retornar null si la canción no se encuentra
       }
+      throw new Error(`Error: ${response.status}`);
     }
     
     return response.json();

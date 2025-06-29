@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react"
 import { Play, SkipBack, SkipForward, Volume2, Repeat, Shuffle, Pause } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Song as SongType } from "./types"
+import { authHttpClient } from "@/lib/httpClient"
 
 interface Song extends SongType {
     // Extendemos la interfaz base para mantener compatibilidad con diferentes fuentes de datos
@@ -45,7 +46,7 @@ export function MusicPlayer({ webSocket }: MusicPlayerProps) {
     const fetchCompleteSongData = async (songId: string) => {
         try {
             console.log('[MusicPlayer] Obteniendo datos completos para canción:', songId);
-            const response = await fetch(`/api/v1/music/songs/${songId}`);
+            const response = await authHttpClient.get(`/api/v1/music/songs/${songId}`);
             
             if (!response.ok) {
                 throw new Error('Error al obtener datos de la canción');

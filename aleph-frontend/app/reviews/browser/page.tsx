@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { Search, Play, Heart, Clock } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { authHttpClient } from "@/lib/httpClient"
 
 type Song = {
   _id: string
@@ -36,7 +37,7 @@ export default function BuscarCanciones() {
     setLoading(true)
     debounceRef.current = setTimeout(async () => {
       try {
-        const response = await fetch(`/api/v1/music/songs/search?name=${encodeURIComponent(searchTerm)}`)
+        const response = await authHttpClient.get(`/api/v1/music/songs/search?name=${encodeURIComponent(searchTerm)}`)
         const data = await response.json()
         setSongs(data)
       } catch (error) {

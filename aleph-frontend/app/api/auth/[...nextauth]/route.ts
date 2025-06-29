@@ -39,28 +39,28 @@ const handler = NextAuth({
             },
             async authorize(credentials) {
                 try {
-                    // Usa authService para validar login
-                    const res = await loginWithCredentials(credentials?.email, credentials?.password);
-                    // res debe tener { user, token }
-                    const { user, token } = res.data;
-
-                    if (user && token) {
+                    // Llamar al auth-ms 
+                    const res = await fetch(`${process.env.NEXTAUTH_URL}/api/v1/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: credentials?.email, password: credentials?.password })
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (res.ok && data.user && data.token) {
                         // Devuelve ambos para que estén disponibles en el callback jwt
-                        return { ...user, backendToken: token };
+                        return { ...data.user, backendToken: data.token };
                     } else {
-                        // Si el backend responde sin user/token pero con error, propaga el error
-                        if (res.data?.error) {
-                            throw new Error(JSON.stringify({ error: res.data.error }));
+                        // Si el backend responde con error, propaga el error
+                        if (data?.error) {
+                            throw new Error(JSON.stringify({ error: data.error }));
                         }
                         return null;
                     }
                 } catch (err: any) {
-                    // Si el error viene del backend, propaga el mensaje de error
-                    if (err.response?.data?.error) {
-                        throw new Error(JSON.stringify({ error: err.response.data.error }));
-                    }
-                    // Si ya es un error lanzado arriba, propágalo tal cual
-                    if (err instanceof Error && err.message.startsWith("{")) {
+                    // Si el error viene del fetch, manejar respuesta
+                    if (err.message && err.message.startsWith("{")) {
                         throw err;
                     }
                     // Error genérico
@@ -90,7 +90,7 @@ const handler = NextAuth({
                         provider: 'google'
                     };
                     
-                    // Llamar al auth-ms para crear/obtener token
+                    // Llamar al auth-ms a través del reverse proxy y API Gateway
                     const authResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/v1/auth/google-login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
