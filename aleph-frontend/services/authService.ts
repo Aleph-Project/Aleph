@@ -19,7 +19,7 @@ export async function resetPassword(email: string, code: string, newPassword: st
 
 // Login con email y password (para NextAuth)
 export function loginWithCredentials(email?: string, password?: string) {
-    return axios.post(`http://apigateway:8080/api/v1/auth/login`, { email, password });
+    return axios.post(`${API_URL}/login`, { email, password });
 }
 
 // Registro de usuario

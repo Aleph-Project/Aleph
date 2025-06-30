@@ -10,6 +10,7 @@ import { getReviewsAndProfileBySong } from "@/services/songService"
 import { ReviewWithProfile } from "@/services/songService"
 import { createReplica } from "@/services/reviewService"
 import { useSession } from "next-auth/react";
+import { authHttpClient } from "@/lib/httpClient"
 
 type Song = {
   _id: string;
@@ -106,7 +107,12 @@ export default function SongPage() {
     }
   }, [isModalOpen])
 
-  const formatNumber = (num: number) => {
+  const formatNumber = (num: number | undefined) => {
+    // Manejar casos undefined/null
+    if (num === undefined || num === null || isNaN(num)) {
+      return '0';
+    }
+    
     if (num >= 1000000) {
       return `${(num / 1000000).toFixed(1)}M`
     } else if (num >= 1000) {
@@ -143,22 +149,16 @@ export default function SongPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/v1/reviews`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          review: {  
-            auth_id: auth_id,
-            review_title: `Reseña para ${song?.title}`,
-            review_body: newReview.text,
-            rating: newReview.rating,
-            reviewed_object_id: params.id,  // Agrega el ID de la canción
-            is_song: true,  
-            is_public: true  
-          }
-        }),
+      const response = await authHttpClient.post(`/api/v1/reviews`, {
+        review: {  
+          auth_id: auth_id,
+          review_title: `Reseña para ${song?.title}`,
+          review_body: newReview.text,
+          rating: newReview.rating,
+          reviewed_object_id: params.id,  // Agrega el ID de la canción
+          is_song: true,  
+          is_public: true  
+        }
       });
 
       if (response.ok) {

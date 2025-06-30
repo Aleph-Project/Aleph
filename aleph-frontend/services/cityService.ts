@@ -1,3 +1,5 @@
+import { authHttpClient } from '@/lib/httpClient';
+
 export interface Country {
   id: number;
   name: string;
@@ -17,12 +19,7 @@ export interface City {
 const CITIES_API_URL = "/api/v1/profiles/cities";
 
 export async function getAllCities(): Promise<City[]> {
-  const response = await fetch(CITIES_API_URL, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+  const response = await authHttpClient.get(CITIES_API_URL);
 
   if (!response.ok) {
     throw new Error("Error al obtener las ciudades");

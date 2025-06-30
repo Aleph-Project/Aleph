@@ -1,3 +1,5 @@
+import { authHttpClient } from '@/lib/httpClient';
+
 export interface ProfileExistsResponse {
     exists: boolean;
 }
@@ -46,13 +48,7 @@ const PROFILE_API_URL = '/api/v1/profiles';
 const COMPOSED_API_URL = '/api/v1/composite';  
 
 export async function checkProfileExists(auth_id: string): Promise<ProfileExistsResponse> {
-    const response = await fetch(`${PROFILE_API_URL}/exists-profile/${auth_id}`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        
-    });
+    const response = await authHttpClient.get(`${PROFILE_API_URL}/exists-profile/${auth_id}`);
 
     if (!response.ok) {
         throw new Error('Error checking profile existence');
@@ -75,10 +71,7 @@ export async function CreateProfile(data: CreateProfileData): Promise<any> {
         formData.append("profile[background_file]", data.background_file);
     }
 
-  const response = await fetch(`${PROFILE_API_URL}/create-profile`, {
-    method: "POST",
-    body: formData,
-  });
+  const response = await authHttpClient.postFormData(`${PROFILE_API_URL}/create-profile`, formData);
 
   if (!response.ok) {
     throw new Error("Error creating profile");
@@ -89,12 +82,7 @@ export async function CreateProfile(data: CreateProfileData): Promise<any> {
 
 export async function getProfileLogued(auth_id: string): Promise<any> {
     try{
-        const response = await fetch(`${PROFILE_API_URL}/my-profile/${auth_id}`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });
+        const response = await authHttpClient.get(`${PROFILE_API_URL}/my-profile/${auth_id}`);
 
     if (!response.ok){
         throw new Error('Error fetching profile log');
@@ -111,12 +99,7 @@ export async function getProfileLogued(auth_id: string): Promise<any> {
 
 export async function DeleteProfile(auth_id: string): Promise<any> {
     try {
-        const response = await fetch(`${COMPOSED_API_URL}/delete-profile/${auth_id}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const response = await authHttpClient.delete(`${COMPOSED_API_URL}/delete-profile/${auth_id}`);
 
         if (!response.ok) {
             return { success: false, message: 'Error deleting profile' };
@@ -143,15 +126,7 @@ export async function editProfile(data: CreateProfileData, auth_id: string): Pro
         formData.append("profile[background_file]", data.background_file);
     }
 
-  const response = await fetch(`${PROFILE_API_URL}/my-profile-update/${auth_id}`, {
-    method: "PATCH",
-    body: formData,
-  });
-
-//   const response = await fetch(`${PROFILE_API_URL}/create-profile`, {
-//     method: "POST",
-//     body: formData,
-//   });
+  const response = await authHttpClient.patchFormData(`${PROFILE_API_URL}/my-profile-update/${auth_id}`, formData);
 
   if (!response.ok) {
     throw new Error("Error editing profile");
