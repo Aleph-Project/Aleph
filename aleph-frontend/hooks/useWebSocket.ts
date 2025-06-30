@@ -29,7 +29,7 @@ interface UseWebSocketReturn {
   disconnect: () => void
 }
 
-export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSocketReturn {
+export function useWebSocket(url: string = 'wss://localhost/ws'): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentSong, setCurrentSong] = useState<Song | null>(null)
@@ -123,7 +123,7 @@ export function useWebSocket(url: string = 'ws://localhost:8081/ws'): UseWebSock
       // Agregar el user_id como query parameter para autenticación
       const wsUrl = `${url}?user_id=${encodeURIComponent(session.user.id)}`
       wsRef.current = new WebSocket(wsUrl)
-      
+      console.log(wsUrl);
       wsRef.current.onopen = () => {
         console.log('[WebSocket] Conectado a streaming-ms')
         setIsConnected(true)

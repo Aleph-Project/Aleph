@@ -15,7 +15,7 @@ services:
     networks:
       # private_net: 
       #   ipv4_address: 172.20.1.3
-      private_app_net: 
+      app_net: 
         ipv4_address: 172.20.2.3
   reviews-ms:
     container_name: reviews-ms
@@ -31,7 +31,7 @@ services:
     networks:
       # private_net: 
       #   ipv4_address: 172.20.1.4
-      private_app_net:
+      app_net:
         ipv4_address: 172.20.2.4
   music-ms:
     container_name: music-ms
@@ -48,7 +48,7 @@ services:
     networks:
       # private_net:
       #   ipv4_address: 172.20.1.6
-      private_app_net:
+      app_net:
         ipv4_address: 172.20.2.5
   streaming-ms:
     container_name: streaming-ms
@@ -59,8 +59,10 @@ services:
     networks:
       # public_net:
       #   ipv4_address: 172.20.0.5
-      private_app_net:
-        ipv4_address: 172.20.2.15
+      fe_net:
+        ipv4_address: 172.20.1.5
+      # app_net:
+      #   ipv4_address: 172.20.2.15
     # ports:
     #   - "8081:8080"  # Exponer WebSocket para conexión directa desde el frontend
     environment:
@@ -89,7 +91,7 @@ services:
     networks:
       # public_net:
       #   ipv4_address: 172.20.0.2
-      private_fe_net:
+      fe_net:
         ipv4_address: 172.20.1.3
     # ports:
     #   - "3000:3000"
@@ -108,9 +110,9 @@ services:
       #   ipv4_address: 172.20.0.3
       # private_net: 
       #   ipv4_address: 172.20.1.2
-      private_fe_net: 
+      fe_net: 
         ipv4_address: 172.20.1.4
-      private_app_net:
+      app_net:
         ipv4_address: 172.20.2.2
 
     # ports:
@@ -121,7 +123,7 @@ services:
     networks:
       # private_net:
       #   ipv4_address: 172.20.1.9
-      private_app_net:
+      app_net:
         ipv4_address: 172.20.2.6
     # ports:
     #   - "9092:9092"  
@@ -152,7 +154,7 @@ services:
     networks:
       # private_net:
       #   ipv4_address: 172.20.1.10
-      private_app_net:
+      app_net:
         ipv4_address: 172.20.2.7
   analysis-ms:
     container_name: analysis-ms
@@ -162,7 +164,7 @@ services:
     networks:
       # private_net:
       #   ipv4_address: 172.20.1.8
-      private_app_net:
+      app_net:
         ipv4_address: 172.20.2.8
     # ports:
     #   - "8001:8000"  
@@ -191,7 +193,7 @@ services:
     networks:
       # private_net:
       #   ipv4_address: 172.20.1.5
-      private_app_net:
+      app_net:
         ipv4_address: 172.20.2.9
     # ports:
     #   - "4000:4000"
@@ -203,7 +205,7 @@ services:
     networks:
       public_net:
         ipv4_address: 172.20.0.2
-      private_fe_net:
+      fe_net:
         ipv4_address: 172.20.1.2
     ports:
       - "443:443"
@@ -214,12 +216,13 @@ services:
 networks:
   public_net:
     driver: bridge
+    internal: false
     ipam: 
       config:
         - subnet: 172.20.0.0/26
           gateway: 172.20.0.1
   
-  private_fe_net: 
+  fe_net: 
     driver: bridge
     internal: false
     ipam:
@@ -227,7 +230,7 @@ networks:
         - subnet: 172.20.1.0/26
           gateway: 172.20.1.1
   
-  private_app_net:
+  app_net:
     driver: bridge
     internal: false
     ipam:
