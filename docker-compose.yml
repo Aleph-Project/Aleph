@@ -35,6 +35,41 @@ services:
       - MONGODB_TIMEOUT=10
       - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
       - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+  music-ms-a:
+    container_name: music-ms-a
+    build:
+      context: ./music-ms
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_NAME=${MONGODB_NAME}
+      - MONGODB_TIMEOUT=10
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+  music-ms-b:
+    container_name: music-ms-b
+    build:
+      context: ./music-ms
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_NAME=${MONGODB_NAME}
+      - MONGODB_TIMEOUT=10
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+  music-load-balancer:
+    image: nginx:latest
+    container_name: music-load-balancer
+    ports: 
+      - "8082:80"
+    volumes:
+      - ./music-load-balancer/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - music-ms
+      - music-ms-a
+      - music-ms-b
   streaming-ms:
     container_name: streaming-ms
     build:
@@ -74,6 +109,8 @@ services:
     build: 
       context: ./ApiGateway
       dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
     environment:
       - JWT_SECRET=${JWT_SECRET}
   aleph_message_queue:
