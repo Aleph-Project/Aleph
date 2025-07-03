@@ -59,7 +59,7 @@ class ReviewsController < ApplicationController
 
     # Obtener las reseñas de un perfil
     def reviews_by_profile
-        if params[:review][:auth_id].blank?
+        if params[:auth_id].blank?
             render json: { error: "Parameter 'auth_id' is required" }, status: :bad_request
             return
         end
