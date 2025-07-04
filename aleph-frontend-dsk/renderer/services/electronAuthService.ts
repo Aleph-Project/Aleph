@@ -1,5 +1,7 @@
 import axios from 'axios';
+import api from './api';
 import { jwtDecode } from 'jwt-decode';
+
 import { 
     storeAccessToken, 
     storeRefreshToken, 
@@ -75,7 +77,7 @@ export const checkAuth = async () => {
 // Solicita el envío del código de recuperación
 export async function requestResetCode(email: string) {
     try {
-        const res = await axios.post(`${API_URL}/forgot-password`, { email });
+        const res = await api.post(`${API_URL}/forgot-password`, { email });
         return { success: true, message: 'Reset code sent successfully' };
     } catch (error: any) {
         return {
@@ -88,7 +90,7 @@ export async function requestResetCode(email: string) {
 // Verifica el código recibido por correo
 export async function verifyResetCode(email: string, code: string) {
     try {
-        const res = await axios.post(`${API_URL}/verify-reset-code`, { email, code });
+        const res = await api.post(`${API_URL}/verify-reset-code`, { email, code });
         return { success: true, message: 'Reset code verified successfully' };
     } catch (error: any) {
         return {
@@ -100,7 +102,7 @@ export async function verifyResetCode(email: string, code: string) {
 
 export async function resetPassword(email: string, code: string, newPassword: string) {
     try {
-        const res = await axios.post(`${API_URL}/reset-password`, { email, code, newPassword });
+        const res = await api.post(`${API_URL}/reset-password`, { email, code, newPassword });
         return { success: true, message: 'Password reset successfully' };
     } catch (error: any) {
         return {
@@ -179,7 +181,7 @@ export const logout = async () => {
 
 export function activateAccount(token: string) {
     try {
-        const res = axios.post(`${API_URL}/activate`, { token });
+        const res = api.post(`${API_URL}/activate`, { token });
         return {
             success: true,
             message: 'Account activated successfully'

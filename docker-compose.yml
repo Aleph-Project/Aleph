@@ -100,7 +100,8 @@ services:
     #   - "3000:3000"
     depends_on:
       - music-ms
-      - streaming-ms      
+      - streaming-ms   
+
   apigateway:
     container_name: apigateway
     build: 
