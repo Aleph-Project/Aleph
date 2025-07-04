@@ -39,8 +39,8 @@ const handler = NextAuth({
             },
             async authorize(credentials) {
                 try {
-                    // Llamar al auth-ms 
-                    const res = await fetch(`${process.env.NEXTAUTH_URL}/api/v1/auth/login`, {
+                    // Llamar al auth-ms a través del API Gateway (URL interna de Docker)
+                    const res = await fetch(`http://apigateway:8080/api/v1/auth/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email: credentials?.email, password: credentials?.password })
@@ -90,8 +90,8 @@ const handler = NextAuth({
                         provider: 'google'
                     };
                     
-                    // Llamar al auth-ms a través del reverse proxy y API Gateway
-                    const authResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/v1/auth/google-login`, {
+                    // Llamar al auth-ms a través del API Gateway (URL interna de Docker)
+                    const authResponse = await fetch(`http://apigateway:8080/api/v1/auth/google-login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(googleUserData)
