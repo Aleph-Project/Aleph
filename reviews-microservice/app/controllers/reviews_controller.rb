@@ -59,7 +59,7 @@ class ReviewsController < ApplicationController
 
     # Obtener las reseñas de un perfil
     def reviews_by_profile
-        if params[:auth_id].blank?
+        if params[:review][:auth_id].blank?
             render json: { error: "Parameter 'auth_id' is required" }, status: :bad_request
             return
         end
@@ -76,7 +76,7 @@ class ReviewsController < ApplicationController
 
     # Borrar todas las reseñas de una cancion
     def delete_reviews_by_song
-        if params[:reviewed_object_id].blank?
+        if params[:review][:reviewed_object_id].blank?
             render json: { error: "Parameter 'reviewed_object_id' is required" }, status: :bad_request
             return
         end
