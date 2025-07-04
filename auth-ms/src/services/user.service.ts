@@ -97,11 +97,11 @@ export async function googleLogin(email: string, name: string, googleId: string)
   let user = await userRepository.findByEmail(email);
   
   if (!user) {
-    // Crear nuevo usuario para Google OAuth
+    // Crear nuevo usuario para Google OAuth - usar googleId como password
     user = await userRepository.create({ 
       name, 
       email, 
-      password: "", // Sin contraseña para usuarios de Google
+      password: googleId, // Usar googleId como password para cumplir con schema
       active: true, // Google ya verificó el email
       googleId 
     });
