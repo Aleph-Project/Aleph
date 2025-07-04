@@ -12,12 +12,13 @@ services:
       - AZURE_DB_USER=${AZURE_DB_USER}
       - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
       - AZURE_DB_HOST=${AZURE_DB_HOST}
-      - RAILS_ENV=test
     networks:
       # private_net: 
       #   ipv4_address: 172.20.1.3
-      app_net: 
-        ipv4_address: 172.20.2.3
+      private_net: 
+        ipv4_address: 172.20.1.9
+      ms_net:
+        ipv4_address: 172.20.2.4
   reviews-ms:
     container_name: reviews-ms
     build: 
@@ -29,12 +30,13 @@ services:
       - AZURE_DB_USER=${AZURE_DB_USER}
       - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
       - AZURE_DB_HOST=${AZURE_DB_HOST}
-      - RAILS_ENV=test
     networks:
       # private_net: 
       #   ipv4_address: 172.20.1.4
-      app_net:
-        ipv4_address: 172.20.2.4
+      private_net:
+        ipv4_address: 172.20.1.10
+      ms_net:
+        ipv4_address: 172.20.2.5
   music-ms:
     container_name: music-ms
     build:
@@ -50,8 +52,58 @@ services:
     networks:
       # private_net:
       #   ipv4_address: 172.20.1.6
-      app_net:
-        ipv4_address: 172.20.2.5
+      private_net:
+        ipv4_address: 172.20.1.13
+      ms_net:
+        ipv4_address: 172.20.2.7
+  music-ms-a:
+    container_name: music-ms-a
+    build:
+      context: ./music-ms
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.14
+      ms_net:
+        ipv4_address: 172.20.2.8
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_NAME=${MONGODB_NAME}
+      - MONGODB_TIMEOUT=10
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+  music-ms-b:
+    container_name: music-ms-b
+    build:
+      context: ./music-ms
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.15
+      ms_net:
+        ipv4_address: 172.20.2.9
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_NAME=${MONGODB_NAME}
+      - MONGODB_TIMEOUT=10
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+  music-load-balancer:
+    image: nginx:latest
+    container_name: music-load-balancer
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.12
+    # ports: 
+    #   - "8082:80"
+    volumes:
+      - ./music-load-balancer/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - music-ms
+      - music-ms-a
+      - music-ms-b
   streaming-ms:
     container_name: streaming-ms
     build:
@@ -61,8 +113,8 @@ services:
     networks:
       # public_net:
       #   ipv4_address: 172.20.0.5
-      fe_net:
-        ipv4_address: 172.20.1.5
+      private_net:
+        ipv4_address: 172.20.1.4
       # app_net:
       #   ipv4_address: 172.20.2.15
     # ports:
@@ -92,9 +144,9 @@ services:
     extra_hosts:
       - "localhost:host-gateway"  # Permite resolver localhost desde el contenedor
     networks:
-      # public_net:
-      #   ipv4_address: 172.20.0.3
-      fe_net:
+      public_net:
+        ipv4_address: 172.20.0.3
+      private_net:
         ipv4_address: 172.20.1.3
     # ports:
     #   - "3000:3000"
@@ -112,14 +164,10 @@ services:
     environment:
       - JWT_SECRET=${JWT_SECRET}
     networks:
-      # public_net:
-      #   ipv4_address: 172.20.0.3
-      # private_net: 
-      #   ipv4_address: 172.20.1.2
-      fe_net: 
-        ipv4_address: 172.20.1.4
-      app_net:
-        ipv4_address: 172.20.2.2
+      private_net: 
+        ipv4_address: 172.20.1.5
+      # app_net:
+      #   ipv4_address: 172.20.2.2
 
     # ports:
     #   - "8080:8080"
@@ -129,8 +177,8 @@ services:
     networks:
       # private_net:
       #   ipv4_address: 172.20.1.9
-      app_net:
-        ipv4_address: 172.20.2.6
+      private_net:
+        ipv4_address: 172.20.1.6
     # ports:
     #   - "9092:9092"  
     #   - "9093:9093"  
@@ -160,8 +208,10 @@ services:
     networks:
       # private_net:
       #   ipv4_address: 172.20.1.10
-      app_net:
-        ipv4_address: 172.20.2.7
+      private_net:
+        ipv4_address: 172.20.1.7
+      ms_net:
+        ipv4_address: 172.20.2.2
   analysis-ms:
     container_name: analysis-ms
     build:
@@ -170,8 +220,10 @@ services:
     networks:
       # private_net:
       #   ipv4_address: 172.20.1.8
-      app_net:
-        ipv4_address: 172.20.2.8
+      private_net:
+        ipv4_address: 172.20.1.8
+      ms_net:
+        ipv4_address: 172.20.2.3
     # ports:
     #   - "8001:8000"  
     environment:
@@ -199,8 +251,10 @@ services:
     networks:
       # private_net:
       #   ipv4_address: 172.20.1.5
-      app_net:
-        ipv4_address: 172.20.2.9
+      private_net:
+        ipv4_address: 172.20.1.11
+      ms_net:
+        ipv4_address: 172.20.2.6
     # ports:
     #   - "4000:4000"
   reverse-proxy:
@@ -211,7 +265,7 @@ services:
     networks:
       public_net:
         ipv4_address: 172.20.0.2
-      fe_net:
+      private_net:
         ipv4_address: 172.20.1.2
     ports:
       - "443:443"
@@ -228,7 +282,7 @@ networks:
         - subnet: 172.20.0.0/26
           gateway: 172.20.0.1
   
-  fe_net: 
+  private_net: 
     driver: bridge
     internal: true
     ipam:
@@ -236,7 +290,7 @@ networks:
         - subnet: 172.20.1.0/26
           gateway: 172.20.1.1
   
-  app_net:
+  ms_net:
     driver: bridge
     internal: false
     ipam:
