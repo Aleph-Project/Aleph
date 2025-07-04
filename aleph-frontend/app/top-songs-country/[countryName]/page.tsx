@@ -5,6 +5,7 @@ import Image from "next/image"
 import { Headphones, Music, FlagTriangleRight } from "lucide-react"
 import { useParams } from "next/navigation"
 import Flag from 'react-flagpack'
+import { authHttpClient } from "@/lib/httpClient"
 
 
 type TopSong = {
@@ -54,11 +55,24 @@ export default function TopCountryPage() {
     const fetchTopSongs = async () => {
       setLoading(true)
       try {
-        const response = await fetch(`/api/v1/analytics/top-songs-by-country?country=${countryName}&limit=10`)
+        const response = await authHttpClient.get(`/api/v1/analytics/top-songs-by-country?country=${countryName}&limit=10`)
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        
         const data = await response.json()
-        setTopSongs(data)
+        
+        // Verificar que data sea un array
+        if (Array.isArray(data)) {
+          setTopSongs(data)
+        } else {
+          console.error("La respuesta no es un array:", data)
+          setTopSongs([])
+        }
       } catch (error) {
         console.error(`Error al cargar el top de ${country.name}:`, error)
+        setTopSongs([])
       } finally {
         setLoading(false)
       }
@@ -83,7 +97,7 @@ export default function TopCountryPage() {
         <div className="absolute inset-0 overflow-hidden h-96">
           <div className="relative w-full h-full">
             <Image
-              src={topSongs[0]?.album_image_url || "/placeholder.svg"}
+              src={topSongs && topSongs.length > 0 ? topSongs[0]?.album_image_url || "/placeholder.svg" : "/placeholder.svg"}
               alt="Top song background"
               fill
               className="object-cover"
@@ -149,7 +163,7 @@ export default function TopCountryPage() {
       {/* Lista del top de canciones */}
       <div className="max-w-5xl mx-auto px-4 -mt-10 relative z-20">
         <div className="space-y-8">
-          {topSongs.map((song, index) => (
+          {topSongs && topSongs.length > 0 ? topSongs.map((song, index) => (
             <div key={index} className="flex items-center justify-center pt-4 pb-8 space-x-4">
               {/* Número grande en blanco intenso */}
               <div className="w-32 md:w-40 flex items-center justify-center">
@@ -260,7 +274,12 @@ export default function TopCountryPage() {
                 </div>
               </div>
             </div>
-          ))}
+          ))
+          : (
+            <div className="text-center py-12">
+              <p className="text-zinc-400 text-xl">No hay datos de top songs para {country.name}</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -278,7 +297,10 @@ export default function TopCountryPage() {
               </div>
               <p className="text-sm text-zinc-400 mb-1">Total de reproducciones</p>
               <p className="text-3xl font-bold">
-                {topSongs.reduce((sum, song) => sum + song.plays, 0).toLocaleString()}
+                {topSongs && topSongs.length > 0 
+                  ? topSongs.reduce((sum, song) => sum + song.plays, 0).toLocaleString()
+                  : "0"
+                }
               </p>
             </div>
             <div className="bg-zinc-800/70 rounded-xl p-6 flex flex-col items-center text-center">
@@ -293,7 +315,9 @@ export default function TopCountryPage() {
                 <FlagTriangleRight className="h-8 w-8 text-purple-500" />
               </div>
               <p className="text-sm text-zinc-400 mb-1">Canción más popular</p>
-              <p className="text-xl font-bold truncate max-w-full">{topSongs[0]?.title || "Cargando..."}</p>
+              <p className="text-xl font-bold truncate max-w-full">
+                {topSongs && topSongs.length > 0 ? topSongs[0]?.title : "Sin datos"}
+              </p>
             </div>
           </div>
         </div>

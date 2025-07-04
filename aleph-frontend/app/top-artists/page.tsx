@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Headphones, Users, Star, Mic } from "lucide-react"
+import { authHttpClient } from "@/lib/httpClient"
 
 // Tipo para la estructura de un artista en el top
 type TopArtist = {
@@ -21,11 +22,24 @@ export default function TopArtistasPage() {
     const fetchTopArtists = async () => {
       setLoading(true)
       try {
-        const response = await fetch("/api/v1/analytics/top-artists")
+        const response = await authHttpClient.get("/api/v1/analytics/top-artists")
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        
         const data = await response.json()
-        setTopArtists(data)
+        
+        // Verificar que data sea un array
+        if (Array.isArray(data)) {
+          setTopArtists(data)
+        } else {
+          console.error("La respuesta no es un array:", data)
+          setTopArtists([])
+        }
       } catch (error) {
         console.error("Error al cargar el top de artistas:", error)
+        setTopArtists([])
       } finally {
         setLoading(false)
       }
@@ -50,7 +64,7 @@ export default function TopArtistasPage() {
         <div className="absolute inset-0 overflow-hidden h-80">
           <div className="relative w-full h-full">
             <Image
-              src={topArtists[0]?.image || "/placeholder.svg"}
+              src={topArtists && topArtists.length > 0 ? topArtists[0]?.image || "/placeholder.svg" : "/placeholder.svg"}
               alt="Top artist background"
               fill
               className="object-cover"
@@ -96,7 +110,7 @@ export default function TopArtistasPage() {
       {/* Lista del top de artistas */}
       <div className="max-w-5xl mx-auto px-4 -mt-10 relative z-20">
         <div className="space-y-8">
-          {topArtists.map((artist, index) => (
+          {topArtists && topArtists.length > 0 ? topArtists.map((artist, index) => (
             <div key={index} className="flex items-center justify-center pt-4 pb-8 space-x-4">
               {/* Número grande en blanco intenso */}
               <div className="w-32 md:w-40 flex items-center justify-center">
@@ -213,7 +227,12 @@ export default function TopArtistasPage() {
                 </div>
               </div>
             </div>
-          ))}
+          ))
+          : (
+            <div className="text-center py-12">
+              <p className="text-zinc-400 text-xl">No hay datos de top artistas disponibles</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -228,7 +247,10 @@ export default function TopArtistasPage() {
               </div>
               <p className="text-sm text-zinc-400 mb-1">Total de reproducciones</p>
               <p className="text-3xl font-bold">
-                {topArtists.reduce((sum, artist) => sum + artist.plays, 0).toLocaleString()}
+                {topArtists && topArtists.length > 0 
+                  ? topArtists.reduce((sum, artist) => sum + artist.plays, 0).toLocaleString()
+                  : "0"
+                }
               </p>
             </div>
             <div className="bg-zinc-800/70 rounded-xl p-6 flex flex-col items-center text-center">
@@ -243,7 +265,9 @@ export default function TopArtistasPage() {
                 <Mic className="h-8 w-8 text-purple-500" />
               </div>
               <p className="text-sm text-zinc-400 mb-1">Artista más popular</p>
-              <p className="text-xl font-bold truncate max-w-full">{topArtists[0]?.artist || "Cargando..."}</p>
+              <p className="text-xl font-bold truncate max-w-full">
+                {topArtists && topArtists.length > 0 ? topArtists[0]?.artist : "Sin datos"}
+              </p>
             </div>
           </div>
         </div>

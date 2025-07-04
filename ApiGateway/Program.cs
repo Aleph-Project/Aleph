@@ -78,8 +78,15 @@ app.Use(async (context, next) =>
             return;
         }
         
-        // Aquí el middleware JWT ya validó el token automáticamente
-        // Si llegamos hasta aquí, el token es válido
+        // El middleware JWT ya procesó el token, ahora verificamos si es válido
+        if (!context.User.Identity?.IsAuthenticated ?? true)
+        {
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsync("{\"error\":\"Token inválido o expirado\"}");
+            return;
+        }
+        
+        // Si llegamos hasta aquí, el token es válido y está autenticado
     }
     
     await next();

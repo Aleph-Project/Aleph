@@ -76,7 +76,7 @@ class ReviewsController < ApplicationController
 
     # Borrar todas las reseñas de una cancion
     def delete_reviews_by_song
-        if params[:review][:reviewed_object_id].blank?
+        if params[:reviewed_object_id].blank?
             render json: { error: "Parameter 'reviewed_object_id' is required" }, status: :bad_request
             return
         end
