@@ -29,7 +29,7 @@ interface UseWebSocketReturn {
   disconnect: () => void
 }
 // 'wss://localhost/ws'
-export function useWebSocket(url: string = 'ws://streaming-ms:8080/ws'): UseWebSocketReturn {
+export function useWebSocket(url: string = 'wss://localhost/ws'): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentSong, setCurrentSong] = useState<Song | null>(null)

@@ -87,6 +87,7 @@ services:
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - APIGATEWAY_INT_URL=${APIGATEWAY_INT_URL}
       - NODE_TLS_REJECT_UNAUTHORIZED=0  # Acepta certificados self-signed para desarrollo
     extra_hosts:
       - "localhost:host-gateway"  # Permite resolver localhost desde el contenedor
