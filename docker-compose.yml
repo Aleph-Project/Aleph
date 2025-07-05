@@ -374,7 +374,7 @@ services:
       - "443:443"
     depends_on:
       # - apigateway
-      - apigateway-load-balancer 
+      # - apigateway-load-balancer 
       - aleph-frontend
 
   auth-load-balancer:
