@@ -44,8 +44,9 @@ builder.Services.AddReverseProxy()
 
 var app = builder.Build();
 
+// COMENTADO TEMPORALMENTE PARA TESTING DEL CACHE
 // Middleware de autenticación
-app.UseAuthentication();
+// app.UseAuthentication();
 
 // Middleware personalizado para excluir rutas de auth
 app.Use(async (context, next) =>
@@ -66,7 +67,9 @@ app.Use(async (context, next) =>
         return;
     }
     
+    // COMENTADO TEMPORALMENTE PARA TESTING DEL CACHE
     // Para todas las demás rutas API, verificar el token
+    /*
     if (path.StartsWith("/api/"))
     {
         var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
@@ -88,6 +91,7 @@ app.Use(async (context, next) =>
         
         // Si llegamos hasta aquí, el token es válido y está autenticado
     }
+    */
     
     await next();
 });
