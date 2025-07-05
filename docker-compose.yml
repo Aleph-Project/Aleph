@@ -283,7 +283,7 @@ services:
         ipv4_address: 172.20.1.8
       ms_net:
         ipv4_address: 172.20.2.3
-    # ports:
+    #ports:
     #   - "8001:8000"  
     environment:
       - DB_HOST=${AZURE_DB_HOST}
@@ -291,6 +291,8 @@ services:
       - DB_NAME=${ANALYSIS_DB_NAME}
       - DB_USER=${AZURE_DB_USER}
       - DB_PASSWORD=${AZURE_DB_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
   auth-ms:
     container_name: auth-ms
     build:
@@ -415,6 +417,13 @@ services:
       - apigateway
       - apigateway-a
       - apigateway-b
+  
+  analysis-cache:
+    image: redis:7
+    container_name: analysis-cache
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.25
 
 networks:
   public_net:

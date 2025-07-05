@@ -1,6 +1,12 @@
 from db import get_connection
+from cache import get_cache, set_cache
 
 def get_top_songs(limit: int = 10):
+    cache_key = f"top_songs:{limit}"
+    cached_result = get_cache(cache_key)
+    if cached_result:
+        return cached_result
+    
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -19,7 +25,9 @@ def get_top_songs(limit: int = 10):
     cursor.close()
     conn.close()
 
-    return [{"title": r[0], "album_image_url": r[1], "plays": r[2]} for r in rows]
+    result = [{"title": r[0], "album_image_url": r[1], "plays": r[2]} for r in rows]
+    set_cache(cache_key, result, expire_seconds=300)
+    return result
 
 
 
