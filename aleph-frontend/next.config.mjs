@@ -20,7 +20,7 @@ const nextConfig = {
       },
       {
         source: '/api/:path*',
-        destination: 'http://apigateway:8080/api/:path*',
+        destination: 'http://apigateway-load-balancer:80/api/:path*',
       },
       // Ruta alternativa para evitar bloqueos por extensiones
       {
