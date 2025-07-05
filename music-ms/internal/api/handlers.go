@@ -26,13 +26,15 @@ import (
 type Handler struct {
 	musicService   *service.MusicService
 	spotifyService *service.SpotifyService
+	cacheService   *service.CacheService
 }
 
 // NewHandler crea un nuevo handler
-func NewHandler(musicService *service.MusicService, spotifyService *service.SpotifyService) *Handler {
+func NewHandler(musicService *service.MusicService, spotifyService *service.SpotifyService, cacheService *service.CacheService) *Handler {
 	return &Handler{
 		musicService:   musicService,
 		spotifyService: spotifyService,
+		cacheService:   cacheService,
 	}
 }
 
@@ -289,6 +291,17 @@ func (h *Handler) ImportArtistFromSpotify(c *gin.Context) {
 		})
 	}
 
+	// 🔄 INVALIDACIÓN AUTOMÁTICA DE CACHE
+	if h.cacheService != nil {
+		ctx := c.Request.Context()
+		// Invalidar cache de álbumes, canciones y artistas
+		h.cacheService.DeletePattern(ctx, h.cacheService.GenerateKey("albums", "*"))
+		h.cacheService.DeletePattern(ctx, h.cacheService.GenerateKey("songs", "*"))
+		h.cacheService.DeletePattern(ctx, h.cacheService.GenerateKey("artists", "*"))
+
+		fmt.Printf("🔄 CACHE INVALIDATED: Artist imported, cache cleared\n")
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Artist imported successfully",
 		"artist": map[string]interface{}{
@@ -513,6 +526,16 @@ func (h *Handler) ImportAlbumFromSpotify(c *gin.Context) {
 		}
 	}
 
+	// 🔄 INVALIDACIÓN AUTOMÁTICA DE CACHE
+	if h.cacheService != nil {
+		// Invalidar cache de álbumes, canciones y artistas
+		h.cacheService.DeletePattern(ctx, h.cacheService.GenerateKey("albums", "*"))
+		h.cacheService.DeletePattern(ctx, h.cacheService.GenerateKey("songs", "*"))
+		h.cacheService.DeletePattern(ctx, h.cacheService.GenerateKey("artists", "*"))
+
+		fmt.Printf("🔄 CACHE INVALIDATED: Album imported, cache cleared\n")
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Album imported successfully",
 		"album": map[string]interface{}{
@@ -572,8 +595,35 @@ func (h *Handler) GetSongs(c *gin.Context) {
 
 	fmt.Printf("Parámetros de paginación: limit=%d, skip=%d\n", limit, skip)
 
-	// Llamar al servicio para obtener las canciones
-	songs, err := h.musicService.GetSongs(ctx, limit, skip)
+	// Usar cache si está disponible
+	var songs []models.SongWithDetails
+	var err error
+
+	if h.cacheService != nil {
+		// Implementar cache manual para GetSongs
+		cacheKey := h.cacheService.GenerateKey("songs", fmt.Sprintf("limit_%d_skip_%d", limit, skip))
+
+		// Intentar obtener del cache
+		err = h.cacheService.Get(ctx, cacheKey, &songs)
+		if err == nil {
+			fmt.Printf("✅ CACHE HIT: GetSongs(limit=%d, skip=%d)\n", limit, skip)
+		} else {
+			// Cache miss - obtener de la base de datos
+			fmt.Printf("🔍 CACHE MISS: GetSongs(limit=%d, skip=%d) - consultando DB\n", limit, skip)
+			songs, err = h.musicService.GetSongs(ctx, limit, skip)
+			if err == nil {
+				// Guardar en cache para próximas consultas
+				if cacheErr := h.cacheService.Set(ctx, cacheKey, songs); cacheErr != nil {
+					fmt.Printf("⚠️ Error guardando en cache: %v\n", cacheErr)
+				}
+			}
+		}
+	} else {
+		// Fallback al servicio regular
+		songs, err = h.musicService.GetSongs(ctx, limit, skip)
+		fmt.Printf("🔄 Usando MusicService regular (sin cache)\n")
+	}
+
 	if err != nil {
 		fmt.Printf("Error al obtener las canciones: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener las canciones: " + err.Error()})
@@ -803,6 +853,22 @@ func (h *Handler) UpdateSongAudioURL(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar la canción"})
 		return
+	}
+
+	// 🔄 INVALIDACIÓN AUTOMÁTICA DE CACHE
+	if h.cacheService != nil {
+		ctx := c.Request.Context()
+
+		// Invalidar cache específico de esta canción
+		songCacheKey := h.cacheService.GenerateKey("song", songID)
+		h.cacheService.Delete(ctx, songCacheKey)
+
+		// Invalidar cache de listados de canciones (porque pueden incluir esta canción)
+		songsPattern := h.cacheService.GenerateKey("songs", "*")
+		h.cacheService.DeletePattern(ctx, songsPattern)
+
+		// Log de invalidación
+		fmt.Printf("🔄 CACHE INVALIDATED: Song %s updated, cache cleared\n", songID)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -1238,4 +1304,40 @@ func containsObjectID(list []primitive.ObjectID, id primitive.ObjectID) bool {
 		}
 	}
 	return false
+}
+
+// GetCacheStats obtiene estadísticas del cache
+func (h *Handler) GetCacheStats(c *gin.Context) {
+	if h.cacheService == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Cache not available"})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	stats, err := h.cacheService.GetStats(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error getting cache stats", "details": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"cache_stats": stats})
+}
+
+// ClearCache limpia todo el cache
+func (h *Handler) ClearCache(c *gin.Context) {
+	if h.cacheService == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Cache not available"})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	// Limpiar todo el cache del namespace de música
+	err := h.cacheService.DeletePattern(ctx, "aleph:music:*")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error clearing cache", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Cache cleared successfully"})
 }
