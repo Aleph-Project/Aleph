@@ -8,6 +8,7 @@ class ReplicasController < ApplicationController
 
         @replica = Replica.new(replicas_params)
         if @replica.save
+            invalidate_replica_cache(@replica)
             render json: @replica, status: :created
         else
             render json: { error: 'Failed to create replica', details: @replica.errors.full_messages }, status: :unprocessable_entity
@@ -20,10 +21,19 @@ class ReplicasController < ApplicationController
             return
         end
 
+        cache = CacheService.new
+        cache_key = "replicas:review:#{params[:review_id]}"
+
+        cached = cache.fetch(cache_key)
+        if cached
+            render json: cached and return
+        end
+
         replicas = Replica.where(review_id: params[:review_id])
         if replicas.empty?
             render json: { message: 'No replicas found for this review' }, status: :not_found
         else
+            cache.write(cache_key, replicas)
             render json: replicas, status: :ok
         end
     end
@@ -38,6 +48,7 @@ class ReplicasController < ApplicationController
         if replicas.empty?
             render json: { message: 'No replicas found for this profile' }, status: :not_found
         else
+            replicas.each { |replica| invalidate_replica_cache(replica) }
             replicas.destroy_all
             render json: { message: 'All replicas for the profile deleted successfully' }, status: :ok
         end
@@ -46,6 +57,16 @@ class ReplicasController < ApplicationController
 
     def replicas_params
         params.permit(:review_id, :auth_id, :replica_body)
+    end
+
+    def invalidate_replica_cache(replica)
+        cache = CacheService.new
+        
+        #réplicas por review
+        cache.delete("replicas:review:#{replica.review_id}")
+        
+        #réplicas por perfil
+        cache.delete("replicas:profile:#{replica.auth_id}")
     end
 
 end
