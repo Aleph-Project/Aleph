@@ -441,7 +441,7 @@ services:
     container_name: analysis-cache
     networks:
       private_net:
-        ipv4_address: 172.20.1.25
+        ipv4_address: 172.20.1.26
 
   aleph-redis:
     image: redis:7-alpine
