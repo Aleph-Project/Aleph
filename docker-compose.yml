@@ -4,6 +4,7 @@ services:
     build: 
       context: ./profile-microservice
       dockerfile: Dockerfile-dev
+    restart: unless-stopped
     volumes:
       - ./profile-microservice:/usr/src/app
     environment:
@@ -24,6 +25,7 @@ services:
     build:
       context: ./profile-microservice
       dockerfile: Dockerfile-dev
+    restart: unless-stopped
     volumes:
       - ./profile-microservice:/usr/src/app
     environment:
@@ -42,6 +44,7 @@ services:
     build:
       context: ./profile-microservice
       dockerfile: Dockerfile-dev
+    restart: unless-stopped
     volumes:
       - ./profile-microservice:/usr/src/app
     environment:
