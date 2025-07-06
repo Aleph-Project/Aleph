@@ -99,3 +99,29 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 |Lógica|```aleph_profile_ms```, ```aleph_music_ms```, ```aleph_reviews_ms```, ```aleph_analysis_ms```, ```aleph_queue_consumer```, ```aleph_auth_ms```|
 |Datos|```aleph_profile_db```, ```aleph_music_db```, ```aleph_reviews_db```, ```aleph_analysis_db```, ```aleph_auth_db```, ```aleph_profile_bk```, ```aleph_music_bk```, ```aleph_streaming_bk```|
 
+
+## 6. Quality Attributes (Security)
+## 6.1. Secure Chanel Pattern
+
+## 6.2 Reverse Proxy Pattern
+## 6.3 Network Segmentation Pattern
+### Scenario:
+| Elemento         | Descripción del Comportamiento del Sistema                                                                                                                                    |
+|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Source**       | Un atacante o servicio no autorizado ubicado en la red `public_net` intenta acceder directamente a un microservicio interno ubicado en la red `private_net`.         |
+| **Stimulus**     | El atacante realiza una petición HTTP o un intento de conexión TCP/UDP desde una red externa hacia un microservicio privado (ej. `auth-ms`, `music-ms`).                              |
+| **Environment**  | El sistema de red Docker con redes segmentadas como: `public_net`, `private_net`, `ms_net`. |
+| **Artifact**     | Microservicios internos (como `aleph_ag`) que están definidos únicamente en `private_net`.                                   |
+| **Response**     | **Bloqueo de conexión por aislamiento de red** El sistema bloqueará el intento de acceso, ya que Docker impide la comunicación entre contenedores que no compartan la misma red. Dado a este comportamiento, el atacante no podrá acceder al microservicio interno. |
+| **Response Measure** | **Tasa de Éxito.** Se cálcula la tasa de éxito de acuerdo al número de intentos de conexión provinientes de redes no autorizadas, que fueron efectivamente bloqueadas por la segmentación de red. |
+
+## 6.4 Tokens Pattern
+### Scenario:
+| Elemento             | Descripción del Comportamiento del Sistema                                                                                                                                                       |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Source**           | Un usuario no autenticado (Posible atacante) intenta acceder a un microservicio protegido (`auth-ms`, `profile-ms`, `music-ms`, etc.) mediante una solicitud HTTP. |
+| **Stimulus**         | Solicitudes HTTP enviadas con Tokens JWT inválidos.                                                        |
+| **Environment**      | Sistema de microservicios desplegado con Docker, donde todas las solicitudes pasan a través del API Gateway `aleph_ag`, el cual se encarga de validar los tokens.                          |
+| **Artifact**         | El componente `aleph_ag`, siendo responsable de validar los tokens antes de reenviar la petición al microservicio correspondiente.                                |
+| **Response**         | El API Gateway `aleph_ag` rechaza la solicitud si el token es inválido o ha expirado, bloqueando el acceso.         |
+| **Response Measure** | **Cantidad de peticiones bloqueadas por autenticación fallida**, ya sea por tokens inválidos o que hayan expirado.                                          |
