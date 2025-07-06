@@ -186,7 +186,7 @@ class ReviewsController < ApplicationController
         end
 
         cache = CacheService.new
-        cache_key = "reviews:album:public:#{params[:reviewed_object_id]}"
+        cache_key = "reviews:profile:all:#{params[:reviewed_object_id]}"
 
         cached = cache.fetch(cache_key)
         if cached
@@ -200,7 +200,7 @@ class ReviewsController < ApplicationController
         if @reviews.empty?
             render json: { message: 'No reviews found for this profile' }, status: :not_found
         else
-            cache.write(cache_key, reviews)
+            cache.write(cache_key, @reviews)
             render json: @reviews, status: :ok
         end
     end
@@ -276,10 +276,10 @@ class ReviewsController < ApplicationController
         cache = CacheService.new
         #perfiles
         cache.delete("reviews:profile:#{review.auth_id}")
-        #todas
+        #reviews por perfil (todas)
         cache.delete("reviews:profile:all:#{review.auth_id}")
         
-        #reviews por canción o álbum
+        #reeviews por canción o álbum
         if review.is_song
             cache.delete("reviews:song:public:#{review.reviewed_object_id}")
         else

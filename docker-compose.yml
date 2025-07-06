@@ -66,6 +66,10 @@ services:
       - AZURE_DB_USER=${AZURE_DB_USER}
       - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
       - AZURE_DB_HOST=${AZURE_DB_HOST}
+      - REDIS_HOST=reviews-redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - CACHE_TTL_SECONDS=300
     networks:
       # private_net: 
       #   ipv4_address: 172.20.1.4
