@@ -110,9 +110,9 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 |------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Source**       | Un atacante o servicio no autorizado ubicado en la red `public_net` intenta acceder directamente a un microservicio interno ubicado en la red `private_net`.         |
 | **Stimulus**     | El atacante realiza una petición HTTP o un intento de conexión TCP/UDP desde una red externa hacia un microservicio o componente privado (ej. `aleph_ag`).                              |
-| **Environment**  | El sistema de red Docker con redes segmentadas como: `public_net`, `private_net`, `ms_net`. |
+| **Environment**  | El sistema está desplegado en Docker con redes virtuales segmentadas: `public_net`, `private_net` y `ms_net`. Los contenedores en `private_net` están completamente aislados de `public_net`. <br><br>Además, los servicios en `public_net` no exponen puertos al host, por lo que no pueden ser accedidos directamente desde fuera del entorno Docker. Las redes públicas están configuradas para permitir únicamente el tráfico saliente *(inside-out)*, bloqueando accesos que no estén autorizados. |
 | **Artifact**     | Microservicios internos (como `aleph_ag`) que están definidos únicamente en `private_net`.                                   |
-| **Response**     | **Bloqueo de conexión por aislamiento de red** El sistema bloqueará el intento de acceso, ya que Docker impide la comunicación entre contenedores que no compartan la misma red. Dado a este comportamiento, el atacante no podrá acceder al microservicio interno. |
+| **Response**     | **Bloqueo de conexión por aislamiento de red** El sistema impide que un contenedor acceda a otro que no comparta la misma red. Docker, automáticamente bloquea la comunicación entre redes distintas, así evitando el acceso de puntos no autorizados a servicios importantes.|
 | **Response Measure** | **Tasa de Éxito.** Se cálcula la tasa de éxito de acuerdo al número de intentos de conexión provinientes de redes no autorizadas, que fueron efectivamente bloqueadas por la segmentación de red. |
 
 ## 6.4 Tokens Pattern
