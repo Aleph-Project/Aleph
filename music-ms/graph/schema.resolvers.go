@@ -15,6 +15,19 @@ import (
 
 // Songs is the resolver for the songs field.
 func (r *queryResolver) Songs(ctx context.Context) ([]*model.Song, error) {
+	const cacheKey = "aleph:music:songs:all"
+
+	// Intentar obtener desde cache
+	if r.Resolver.CacheService != nil {
+		var cachedSongs []*model.Song
+		if err := r.Resolver.CacheService.Get(ctx, cacheKey, &cachedSongs); err == nil {
+			fmt.Printf("✅ CACHE HIT: GraphQL Songs()\n")
+			return cachedSongs, nil
+		}
+		fmt.Printf("🔍 CACHE MISS: GraphQL Songs()\n")
+	}
+
+	// Obtener desde DB
 	songsData, err := r.Resolver.MusicService.GetSongs(ctx, 0, 0)
 	if err != nil {
 		return nil, err
@@ -56,11 +69,30 @@ func (r *queryResolver) Songs(ctx context.Context) ([]*model.Song, error) {
 		}
 		songs = append(songs, song)
 	}
+
+	// Guardar en cache
+	if r.Resolver.CacheService != nil {
+		r.Resolver.CacheService.Set(ctx, cacheKey, songs)
+	}
+
 	return songs, nil
 }
 
 // Song is the resolver for the song field.
 func (r *queryResolver) Song(ctx context.Context, id string) (*model.Song, error) {
+	cacheKey := fmt.Sprintf("aleph:music:song:%s", id)
+
+	// Intentar obtener desde cache
+	if r.Resolver.CacheService != nil {
+		var cachedSong *model.Song
+		if err := r.Resolver.CacheService.Get(ctx, cacheKey, &cachedSong); err == nil {
+			fmt.Printf("✅ CACHE HIT: GraphQL Song(%s)\n", id)
+			return cachedSong, nil
+		}
+		fmt.Printf("🔍 CACHE MISS: GraphQL Song(%s)\n", id)
+	}
+
+	// Obtener desde DB
 	song, err := r.Resolver.MusicService.GetSong(ctx, id)
 	if err != nil {
 		return nil, err
@@ -91,7 +123,7 @@ func (r *queryResolver) Song(ctx context.Context, id string) (*model.Song, error
 		})
 	}
 
-	return &model.Song{
+	result := &model.Song{
 		ID:          song.Song.ID.Hex(),
 		Title:       song.Song.Title,
 		Duration:    song.Song.Duration,
@@ -103,11 +135,31 @@ func (r *queryResolver) Song(ctx context.Context, id string) (*model.Song, error
 		UpdatedAt:   strPtr(song.Song.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		Album:       album,
 		Artists:     artists,
-	}, nil
+	}
+
+	// Guardar en cache
+	if r.Resolver.CacheService != nil {
+		r.Resolver.CacheService.Set(ctx, cacheKey, result)
+	}
+
+	return result, nil
 }
 
 // Albums is the resolver for the albums field.
 func (r *queryResolver) Albums(ctx context.Context) ([]*model.Album, error) {
+	const cacheKey = "aleph:music:albums:all"
+
+	// Intentar obtener desde cache
+	if r.Resolver.CacheService != nil {
+		var cachedAlbums []*model.Album
+		if err := r.Resolver.CacheService.Get(ctx, cacheKey, &cachedAlbums); err == nil {
+			fmt.Printf("✅ CACHE HIT: GraphQL Albums()\n")
+			return cachedAlbums, nil
+		}
+		fmt.Printf("🔍 CACHE MISS: GraphQL Albums()\n")
+	}
+
+	// Obtener desde DB
 	albumsData, err := r.Resolver.MusicService.GetAlbums(ctx)
 	if err != nil {
 		return nil, err
@@ -130,11 +182,30 @@ func (r *queryResolver) Albums(ctx context.Context) ([]*model.Album, error) {
 			ImageURL:    strPtr(a.ImageURL),
 		})
 	}
+
+	// Guardar en cache
+	if r.Resolver.CacheService != nil {
+		r.Resolver.CacheService.Set(ctx, cacheKey, albums)
+	}
+
 	return albums, nil
 }
 
 // Album is the resolver for the album field.
 func (r *queryResolver) Album(ctx context.Context, id string) (*model.Album, error) {
+	cacheKey := fmt.Sprintf("aleph:music:album:%s", id)
+
+	// Intentar obtener desde cache
+	if r.Resolver.CacheService != nil {
+		var cachedAlbum *model.Album
+		if err := r.Resolver.CacheService.Get(ctx, cacheKey, &cachedAlbum); err == nil {
+			fmt.Printf("✅ CACHE HIT: GraphQL Album(%s)\n", id)
+			return cachedAlbum, nil
+		}
+		fmt.Printf("🔍 CACHE MISS: GraphQL Album(%s)\n", id)
+	}
+
+	// Obtener desde DB
 	album, err := r.Resolver.MusicService.GetAlbum(ctx, id)
 	if err != nil {
 		return nil, err
@@ -177,7 +248,7 @@ func (r *queryResolver) Album(ctx context.Context, id string) (*model.Album, err
 		})
 	}
 
-	return &model.Album{
+	result := &model.Album{
 		ID:          album.ID.Hex(),
 		Title:       album.Title,
 		ReleaseDate: strPtr(album.ReleaseDate),
@@ -189,11 +260,31 @@ func (r *queryResolver) Album(ctx context.Context, id string) (*model.Album, err
 		ImageURL:    strPtr(album.ImageURL),
 		Songs:       songs,
 		Artists:     artists,
-	}, nil
+	}
+
+	// Guardar en cache
+	if r.Resolver.CacheService != nil {
+		r.Resolver.CacheService.Set(ctx, cacheKey, result)
+	}
+
+	return result, nil
 }
 
 // Artists is the resolver for the artists field.
 func (r *queryResolver) Artists(ctx context.Context) ([]*model.Artist, error) {
+	const cacheKey = "aleph:music:artists:all"
+
+	// Intentar obtener desde cache
+	if r.Resolver.CacheService != nil {
+		var cachedArtists []*model.Artist
+		if err := r.Resolver.CacheService.Get(ctx, cacheKey, &cachedArtists); err == nil {
+			fmt.Printf("✅ CACHE HIT: GraphQL Artists()\n")
+			return cachedArtists, nil
+		}
+		fmt.Printf("🔍 CACHE MISS: GraphQL Artists()\n")
+	}
+
+	// Obtener desde DB
 	artistsData, err := r.Resolver.MusicService.GetArtists(ctx, 0, 0) // 0,0 para sin paginación
 	if err != nil {
 		return nil, err
@@ -211,11 +302,30 @@ func (r *queryResolver) Artists(ctx context.Context) ([]*model.Artist, error) {
 			UpdatedAt:  strPtr(a.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		})
 	}
+
+	// Guardar en cache
+	if r.Resolver.CacheService != nil {
+		r.Resolver.CacheService.Set(ctx, cacheKey, artists)
+	}
+
 	return artists, nil
 }
 
 // Artist is the resolver for the artist field.
 func (r *queryResolver) Artist(ctx context.Context, id string) (*model.Artist, error) {
+	cacheKey := fmt.Sprintf("aleph:music:artist:%s", id)
+
+	// Intentar obtener desde cache
+	if r.Resolver.CacheService != nil {
+		var cachedArtist *model.Artist
+		if err := r.Resolver.CacheService.Get(ctx, cacheKey, &cachedArtist); err == nil {
+			fmt.Printf("✅ CACHE HIT: GraphQL Artist(%s)\n", id)
+			return cachedArtist, nil
+		}
+		fmt.Printf("🔍 CACHE MISS: GraphQL Artist(%s)\n", id)
+	}
+
+	// Obtener desde DB
 	artist, err := r.Resolver.MusicService.GetArtistWithDetails(ctx, id)
 	if err != nil {
 		return nil, err
@@ -279,7 +389,7 @@ func (r *queryResolver) Artist(ctx context.Context, id string) (*model.Artist, e
 		})
 	}
 
-	return &model.Artist{
+	result := &model.Artist{
 		ID:         artist.ID.Hex(),
 		Name:       artist.Name,
 		SpotifyID:  strPtr(artist.SpotifyID),
@@ -290,11 +400,31 @@ func (r *queryResolver) Artist(ctx context.Context, id string) (*model.Artist, e
 		UpdatedAt:  strPtr(artist.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		Albums:     albums,
 		Songs:      []*model.Song{}, // Las canciones se resuelven por separado si es necesario
-	}, nil
+	}
+
+	// Guardar en cache
+	if r.Resolver.CacheService != nil {
+		r.Resolver.CacheService.Set(ctx, cacheKey, result)
+	}
+
+	return result, nil
 }
 
 // Genres is the resolver for the genres field.
 func (r *queryResolver) Genres(ctx context.Context) ([]*model.Genre, error) {
+	const cacheKey = "aleph:music:genres:all"
+
+	// Intentar obtener desde cache
+	if r.Resolver.CacheService != nil {
+		var cachedGenres []*model.Genre
+		if err := r.Resolver.CacheService.Get(ctx, cacheKey, &cachedGenres); err == nil {
+			fmt.Printf("✅ CACHE HIT: GraphQL Genres()\n")
+			return cachedGenres, nil
+		}
+		fmt.Printf("🔍 CACHE MISS: GraphQL Genres()\n")
+	}
+
+	// Obtener desde DB
 	genresData, err := r.Resolver.MusicService.GetGenres(ctx)
 	if err != nil {
 		return nil, err
@@ -328,11 +458,30 @@ func (r *queryResolver) Genres(ctx context.Context) ([]*model.Genre, error) {
 			Count: count,
 		})
 	}
+
+	// Guardar en cache
+	if r.Resolver.CacheService != nil {
+		r.Resolver.CacheService.Set(ctx, cacheKey, genres)
+	}
+
 	return genres, nil
 }
 
 // Genre is the resolver for the genre field.
 func (r *queryResolver) Genre(ctx context.Context, id string) (*model.Genre, error) {
+	cacheKey := fmt.Sprintf("aleph:music:genre:%s", id)
+
+	// Intentar obtener desde cache
+	if r.Resolver.CacheService != nil {
+		var cachedGenre *model.Genre
+		if err := r.Resolver.CacheService.Get(ctx, cacheKey, &cachedGenre); err == nil {
+			fmt.Printf("✅ CACHE HIT: GraphQL Genre(%s)\n", id)
+			return cachedGenre, nil
+		}
+		fmt.Printf("🔍 CACHE MISS: GraphQL Genre(%s)\n", id)
+	}
+
+	// Obtener desde DB
 	genreData, err := r.Resolver.MusicService.GetGenreByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -342,16 +491,37 @@ func (r *queryResolver) Genre(ctx context.Context, id string) (*model.Genre, err
 		c := int(v.(int32))
 		count = &c
 	}
-	return &model.Genre{
+
+	result := &model.Genre{
 		ID:    genreData["id"].(string),
 		Name:  genreData["name"].(string),
 		Slug:  genreData["slug"].(string),
 		Count: count,
-	}, nil
+	}
+
+	// Guardar en cache
+	if r.Resolver.CacheService != nil {
+		r.Resolver.CacheService.Set(ctx, cacheKey, result)
+	}
+
+	return result, nil
 }
 
 // Categories is the resolver for the categories field.
 func (r *queryResolver) Categories(ctx context.Context) ([]*model.Category, error) {
+	const cacheKey = "aleph:music:categories:all"
+
+	// Intentar obtener desde cache
+	if r.Resolver.CacheService != nil {
+		var cachedCategories []*model.Category
+		if err := r.Resolver.CacheService.Get(ctx, cacheKey, &cachedCategories); err == nil {
+			fmt.Printf("✅ CACHE HIT: GraphQL Categories()\n")
+			return cachedCategories, nil
+		}
+		fmt.Printf("🔍 CACHE MISS: GraphQL Categories()\n")
+	}
+
+	// Obtener desde DB
 	categoriesData, err := r.Resolver.MusicService.GetCategories(ctx)
 	if err != nil {
 		return nil, err
@@ -373,11 +543,30 @@ func (r *queryResolver) Categories(ctx context.Context) ([]*model.Category, erro
 			ImageURL: imageURL,
 		})
 	}
+
+	// Guardar en cache
+	if r.Resolver.CacheService != nil {
+		r.Resolver.CacheService.Set(ctx, cacheKey, categories)
+	}
+
 	return categories, nil
 }
 
 // Category is the resolver for the category field.
 func (r *queryResolver) Category(ctx context.Context, id string) (*model.Category, error) {
+	cacheKey := fmt.Sprintf("aleph:music:category:%s", id)
+
+	// Intentar obtener desde cache
+	if r.Resolver.CacheService != nil {
+		var cachedCategory *model.Category
+		if err := r.Resolver.CacheService.Get(ctx, cacheKey, &cachedCategory); err == nil {
+			fmt.Printf("✅ CACHE HIT: GraphQL Category(%s)\n", id)
+			return cachedCategory, nil
+		}
+		fmt.Printf("🔍 CACHE MISS: GraphQL Category(%s)\n", id)
+	}
+
+	// Obtener desde DB
 	categoriesData, err := r.Resolver.MusicService.GetCategories(ctx)
 	if err != nil {
 		return nil, err
@@ -392,12 +581,19 @@ func (r *queryResolver) Category(ctx context.Context, id string) (*model.Categor
 			if c.ImageURL != "" {
 				imageURL = &c.ImageURL
 			}
-			return &model.Category{
+			result := &model.Category{
 				ID:       c.ID.Hex(),
 				Name:     c.Name,
 				Slug:     slug,
 				ImageURL: imageURL,
-			}, nil
+			}
+
+			// Guardar en cache
+			if r.Resolver.CacheService != nil {
+				r.Resolver.CacheService.Set(ctx, cacheKey, result)
+			}
+
+			return result, nil
 		}
 	}
 	return nil, fmt.Errorf("Category not found")
@@ -508,14 +704,14 @@ func (r *queryResolver) ArtistsByGenre(ctx context.Context, genre string) ([]*mo
 		}
 
 		result = append(result, &model.Artist{
-			ID:         artistDetails.ID.Hex(),
-			Name:       artistDetails.Name,
-			SpotifyID:  strPtr(artistDetails.SpotifyID),
-			ImageURL:   strPtr(artistDetails.ImageURL),
-			Genres:     artistDetails.Genres,
-			Popularity: &artistDetails.Popularity,
-			CreatedAt:  strPtr(artistDetails.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
-			UpdatedAt:  strPtr(artistDetails.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			ID:         artist.ID.Hex(),
+			Name:       artist.Name,
+			SpotifyID:  strPtr(artist.SpotifyID),
+			ImageURL:   strPtr(artist.ImageURL),
+			Genres:     artist.Genres,
+			Popularity: &artist.Popularity,
+			CreatedAt:  strPtr(artist.CreatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			UpdatedAt:  strPtr(artist.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 			Albums:     albums,
 			Songs:      songs,
 		})
