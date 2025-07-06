@@ -7,4 +7,5 @@ import "github.com/angel/music-ms/internal/service"
 
 type Resolver struct {
 	MusicService *service.MusicService
+	CacheService *service.CacheService
 }

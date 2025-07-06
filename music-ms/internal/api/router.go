@@ -94,6 +94,9 @@ func SetupRouter(db *mongo.Database) *gin.Engine {
 			music.GET("/genres/:id", handler.GetGenreByID)
 			music.GET("/genres/slug/:slug", handler.GetGenreBySlug)
 
+			// Rutas de categorías
+			music.GET("/categories", handler.GetCategories)
+
 			// Rutas de cache (solo si cache está disponible)
 			if cacheEnabled && cacheService != nil {
 				cache := music.Group("/cache")
@@ -112,7 +115,7 @@ func SetupRouter(db *mongo.Database) *gin.Engine {
 			}
 
 			// GraphQL endpoint
-			music.POST("/graphql", gin.WrapH(gqlhandler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{MusicService: musicService}}))))
+			music.POST("/graphql", gin.WrapH(gqlhandler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{MusicService: musicService, CacheService: cacheService}}))))
 
 			// Playground (opcional, solo en desarrollo)
 			music.GET("/playground", gin.WrapH(playground.Handler("GraphQL", "/api/v1/music/graphql")))

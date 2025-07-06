@@ -68,6 +68,44 @@ func (s *MusicService) GetSongs(ctx context.Context, limit, skip int) ([]models.
 		return nil, err
 	}
 
+	return s.buildSongsWithDetails(ctx, songs)
+}
+
+// 🆕 GetSongsByAlbumID obtiene canciones filtradas por album_id con paginación
+func (s *MusicService) GetSongsByAlbumID(ctx context.Context, albumIDHex string, limit, skip int) ([]models.SongWithDetails, error) {
+	// Convertir el album_id de string a ObjectID
+	albumID, err := primitive.ObjectIDFromHex(albumIDHex)
+	if err != nil {
+		return nil, fmt.Errorf("invalid album_id: %v", err)
+	}
+
+	collection := s.db.Collection("songs")
+
+	findOptions := options.Find()
+	if limit > 0 {
+		findOptions.SetLimit(int64(limit))
+	}
+	findOptions.SetSkip(int64(skip))
+	findOptions.SetSort(bson.D{{Key: "created_at", Value: -1}})
+
+	// Filtrar por album_id específico
+	filter := bson.M{"album_id": albumID}
+	cursor, err := collection.Find(ctx, filter, findOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var songs []models.Song
+	if err := cursor.All(ctx, &songs); err != nil {
+		return nil, err
+	}
+
+	return s.buildSongsWithDetails(ctx, songs)
+}
+
+// 🆕 buildSongsWithDetails construye una lista de SongWithDetails a partir de una lista de Songs
+func (s *MusicService) buildSongsWithDetails(ctx context.Context, songs []models.Song) ([]models.SongWithDetails, error) {
 	var songsWithDetails []models.SongWithDetails
 	for _, song := range songs {
 		// Obtener detalles del álbum
