@@ -173,6 +173,13 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 | **Response**     | **Bloqueo de conexión por aislamiento de red** El sistema impide que un contenedor acceda a otro que no comparta la misma red. Docker, automáticamente bloquea la comunicación entre redes distintas, así evitando el acceso de puntos no autorizados a servicios importantes.|
 | **Response Measure** | **Tasa de Éxito.** Se cálcula la tasa de éxito de acuerdo al número de intentos de conexión provinientes de redes no autorizadas, que fueron efectivamente bloqueadas por la segmentación de red. |
 
+### Tácticas Aplicadas:
+* *Se divide la red por capas* que limitan el alcance de los usuarios y posibles atacantes a los componentes internos y sensibles del sistema. Se definen redes virtuales en Docker llamadas private_net, public_net, ms_net. Los contenedores en private_net están completamente aislados de public_net. <br><br>Además, los servicios en public_net no exponen puertos al host, por lo que no pueden ser accedidos directamente desde fuera del entorno Docker. Las redes públicas están configuradas para permitir únicamente el tráfico saliente (inside-out).
+* **Limit Access:** Se restringe el acceso a los recursos del sistema por servicios que no estén autorizados. Se aplica la validación por Tokens JWT antes de ingresar a los microservicios requeridos, asegurando que solo los componentes definidos para su comunicación puedan interactuar entre sí.
+  
+### Patrones Aplicados:
+* *Network Segmentation *
+
 ## 6.4 Tokens Pattern
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                                                       |
@@ -183,6 +190,13 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 | **Artifact**         | El componente `aleph_ag`, siendo responsable de validar los tokens antes de reenviar la petición al microservicio correspondiente.                                |
 | **Response**         | El API Gateway `aleph_ag` rechaza la solicitud si el token es inválido o ha expirado, bloqueando el acceso.         |
 | **Response Measure** | **Cantidad de peticiones bloqueadas por autenticación fallida**, ya sea por tokens inválidos o que hayan expirado.                                          |
+
+### Tácticas Aplicadas
+* **Authenticate Actor:** El sistema verifica la identidad del usuario o servicio que está solicitando acceder a un componente o recurso del sistema que se encuentra protegido. El sistema verifica la autenticación del usuario mediante Tokens JWT para cada solicitud que realice. Para esto, el API Gateway actúa como el único punto de entrada para dichas solicitudes y las verifica. Si el Token es valido, redirige la petición al microservicio, si no es válido, rechaza la petición.  
+
+### Patrones Aplicados
+* *Token Verification*
+
 
 ## 6. Quality Attributes (Performance and Scalability)
 
