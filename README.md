@@ -1,3 +1,4 @@
+
 # Proyecto Grupo 1F - Prototipo 3
 _**Integrantes:**_
 * Angel David Piñeros Sierra (apineross@unal.edu.co)
@@ -65,7 +66,6 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 |```aleph_music_ms```|Lógica|Administra la información de artistas, canciones, álbumes y listas de reproducción personalizadas. Implementa búsqueda por filtros y visualización detallada. Utiliza ```aleph_music_db```, una base de datos MongoDB alojada en Atlas, para manejar datos flexibles (como letras, portadas, categorías).|
 |```aleph_reviews_ms```|Lógica|Microservicio encargado de la gestión de reseñas para canciones y álbumes, tomando en cuenta la reseña principal, el voto realizado y los hilos de comentarios qué otros usuarios le realicen a la reseña. Este componente gestionará las operaciones de CREATE para la creación de reseñas, UPDATE para la actualización de reseñas, GET para la visualización de reseñas y DELETE para su eliminación, qué serán realizadas hacia la base de datos (```aleph_reviews_db```).|
 |```aleph_auth_ms```|Lógica|	Servicio interno para autenticación, construido con Node.js, Express y TypeScript. Expone endpoints REST para registro, login, recuperación y cambio de contraseña. Utiliza JWT, correo de confirmación y se comunica con aleph_auth_db (MongoDB). Su implementación elimina la dependencia de Auth0 en entornos internos.|
-|```aleph_analysis_ms_lb```| Comunicación | Se encarga de la distribución del tráfico dirigido hacia las instancias del microservicio ``aleph_analysis_ms`` que se encuentren disponibles. El balanceo se realiza bajo el algoritmo *Least Connection*  (dirección del tráfico al servidor con menos conexiones). |
 |```aleph_analysis_ms```|Lógica|Microservicio de analítica que expone endpoints para obtener estadísticas como canciones más reproducidas y análisis por ubicación. Consulta directamente aleph_analysis_db, una base PostgreSQL con modelo estrella.|
 |```aleph_message_queue```|Comunicación|Sistema de mensajería implementado con Apache Kafka. Recolecta eventos como song-played generados por acciones del usuario, y permite su consumo por otros servicios para análisis posterior.|
 |```aleph_queue_consumer```|Lógica|	Consumer suscrito al topic de Kafka. Procesa eventos de reproducción de canciones, consulta datos a otros microservicios, enriquece la información y la almacena en ```aleph_analysis_db``` siguiendo el modelo estrella.|
@@ -77,6 +77,10 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 |```aleph_music_bk```|Data|Para guardar archivos multimedia, incluyendo archivos de audio. Proporciona almacenamiento escalable y de alta disponibilidad para el contenido multimedia, facilitando el acceso rápido desde el microservicio de música y el sistema de streaming para la reproducción en tiempo real.|
 |```aleph_profile_db```|Data|Base de datos principal del ```aleph_profile_ms```, encargada de almacenar información estructurada de usuarios (nombre, biografía, fecha de cumpleaños, etc.). Será una base de datos PostgreSQL.|
 |```aleph_analysis_db```|Data|Base de datos de análisis para consultas multidimensionales. Implementa un modelo en estrella con una tabla de hechos principal (FactTableSongPlayed) y dimensiones como DimUser, DimSong, DimArtist, DimAlbum, DimLocation y DimTime. Su objetivo es permitir análisis rápidos sobre el comportamiento de reproducción dentro de Aleph.|
+|```aleph_analysis_cache```|Data|Este componente se encarga de almacenar en caché (utilizando Redis) los resultados de análisis generados por el microservicio de análisis (aleph_analysis_service), como top-songs.|
+|```aleph_reviews_cache```|Data|Almacena en Redis las reseñas de albumes, canciones y perfiles.|
+|```aleph_music_cache```|Data|Este componente gestiona el caché de resultados relacionados con catálogos musicales y metadatos de pistas.
+
 
 ### Relations
 | Fuente  | Destino | 	Tipo de Conector| Descripción|
