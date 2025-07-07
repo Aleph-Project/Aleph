@@ -182,11 +182,11 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 | **Response Measure** | **Tasa de Éxito.** Se cálcula la tasa de éxito de acuerdo al número de intentos de conexión provinientes de redes no autorizadas, que fueron efectivamente bloqueadas por la segmentación de red. |
 
 ### Tácticas Aplicadas:
-* *Se divide la red por capas* que limitan el alcance de los usuarios y posibles atacantes a los componentes internos y sensibles del sistema. Se definen redes virtuales en Docker llamadas private_net, public_net, ms_net. Los contenedores en `private_net` están completamente aislados de `public_net`. <br><br>Además, los servicios en `public_net` no exponen puertos al host, por lo que no pueden ser accedidos directamente desde fuera del entorno Docker. Las redes públicas están configuradas para permitir únicamente el tráfico saliente (inside-out).
+* *Se divide la red por capas* que limitan el alcance de los usuarios y posibles atacantes a los componentes internos y sensibles del sistema. Se definen redes virtuales en Docker llamadas `private_net`, `public_net`, `ms_net`. Los contenedores en `private_net` están completamente aislados de `public_net`. Además, los servicios en `public_net` no exponen puertos al host, por lo que no pueden ser accedidos directamente desde fuera del entorno Docker. Las redes públicas están configuradas para permitir únicamente el tráfico saliente (*inside-out*).
 * **Limit Access:** Se restringe el acceso a los recursos del sistema por servicios que no estén autorizados. Se aplica la validación por Tokens JWT antes de ingresar a los microservicios requeridos, asegurando que solo los componentes definidos para su comunicación puedan interactuar entre sí.
   
 ### Patrones Aplicados:
-* *Network Segmentation *
+* **Network Segmentation**
 
 ## 6.4 Tokens validation tactic
 ### Scenario:
