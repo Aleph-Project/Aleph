@@ -459,6 +459,8 @@ services:
       private_net:
         ipv4_address: 172.20.1.26
     environment:
+      - REDIS_HOST=${ANALYSIS_REDIS_HOST}
+      - REDIS_PORT=${ANALYSIS_REDIS_PORT}
       - REDIS_PASSWORD=${ANALYSIS_CACHE_PASSWORD}
     # Configuración de memoria y optimizaciones
     sysctls:
@@ -479,6 +481,8 @@ services:
       private_net:
         ipv4_address: 172.20.1.27
     environment:
+      - REDIS_HOST=${REVIEWS_REDIS_HOST}
+      - REDIS_PORT=${REVIEWS_REDIS_PORT}
       - REDIS_PASSWORD=${REVIEWS_CACHE_PASSWORD}
     # Configuración de memoria y optimizaciones
     sysctls:
@@ -499,6 +503,8 @@ services:
       private_net:
         ipv4_address: 172.20.1.25
     environment:
+      - REDIS_HOST=${MUSIC_REDIS_HOST}
+      - REDIS_PORT=${MUSIC_REDIS_PORT}
       - REDIS_PASSWORD=${MUSIC_CACHE_PASSWORD}
     # Configuración de memoria y optimizaciones
     sysctls:

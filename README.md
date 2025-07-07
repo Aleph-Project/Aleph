@@ -36,7 +36,11 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 
 ### Architectural Styles
 
-**Estilo de microservicios:** El sistema Aleph está diseñado siguiendo el estilo arquitectónico de microservicios, donde cada funcionalidad del sistema se implementa como un servicio independiente y autónomo. Esta arquitectura permite el desarrollo, despliegue y escalado independiente de cada componente del sistema.
+| Estilo | Descripción |
+| ------------- |:-------------:|
+| Microservicios | El sistema Aleph está diseñado siguiendo el estilo arquitectónico de microservicios, donde cada funcionalidad del sistema se implementa como un servicio independiente y autónomo. Esta arquitectura permite el desarrollo, despliegue y escalado independiente de cada componente del sistema. |
+
+### Architectural Patterns
 
 | Patrón  | Descripción |
 | ------------- |:-------------:|
@@ -47,10 +51,12 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 
 ### Elements
 
-| Patrón | Tier | Descripción |
+| Elemento | Tier | Descripción |
 |---|---|---|
+| ```aleph_rproxy (Reverse Proxy)``` | Presentación |  |
 | ```aleph_wfe (Web Frontend)``` | Presentación | Componente de presentación del sistema desarrollado con Next.js y Tailwind CSS. Permite la navegación, autenticación y gestión de usuarios, así como la visualización de canciones, reseñas y estadísticas desde el navegador. |
 | ```aleph_dfe (Desktop Frontend)``` | Presentación | Aplicación de escritorio construida con Electron y Next.js. Reutiliza el frontend web, pero empacado como ejecutable independiente. Permite autenticación (correo o Google), registro, recuperación y cambio de contraseña, validación mediante códigos enviados por correo, todo integrado con Auth0. |
+|```aleph_ap_load_balancer (Load Balancer API Gateway)```|Se encarga de la distribución del tráfico entrante hacia alguna de las instancias de API Gateway disponibles. El balanceo está determinado por el algoritmo *Least Connection* (dirección del tráfico al servidor con menos conexiones).|
 |```aleph_ag (API Gateway)```|Comunicación|Orquestador central que permite que los componentes de frontend se comuniquen con los distintos microservicios. Gestiona la recepción de peticiones HTTP (GET, POST, PATCH, DELETE), enruta hacia los microservicios apropiados y compone respuestas cuando se requiere información de múltiples fuentes.|
 |```aleph_profile_ms```|Lógica|Microservicio encargado de gestionar la información de perfiles de usuarios, como datos personales, entre ellos su país de origen. Se apoya en una base de datos (aleph_profile_db).|
 |```aleph_music_ms```|Lógica|Administra la información de artistas, canciones, álbumes y listas de reproducción personalizadas. Implementa búsqueda por filtros y visualización detallada. Utiliza ```aleph_music_db```, una base de datos MongoDB alojada en Atlas, para manejar datos flexibles (como letras, portadas, categorías).|
@@ -69,7 +75,7 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 |```aleph_analysis_db```|Data|Base de datos de análisis para consultas multidimensionales. Implementa un modelo en estrella con una tabla de hechos principal (FactTableSongPlayed) y dimensiones como DimUser, DimSong, DimArtist, DimAlbum, DimLocation y DimTime. Su objetivo es permitir análisis rápidos sobre el comportamiento de reproducción dentro de Aleph.|
 
 ### Relations
-| Fuente  | Destino | 	Tipo de Conexión| Descripción|
+| Fuente  | Destino | 	Tipo de Conector| Descripción|
 |----------|----------|----------| ----------|
 | ```aleph_wfe```   | ```aleph_ag```   |REST|Peticiones HTTP para acceder a funcionalidades.|
 | ```aleph_dfe```   | ```aleph_ag```   |REST|---|
@@ -98,4 +104,112 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 |Orquestación|```aleph_ag```, ```aleph_message_queue```|
 |Lógica|```aleph_profile_ms```, ```aleph_music_ms```, ```aleph_reviews_ms```, ```aleph_analysis_ms```, ```aleph_queue_consumer```, ```aleph_auth_ms```|
 |Datos|```aleph_profile_db```, ```aleph_music_db```, ```aleph_reviews_db```, ```aleph_analysis_db```, ```aleph_auth_db```, ```aleph_profile_bk```, ```aleph_music_bk```, ```aleph_streaming_bk```|
+
+
+## 6. Quality Attributes (Security)
+## 6.1. Secure Chanel Pattern
+### Scenario:
+| Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
+|----------------------|----------------------------------------------------------------------------------------------------------------------------|
+| **Source**           | Atacante con capacidad de hacer sniffing de red (Man-in-the-Middle en red pública o comprometida)                         |
+| **Stimulus**         | El atacante intercepta una solicitud enviada por un cliente al sistema que contiene credenciales o datos sensibles         |
+| **Environment**      | Producción; clientes acceden mediante internet, proxy configurado con HTTPS y certificados válidos                         |
+| **Artifact**         | Datos sensibles transmitidos entre clientes y el sistema                                                                   |
+| **Response**         | El reverse proxy negocia conexión TLS con el cliente, cifra los datos desde el inicio; el atacante no puede leer el contenido capturado |
+| **Response Measure** | 100% de las conexiones entrantes usan HTTPS (TLS 1.2 o superior)<br>0% de datos sensibles (como contraseñas o tokens) visibles en texto claro en tráfico capturado |
+
+### Tácticas arquitectónicas aplicadas:
+* Encriptar los datos en el transito
+* **Terminate TLS at entry point:** El reverse Proxy es el encargado del proceso de encriptado y desencriptado evitando llevar esa carga extra a los componentes de logica dentro de la arquitectura.
+
+### Patrones aplicados:
+* Secure Channel Pattern (TLS/HTTPS)
+* Reverse Proxy
+
+## 6.2 Reverse Proxy Pattern
+
+### Scenario:
+| Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
+|----------------------|----------------------------------------------------------------------------------------------------------------------------|
+| **Source**           | Un atacante o servicio no autorizado ubicado en la red `public_net` intenta acceder directamente a un microservicio interno ubicado en la red `private_net`.                                                     |
+| **Stimulus**         | El atacante realiza una petición HTTP o un intento de conexión TCP/UDP desde una red externa hacia un microservicio o componente privado (ej. `aleph_profile_ms`) sin pasar por el flujo de peticiones establecido en la arquitectura.       |
+| **Environment**      | Producción, arquitectura desplegada con reverse proxy activo                                                                |
+| **Artifact**         | Arquitectura de Aleph protegida detrás del reverse proxy                                                            |
+| **Response**         | El reverse proxy intercepta y bloquea cualquier acceso directo a rutas no expuestas (por ejemplo, `/api/internal`), evitando que lleguen al backend |
+| **Response Measure** | 99% de los intentos de acceso directo a servicios internos resultan en respuestas 403 Forbidden o 404 Not Found.<br>0% de exposición directa de servicios backend al exterior |
+
+### Tácticas arquitectónicas aplicadas:
+* **Ofuscacion de arquitectura:** Los componentes de la arquitectura de Aleph no son visibles desde fuera.
+
+* **Reducir la superficie de ataque:** Se establece como unico punto de entrada a la arquitectura desde el exterior al reverse proxy, reduciendo asi la superficie de ataque.
+
+* **Reestringir el acceso:** Desde el reverse Proxy se controla el rate limiting de las peticiones basadas en su origen, lo que nos permite tener control sobre las peticiones que entran al sistema.
+
+### Patrones aplicados:
+
+* **Reverse Proxy Pattern**
+
+* **Facade Pattern**
+
+
+## 6.3 Network Segmentation Pattern
+### Scenario:
+| Elemento         | Descripción del Comportamiento del Sistema                                                                                                                                    |
+|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Source**       | Un atacante o servicio no autorizado ubicado en la red `public_net` intenta acceder directamente a un microservicio interno ubicado en la red `private_net`.         |
+| **Stimulus**     | El atacante realiza una petición HTTP o un intento de conexión TCP/UDP desde una red externa hacia un microservicio o componente privado (ej. `aleph_ag`).                              |
+| **Environment**  | El sistema está desplegado en Docker con redes virtuales segmentadas: `public_net`, `private_net` y `ms_net`. Los contenedores en `private_net` están completamente aislados de `public_net`. <br><br>Además, los servicios en `public_net` no exponen puertos al host, por lo que no pueden ser accedidos directamente desde fuera del entorno Docker. Las redes públicas están configuradas para permitir únicamente el tráfico saliente *(inside-out)*, bloqueando accesos que no estén autorizados. |
+| **Artifact**     | Microservicios internos (como `aleph_ag`) que están definidos únicamente en `private_net`.                                   |
+| **Response**     | **Bloqueo de conexión por aislamiento de red** El sistema impide que un contenedor acceda a otro que no comparta la misma red. Docker, automáticamente bloquea la comunicación entre redes distintas, así evitando el acceso de puntos no autorizados a servicios importantes.|
+| **Response Measure** | **Tasa de Éxito.** Se cálcula la tasa de éxito de acuerdo al número de intentos de conexión provinientes de redes no autorizadas, que fueron efectivamente bloqueadas por la segmentación de red. |
+
+## 6.4 Tokens Pattern
+### Scenario:
+| Elemento             | Descripción del Comportamiento del Sistema                                                                                                                                                       |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Source**           | Un usuario no autenticado (Posible atacante) intenta acceder a un microservicio protegido (`auth-ms`, `profile-ms`, `music-ms`, etc.) mediante una solicitud HTTP. |
+| **Stimulus**         | Solicitudes HTTP enviadas con Tokens JWT inválidos.                                                        |
+| **Environment**      | Sistema de microservicios desplegado con Docker, donde todas las solicitudes pasan a través del API Gateway `aleph_ag`, el cual se encarga de validar los tokens.                          |
+| **Artifact**         | El componente `aleph_ag`, siendo responsable de validar los tokens antes de reenviar la petición al microservicio correspondiente.                                |
+| **Response**         | El API Gateway `aleph_ag` rechaza la solicitud si el token es inválido o ha expirado, bloqueando el acceso.         |
+| **Response Measure** | **Cantidad de peticiones bloqueadas por autenticación fallida**, ya sea por tokens inválidos o que hayan expirado.                                          |
+
+## 6. Quality Attributes (Performance and Scalability)
+
+## 6.5 Load Balancing
+### Scenario:
+| Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
+|----------------------|----------------------------------------------------------------------------------------------------------------------------|
+| **Source**           | 1000 usuarios simultáneos autenticados                                                                                     |
+| **Stimulus**         | Cada usuario realiza una consulta al microservicio de perfiles (por ejemplo, acceder a su perfil)     |
+| **Environment**      | Entorno de producción, bajo carga pico (por ejemplo, en horas de alta actividad), con un balanceador de carga distribuyendo peticiones entre las multiples instancias del microservicio de perfiles |
+| **Artifact**         | Arquitectura de Aleph          |
+| **Response**         | El balanceador de carga distribuye equitativamente las solicitudes entre las instancias disponibles, evitando saturación individual y asegurando un tiempo de respuesta aceptable |
+| **Response Measure** | < 500ms de tiempo de respuesta promedio por solicitud en al menos el 95% de los casos<br>< 5% de errores por sobrecarga (códigos 5xx) durante el pico de tráfico |
+
+### Tácticas arquitectónicas aplicadas:
+* Load balancing: Repartir tráfico entre varias instancias
+* Maintain multiple copies: Desplegar múltiples instancias del microservicio
+* Control resource demand: Cada instancia maneja un subconjunto de tráfico
+
+### Patrones aplicados:
+* Load Balancer Pattern
+
+## 6.5 Db Caching
+### Scenario:
+| Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
+|----------------------|----------------------------------------------------------------------------------------------------------------------------|
+| **Source**           | Miles de usuarios autenticados de Aleph.                                               |
+| **Stimulus**         | El artista más popular de la plataforma lanza un nuevo álbum, y se realizan más de 10,000 solicitudes por minuto al microservicio de música para acceder a las canciones del álbum |
+| **Environment**      | Producción; minutos posteriores al lanzamiento, bajo carga extrema, con sistema en operación normal                        |
+| **Artifact**         | Microservicio de música, Redis cache, balanceador de carga, instancias escalables                                         |
+| **Response**         | El microservicio responde rápidamente a las solicitudes usando Redis para cachear metadatos del álbum y canciones, y balanceador de carga para distribuir tráfico entre varias instancias |
+| **Response Measure** | Tiempo de respuesta medio: < 200ms en el 95% de las solicitudes<br>Tasa de errores 5xx: < 1%<br>Redis cache hit rate: ≥ 95% para datos del álbum en los primeros 10 minutos|
+
+### Tácticas arquitectónicas aplicadas:
+* Introduce Caching (Redis): Reduce latencia y presión sobre la base de datos
+
+
+### Patrones aplicados:
+* Cache Aside Pattern: Las canciones y metadatos del álbum están cacheados desde el primer acceso
 
