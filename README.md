@@ -36,7 +36,11 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 
 ### Architectural Styles
 
-**Estilo de microservicios:** El sistema Aleph está diseñado siguiendo el estilo arquitectónico de microservicios, donde cada funcionalidad del sistema se implementa como un servicio independiente y autónomo. Esta arquitectura permite el desarrollo, despliegue y escalado independiente de cada componente del sistema.
+| Estilo | Descripción |
+| ------------- |:-------------:|
+| Microservicios | El sistema Aleph está diseñado siguiendo el estilo arquitectónico de microservicios, donde cada funcionalidad del sistema se implementa como un servicio independiente y autónomo. Esta arquitectura permite el desarrollo, despliegue y escalado independiente de cada componente del sistema. |
+
+### Architectural Patterns
 
 | Patrón  | Descripción |
 | ------------- |:-------------:|
@@ -47,10 +51,12 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 
 ### Elements
 
-| Patrón | Tier | Descripción |
+| Elemento | Tier | Descripción |
 |---|---|---|
+| ```aleph_rproxy (Reverse Proxy)``` | Presentación |  |
 | ```aleph_wfe (Web Frontend)``` | Presentación | Componente de presentación del sistema desarrollado con Next.js y Tailwind CSS. Permite la navegación, autenticación y gestión de usuarios, así como la visualización de canciones, reseñas y estadísticas desde el navegador. |
 | ```aleph_dfe (Desktop Frontend)``` | Presentación | Aplicación de escritorio construida con Electron y Next.js. Reutiliza el frontend web, pero empacado como ejecutable independiente. Permite autenticación (correo o Google), registro, recuperación y cambio de contraseña, validación mediante códigos enviados por correo, todo integrado con Auth0. |
+|```aleph_ap_load_balancer (Load Balancer API Gateway)```|Se encarga de la distribución del tráfico entrante hacia alguna de las instancias de API Gateway disponibles. El balanceo está determinado por el algoritmo *Least Connection* (dirección del tráfico al servidor con menos conexiones).|
 |```aleph_ag (API Gateway)```|Comunicación|Orquestador central que permite que los componentes de frontend se comuniquen con los distintos microservicios. Gestiona la recepción de peticiones HTTP (GET, POST, PATCH, DELETE), enruta hacia los microservicios apropiados y compone respuestas cuando se requiere información de múltiples fuentes.|
 |```aleph_profile_ms```|Lógica|Microservicio encargado de gestionar la información de perfiles de usuarios, como datos personales, entre ellos su país de origen. Se apoya en una base de datos (aleph_profile_db).|
 |```aleph_music_ms```|Lógica|Administra la información de artistas, canciones, álbumes y listas de reproducción personalizadas. Implementa búsqueda por filtros y visualización detallada. Utiliza ```aleph_music_db```, una base de datos MongoDB alojada en Atlas, para manejar datos flexibles (como letras, portadas, categorías).|
@@ -69,7 +75,7 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 |```aleph_analysis_db```|Data|Base de datos de análisis para consultas multidimensionales. Implementa un modelo en estrella con una tabla de hechos principal (FactTableSongPlayed) y dimensiones como DimUser, DimSong, DimArtist, DimAlbum, DimLocation y DimTime. Su objetivo es permitir análisis rápidos sobre el comportamiento de reproducción dentro de Aleph.|
 
 ### Relations
-| Fuente  | Destino | 	Tipo de Conexión| Descripción|
+| Fuente  | Destino | 	Tipo de Conector| Descripción|
 |----------|----------|----------| ----------|
 | ```aleph_wfe```   | ```aleph_ag```   |REST|Peticiones HTTP para acceder a funcionalidades.|
 | ```aleph_dfe```   | ```aleph_ag```   |REST|---|
