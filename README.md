@@ -82,29 +82,38 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 
 
 ### Relations
-| Fuente  | Destino | 	Tipo de Conector| Descripción|
+| Componente 1  | Componente 2 | 	Tipo de Conector| Descripción|
 |----------|----------|----------| ----------|
-| ```aleph_rproxy```   | ```aleph_wfe```   |REST|
-| ```aleph_wfe```   | ```aleph_ag_lb```   |REST|Peticiones HTTP para acceder a funcionalidades.|
-| ```aleph_ag_lb```   | ```aleph_ag```   |REST|
-| ```aleph_dfe```   | ```aleph_ag```   |REST|---|
-| ```aleph_ag```   | ```aleph_profile_ms```   |REST|Manejo de perfiles.
-| ```aleph_ag```   | ```aleph_music_ms```  |GraphQL|Consulta y gestión de catálogos musicales.|
-| ```aleph_ag```   | ```aleph_reviews_ms```   |REST|CRUD de reseñas y votos.|
-| ```aleph_profile_ms```   | ```aleph_profile_db```   |TCP|PostgreSQL con datos estructurados de usuario.|
-| ```aleph_music_ms```   | ```aleph_music_db```   |TCP|MongoDB flexible para metadatos musicales.|
-| ```aleph_reviews_ms```   | ```aleph_reviews_db```   |TCP|PostgreSQL para persistencia de reseñas.|
-| ```aleph_profile_ms```   | ```aleph_profile_bk```   |S3|Almacenamiento de archivos de usuario.|
-| ```aleph_wfe```   | ```aleph_auth (SaaS)```   |SDK Auth0 (Next.js)|El frontend web usa la librería oficial de Auth0 para autenticación segura con redirección y manejo de sesión.|
-| ```aleph_dfe```   | ```aleph_auth (SaaS)```   |SDK Auth0 (Next.js)|El desktop usa el SDK nativo de Auth0 para Electron, autenticando y almacenando tokens en el sistema operativo.|
-| ```aleph_ag```   | ```aleph_message_queue```   |Kafka|Publicación de eventos song-played.|
-| ```aleph_message_queue```   | ```aleph_queue_consumer```   |Kafka|Consumo de eventos.|
-| ```aleph_queue_consumer```   | ```aleph_analysis_db```   |REST|Inserción e una base de datos PostgreSQL estructurada bajo modelo estrella.|
-| ```aleph_analysis_ms```   | ```aleph_analysis_db```   |REST|Lectura para generación de reportes.|
-| ```aleph_ag```   | ```aleph_auth_ms```   |REST|El API Gateway permite el acceso a los endpoints de autenticación desde los frontends.|
-| ```aleph_ag```   | ```aleph_streaming_ms```   |REST|Se usa AUTH_MONGO_URI para conectar de forma segura con la base de datos del servicio de autenticación.|
-| ```aleph_wfe```   | ```aleph_streaming_ms```   |REST|--|
-| ```aleph_music_ms```   | ```aleph_music_bk```   |REST|Archivos de audio.|
+| ```aleph_rproxy```   | ```aleph_dfe```   |-|--|
+| ```aleph_rproxy```   | ```aleph_wfe```   |-|---
+| ```aleph_dfe```   | ```aleph_ag_lb```   |-|Enrutamiento de peticiones desde el frontend desktop hacia el API Gateway|
+| ```aleph_wfe```   | ```aleph_ag_lb```   |-|Enrutamiento de peticiones desde el frontend web hacia el API Gateway.|
+| ```aleph_ag_lb```   | ```aleph_ag```   |-|Balanceo de carga para solicitudes al API Gateway.
+| ```aleph_ag```   | ```aleph_message_queue```   |---|Publicación de eventos como: song-played.|
+| ```aleph_message_queue```   | ```aleph_queue_consumer```   |---|Consumo de eventos de reproducción para procesamiento analítico.|
+| ```aleph_queue_consumer```   | ```aleph_analysis_db```   |-|Inserción e una base de datos PostgreSQL estructurada bajo modelo estrella.|
+| ```aleph_ag```   | ```aleph_analysis_ms```   |---|Consultas analíticas solicitadas desde el frontend.
+| ```aleph_analysis_ms```   | ```aleph_analysis_db```   |--|Lectura de datos analíticos para generar reportes.|
+| ```aleph_analysis_ms```   | ```aleph_analysis_cache ```   |-|	Cacheo de resultados analíticos frecuentemente consultados.|
+| ```aleph_ag```   | ```aleph_profile_ms_lb```   |-|	Acceso balanceado al microservicio de perfiles.
+| ```aleph_profile_ms_lb```| ```aleph_profile_ms```   |-|	Balanceo de carga hacia la lógica del microservicio de perfiles.
+| ```aleph_profile_ms```   | ```aleph_profile_db```   |-|Persistencia de datos de usuario.|
+| ```aleph_profile_ms```   | ```aleph_profile_bk```   |-|Almacenamiento de archivos relacionados a usuarios (Haciendo uso de S3).|
+| ```aleph_ag```   | ```aleph_reviews_ms```   |-|Gestión de reseñas y votos a través del API Gateway.|
+| ```aleph_reviews_ms```   | ```aleph_reviews_db```   |-|Persistencia de reseñas y votaciones.|
+| ```aleph_reviews_ms```   | ```aleph_reviews_cache```   |-|Almacenamiento en caché de reseñas consultadas frecuentemente.|
+| ```aleph_ag```   | ```aleph_auth_ms_lb```   |-|Acceso a endpoints de autenticación desde el frontend vía el API Gateway.|
+| ```aleph_auth_ms_lb```   | ```aleph_auth_ms```   |-|Balanceo de carga para el microservicio de autenticación.|
+| ```aleph_auth_ms```   | ```aleph_auth_db```   |-|Base de datos con credenciales.|
+| ```aleph_ag```   | ```aleph_music_ms_lb```  |--|	Enrutamiento balanceado hacia el microservicio de música.|
+| ```aleph_music_ms_lb```   | ```aleph_music_ms```  |----|Balanceo de carga para acceso a catálogos musicales.|
+| ```aleph_music_ms```   | ```aleph_music_db```   |-|	Metadatos musicales y relaciones con artistas, álbumes y géneros.|
+| ```aleph_music_ms```   | ```aleph_music_bk```   |-|	Almacenamiento de archivos de audio (tracks).|
+| ```aleph_music_ms```   | ```aleph_music_cache```   |-|Cache de metadatos o respuestas a consultas frecuentes del catálogo.|
+| ```aleph_ag```   | ```aleph_streaming_ms```   |-|	Enrutamiento a microservicio de streaming desde el API Gateway.|
+| ```aleph_wfe```   | ```aleph_streaming_ms```   |-|Acceso directo del frontend web al servicio de streaming. (Mediante webSocket)|
+| ```aleph_wfe```   | ```aleph_auth (SaaS)```   |-|El frontend web usa la librería oficial de Auth0 para autenticación segura con redirección y manejo de sesión.|
+| ```aleph_dfe```   | ```aleph_auth (SaaS)```   |-|El desktop usa el SDK nativo de Auth0 para Electron, autenticando y almacenando tokens en el sistema operativo.|
 
 ## 3. Layered Structure
 |Capa| Componentes|
