@@ -1,4 +1,3 @@
-
 # Proyecto Grupo 1F - Prototipo 3
 _**Integrantes:**_
 * Angel David Piñeros Sierra (apineross@unal.edu.co)
@@ -90,7 +89,7 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 | ```aleph_ag_lb```   | ```aleph_ag```   |REST|
 | ```aleph_dfe```   | ```aleph_ag```   |REST|---|
 | ```aleph_ag```   | ```aleph_profile_ms```   |REST|Manejo de perfiles.
-| ```aleph_ag```   | ```aleph_music_ms```  |REST|Consulta y gestión de catálogos musicales.|
+| ```aleph_ag```   | ```aleph_music_ms```  |GraphQL|Consulta y gestión de catálogos musicales.|
 | ```aleph_ag```   | ```aleph_reviews_ms```   |REST|CRUD de reseñas y votos.|
 | ```aleph_profile_ms```   | ```aleph_profile_db```   |TCP|PostgreSQL con datos estructurados de usuario.|
 | ```aleph_music_ms```   | ```aleph_music_db```   |TCP|MongoDB flexible para metadatos musicales.|
