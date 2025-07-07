@@ -142,10 +142,10 @@ ipcMain.handle('clear-auth-token', async () => {
 ipcMain.handle('auth:login', async (_, email: string, password: string) => {
   try {
     const response = await axios.post(
-      'https://localhost/api/v1/auth/login',
+      'https://localhost:444/api/v1/auth/login',
       { email, password },
       {
-        headers: { Host: "aleph" },
+        headers: { Host: "aleph-dsk" },
         httpsAgent: new https.Agent({ rejectUnauthorized: false }),
       }
     );
@@ -275,12 +275,12 @@ ipcMain.handle('auth:register', async (_, data) => {
     console.log('Received data:', data);
     
     try {
-        console.log('Making API call to: https://localhost/api/v1/auth/register-dsk');
+        console.log('Making API call to: https://localhost:444/api/v1/auth/register-dsk');
         const response = await axios.post(
-            'https://localhost/api/v1/auth/register-dsk',
+            'https://localhost:444/api/v1/auth/register-dsk',
             data,
             {
-                headers: { Host: "aleph" },
+                headers: { Host: "aleph-dsk" },
                 httpsAgent: new https.Agent({ rejectUnauthorized: false }),
             }
         );
@@ -374,12 +374,12 @@ ipcMain.handle('auth:activate', async (_, { email, code }) => {
     console.log('Activating user:', { email, code: code ? 'PROVIDED' : 'MISSING' });
     
     try {
-        console.log('Making API call to: https://localhost/api/v1/auth/activate-dsk');
+        console.log('Making API call to: https://localhost:444/api/v1/auth/activate-dsk');
         const response = await axios.post(
-            'https://localhost/api/v1/auth/activate-dsk',
+            'https://localhost:444/api/v1/auth/activate-dsk',
             { email, code },
             {
-                headers: { Host: "aleph" },
+                headers: { Host: "aleph-dsk" },
                 httpsAgent: new https.Agent({ rejectUnauthorized: false }),
             }
         );

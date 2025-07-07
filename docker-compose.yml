@@ -409,6 +409,22 @@ services:
       # - apigateway-load-balancer 
       - aleph-frontend
 
+  reverse-proxy-dsk:
+    container_name: reverse-proxy-dsk
+    build:
+      context: ./reverse-proxy-dsk
+      dockerfile: Dockerfile
+    networks:
+      public_net:
+        ipv4_address: 172.20.0.4
+      private_net:
+        ipv4_address: 172.20.1.28
+    ports:
+      - "444:444"
+    depends_on:
+      # - apigateway
+      - apigateway-load-balancer 
+
   auth-load-balancer:
     image: nginx:latest
     container_name: auth-load-balancer

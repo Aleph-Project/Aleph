@@ -85,7 +85,9 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 ### Relations
 | Fuente  | Destino | 	Tipo de Conector| Descripción|
 |----------|----------|----------| ----------|
-| ```aleph_wfe```   | ```aleph_ag```   |REST|Peticiones HTTP para acceder a funcionalidades.|
+| ```aleph_rproxy```   | ```aleph_wfe```   |REST|
+| ```aleph_wfe```   | ```aleph_ag_lb```   |REST|Peticiones HTTP para acceder a funcionalidades.|
+| ```aleph_ag_lb```   | ```aleph_ag```   |REST|
 | ```aleph_dfe```   | ```aleph_ag```   |REST|---|
 | ```aleph_ag```   | ```aleph_profile_ms```   |REST|Manejo de perfiles.
 | ```aleph_ag```   | ```aleph_music_ms```  |REST|Consulta y gestión de catálogos musicales.|
