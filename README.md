@@ -180,27 +180,36 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 ### Patrones Aplicados:
 * *Network Segmentation *
 
-## 6.4 Tokens Pattern
+## 6.4 Tokens validation tactic
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                                                       |
 |----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Source**           | Un usuario no autenticado (Posible atacante) intenta acceder a un microservicio protegido (`auth-ms`, `profile-ms`, `music-ms`, etc.) mediante una solicitud HTTP. |
-| **Stimulus**         | Solicitudes HTTP enviadas con Tokens JWT inválidos.                                                        |
-| **Environment**      | Sistema de microservicios desplegado con Docker, donde todas las solicitudes pasan a través del API Gateway `aleph_ag`, el cual se encarga de validar los tokens.                          |
+| **Source**           | Un usuario no autenticado (Posible atacante) intenta acceder a un microservicio protegido (`reviews-ms`, `profile-ms`, `music-ms`, etc.) mediante una solicitud HTTP. |
+| **Stimulus**         | Solicitudes HTTP enviadas con Tokens JWT inválidos, expirados, manipulados o ausentes.                                                        |
+| **Environment**      | Sistema de microservicios desplegado con Docker, donde todas las solicitudes pasan a través del API Gateway `aleph_ag`, el cual se encarga de validar la autenticidad y la duración de los tokens.                          |
 | **Artifact**         | El componente `aleph_ag`, siendo responsable de validar los tokens antes de reenviar la petición al microservicio correspondiente.                                |
-| **Response**         | El API Gateway `aleph_ag` rechaza la solicitud si el token es inválido o ha expirado, bloqueando el acceso.         |
-| **Response Measure** | **Cantidad de peticiones bloqueadas por autenticación fallida**, ya sea por tokens inválidos o que hayan expirado.                                          |
+| **Response**         | El API Gateway `aleph_ag` rechaza la solicitud si el token es inválido, ha expirado, ha sido manipulado o no está presente, bloqueando el acceso  y retornando un error 401.         |
+| **Response Measure** | **Cantidad de peticiones bloqueadas por autenticación fallida**, ya sea por tokens inválidos, que hayan expirado o ausentes.                                          |
 
 ### Tácticas Aplicadas
 * **Authenticate Actor:** El sistema verifica la identidad del usuario o servicio que está solicitando acceder a un componente o recurso del sistema que se encuentra protegido. El sistema verifica la autenticación del usuario mediante Tokens JWT para cada solicitud que realice. Para esto, el API Gateway actúa como el único punto de entrada para dichas solicitudes y las verifica. Si el Token es valido, redirige la petición al microservicio, si no es válido, rechaza la petición.  
 
-### Patrones Aplicados
-* *Token Verification*
+	
+## 6.5 Rate Limiting tactic
+### Scenario:
+| Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
+|----------------------|----------------------------------------------------------------------------------------------------------------------------|
+| **Source**           | Un usuario o script automatizado intenta realizar un número excesivo de solicitudes al sistema en un corto periodo de tiempo. |
+| **Stimulus**         | Envío de múltiples solicitudes HTTP (por ejemplo, más de 100 por minuto) desde una misma IP o usuario.                      |
+| **Environment**      | Producción, con el reverse proxy y/o API Gateway configurados para aplicar límites de tasa a las solicitudes entrantes.     |
+| **Artifact**         | Reverse proxy y API Gateway, responsables de aplicar límites de tasa y bloquear solicitudes excesivas.                      |
+| **Response**         | El sistema detecta el exceso de solicitudes y responde con un error 429 Too Many Requests, bloqueando temporalmente al origen infractor. |
+| **Response Measure** | Porcentaje de solicitudes bloqueadas por exceder el límite de tasa; reducción de riesgo de denegación de servicio (DoS).    |
 
 
 ## 6. Quality Attributes (Performance and Scalability)
 
-## 6.5 Load Balancing
+## 6.6 Load Balancing
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------|
@@ -219,7 +228,7 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 ### Patrones aplicados:
 * Load Balancer Pattern
 
-## 6.5 Db Caching
+## 6.7 Db Caching
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------|
