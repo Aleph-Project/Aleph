@@ -284,15 +284,33 @@ A continuación se presenta el diagrama de descomposición del sistema Aleph, do
      
 2. **CLonar el repositorio**
    - Deberá clonar el repositorio desde GitHub en el escritorio el cual ejecutará el sistema. Podrá hacerlo con el siguiente comando desde Git:
-	```bash git clone <https://github.com/unal-swarch/swarch2025i/tree/main/project/prototype_2/1F>```
+	```bash
+	git clone <https://github.com/unal-swarch/swarch2025i/tree/main/project/prototype_2/1F>
+ 	```
 4. **Establecer variables de entorno**
-* Cambie la ruta desde su terminal para así dirigirse a la ruta del proyecto:
- ```bash cd swarch2025i/project/prototype_1/1F```
+    - Cambie la ruta desde su terminal para así dirigirse a la ruta del proyecto:
+ 	```bash
+	cd swarch2025i/project/prototype_1/1F
+	```
 -  Cree los archivos `.env` necesarios en cada microservicio que los requiera o para Docker Compose. Asegúrase de definir correctamente las variables de entorno requeridas (puertos, credenciales, claves, etc.).
 5. **Configurar los contenedores**
-* Una vez hayas configurado el sistema, con sus archivos `.env`, podrá desplegar todos los contenedores de nuestro sistema para crear debidamente los componentes. Podrá realizarlo por medio del siguiente comando:
-```bash docker compose up --build ```
+   - Una vez hayas configurado el sistema, con sus archivos `.env`, podrá desplegar todos los contenedores de nuestro sistema para crear debidamente los componentes. Podrá realizarlo por medio del siguiente comando:
+	```bash
+	docker compose up --build
+	```
+
 6. **Despliegue**
-  
+   - Verifique que todos los contenedores estén corriendo correctamente:
+     	```bash
+     	docker ps
+     	```
+   - Puedes revisar los logs de los servicios para asegurarte de que no haya errores:
+     	```bash
+     	docker compose logs -f
+     	```
 7. **Acceso al sistema**
-* Podra
+   - Podrá acceder a nuestro sistema desde el navegador web con la URL y el puerto configurados.
+   - Si tienes un cliente de escritorio. Es importante que ejecute el siguiente comando:
+     
+	```bash
+     	npm run build
