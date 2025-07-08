@@ -22,7 +22,7 @@ _*Arquitectura de Software*_
 
 ## Software System
  - **Name:** Aleph.
- - **Logo:** ![project/prototype_1/1F/Logo - Aleph.png](./Logo%20-%20Aleph.png)
+ - **Logo:** ![project/prototype_1/1F/Logo - Aleph.png](./images/Logo%20-%20Aleph.png)
  - **Description:** Aleph es un sistema de software de música, creado para que los usuarios puedan explorar, buscar y escuchar música, artistas y álbumes dentro de una sola plataforma. Los usuarios podrán buscar canciones, artistas y álbumes de su preferencia, estándo en la capacidad de utilizar filtros para sus búsquedas en base a las categorías musicales. Seleccionar las canciones de su interés para reproducirlas e interactuar con el reproductor para así poder realizar acciones como subir o bajar el volumen, pausar, acelerar y entre otras acciones con las cuales podrán disfrutar de sus canciones. Además de poder crear listas de reproducción en base a sus gustos músicales. Aleph se caracteriza por ser un sistema donde los usuarios puedan escribir y dejar sus opiniones o comentarios tanto en canciones como en álbumes, convirtiendo a Aleph en un espacio para el intercambio de opiniones y gustos músicales.
 
 ## 2. Architectural Structures Component-and Connector (C&C) Structure
@@ -30,7 +30,7 @@ _*Arquitectura de Software*_
 
 A continuación se presenta el diagrama de componentes y conectores del sistema Aleph, donde se visualizan los principales elementos arquitectónicos y sus relaciones:
 
-![Diagrama de Componentes y Conectores](./Componentes_Conectores.png)
+![Diagrama de Componentes y Conectores]((./images/Logo%20-%20Aleph.png))
 
 ## 2.2 Description of architectural styles and patterns used
 
@@ -118,12 +118,25 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 | ```aleph_dfe```   | ```aleph_auth (SaaS)```   |-|El desktop usa el SDK nativo de Auth0 para Electron, autenticando y almacenando tokens en el sistema operativo.|
 
 ## 3. Layered Structure
+A continuación se presenta el diagrama de la estructura en capas del sistema Aleph, donde se visualizan las cuatro capas principales y la distribución de los componentes:
+
+![Diagrama de capas](./images/diagrama_capas.drawio.png)
+
 |Capa| Componentes|
 |----|-------|
 |Presentación|```aleph_wfe```, ```aleph_dfe```|
 |Orquestación|```aleph_ag```, ```aleph_message_queue```|
 |Lógica|```aleph_profile_ms```, ```aleph_music_ms```, ```aleph_reviews_ms```, ```aleph_analysis_ms```, ```aleph_queue_consumer```, ```aleph_auth_ms```|
 |Datos|```aleph_profile_db```, ```aleph_music_db```, ```aleph_reviews_db```, ```aleph_analysis_db```, ```aleph_auth_db```, ```aleph_profile_bk```, ```aleph_music_bk```, ```aleph_streaming_bk```|
+
+## 4. Deployment Structure 
+A continuación se presenta el diagrama de despliegue del sistema Aleph, donde se visualizan los contenedores, servicios en la nube y la distribución de los componentes:
+![Diagrama de deployment](./images/diagrama_capas.drawio.png)
+
+
+## 5. Decomposition Structure
+A continuación se presenta el diagrama de descomposición del sistema Aleph, donde se visualizan las funcionalidades principales y la distribución de los componentes involucrados:
+![Diagrama de deployment](./images/diagrama_descomposicion.drawio.png)
 
 
 ## 6. Quality Attributes (Security)
