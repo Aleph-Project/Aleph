@@ -270,3 +270,20 @@ A continuación se presenta el diagrama de descomposición del sistema Aleph, do
 ### Patrones aplicados:
 * Cache Aside Pattern: Las canciones y metadatos del álbum están cacheados desde el primer acceso
 
+## Prototype
+
+1. **Realizar instalaciones previas**
+   - Poseer Docker instalado y Docker compose en la máquina.
+     
+2. **CLonar el repositorio**
+   - Deberá clonar el repositorio desde GitHub en el escritorio el cual ejecutará el sistema. Podrá hacerlo con el siguiente comando desde Git:
+	```bash git clone <https://github.com/unal-swarch/swarch2025i/tree/main/project/prototype_2/1F>```
+4. **Establecer variables de entorno**
+* Cambia la ruta desde tu terminal para así dirigirte a la ruta del proyecto:
+ ```bash cd swarch2025i/project/prototype_1/1F```
+-  Crea los archivos `.env` necesarios en cada microservicio que los requiera o para Docker Compose. Asegúrate de definir correctamente las variables de entorno requeridas (puertos, credenciales, claves, etc.).
+5. **Configurar los contenedores**
+* Una vez hayas configurado el sistema, con sus archivos `.env`, podrás desplegar todos los contenedores de nuestro sistema para crear debidamente los componentes. Podrás realizarlo por medio del siguiente comando:
+```bash docker compose up --build ```
+6. **Despliegue**
+7. **Acceso al sistema**
