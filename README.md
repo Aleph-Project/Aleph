@@ -136,7 +136,7 @@ A continuación se presenta el diagrama de despliegue del sistema Aleph, donde s
 
 ## 5. Decomposition Structure
 A continuación se presenta el diagrama de descomposición del sistema Aleph, donde se visualizan las funcionalidades principales y la distribución de los componentes involucrados:
-![Diagrama de deployment](./images/diagrama_descomposicion.drawio.png)
+![Diagrama de descomposition](./images/diagrama_descomposicion.drawio.png)
 
 
 ## 6. Quality Attributes (Security)
@@ -186,6 +186,7 @@ A continuación se presenta el diagrama de descomposición del sistema Aleph, do
 
 
 ## 6.3 Network Segmentation Pattern
+![Diagrama de segmentación de red](./images/diagrama_segmentacion_red.drawio.png)
 ### Scenario:
 | Elemento         | Descripción del Comportamiento del Sistema                                                                                                                                    |
 |------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
