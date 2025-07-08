@@ -112,7 +112,7 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 | ```aleph_music_ms```   | ```aleph_music_bk```   |-|	Almacenamiento de archivos de audio (tracks).|
 | ```aleph_music_ms```   | ```aleph_music_cache```   |-|Cache de metadatos o respuestas a consultas frecuentes del catálogo.|
 | ```aleph_ag```   | ```aleph_streaming_ms```   |-|	Enrutamiento a microservicio de streaming desde el API Gateway.|
-| ```aleph_wfe```   | ```aleph_streaming_ms```   |-|Acceso directo del frontend web al servicio de streaming. (Mediante webSocket)|
+| ```aleph_rproxy```   | ```aleph_streaming_ms```   |-|Manejo de conexión WebSocket desde el cliente hacia el microservicio de streaming a través del reverse proxy.|
 | ```aleph_wfe```   | ```aleph_auth (SaaS)```   |-|El frontend web usa la librería oficial de Auth0 para autenticación segura con redirección y manejo de sesión.|
 | ```aleph_dfe```   | ```aleph_auth (SaaS)```   |-|El desktop usa el SDK nativo de Auth0 para Electron, autenticando y almacenando tokens en el sistema operativo.|
 
