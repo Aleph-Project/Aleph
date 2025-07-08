@@ -86,8 +86,8 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 ### Relations
 | Componente 1  | Componente 2 | 	Tipo de Conector| Descripción|
 |----------|----------|----------| ----------|
-| ```aleph_rproxy```   | ```aleph_dfe```   |HTTPS|Enrutamiento de solicitudes del escritorio del usuario desde el proxy inverso hacia el desktop frontend.|
-| ```aleph_rproxy_dsk```   | ```aleph_wfe```   |HTTPS|Enrutamiento de solicitudes web desde el proxy inverso hacia el web frontend.|
+| ```aleph_rproxy_dsk```   | ```aleph_dfe```   |HTTPS|Enrutamiento de solicitudes del escritorio del usuario desde el proxy inverso hacia el desktop frontend.|
+| ```aleph_rproxy```   | ```aleph_wfe```   |HTTPS|Enrutamiento de solicitudes web desde el proxy inverso hacia el web frontend.|
 | ```aleph_rproxy```   | ```aleph_ag_lb```   |HTTP|Enrutamiento de solicitudes web externas desde el reverse proxy hacia el balanceador del API Gateway.|
 | ```aleph_rproxy_dsk```   | ```aleph_ag_lb```   |HTTP|Enrutamiento de solicitudes del escritorio del usuario externas desde el reverse proxy hacia el balanceador del API Gateway.|
 | ```aleph_ag_lb```   | ```aleph_ag```   |HTTP|Balanceo de carga para solicitudes al API Gateway.
