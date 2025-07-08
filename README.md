@@ -90,7 +90,6 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 | ```aleph_rproxy_dsk```   | ```aleph_wfe```   |HTTPS|Enrutamiento de solicitudes web desde el proxy inverso hacia el web frontend.|
 | ```aleph_rproxy```   | ```aleph_ag_lb```   |HTTP|Enrutamiento de solicitudes web externas desde el reverse proxy hacia el balanceador del API Gateway.|
 | ```aleph_rproxy_dsk```   | ```aleph_ag_lb```   |HTTP|Enrutamiento de solicitudes del escritorio del usuario externas desde el reverse proxy hacia el balanceador del API Gateway.|
-| ```aleph_wfe```   | ```aleph_ag_lb```   |-|Enrutamiento de peticiones desde el frontend web hacia el API Gateway.|
 | ```aleph_ag_lb```   | ```aleph_ag```   |-|Balanceo de carga para solicitudes al API Gateway.
 | ```aleph_ag```   | ```aleph_message_queue```   |---|Publicación de eventos como: song-played.|
 | ```aleph_message_queue```   | ```aleph_queue_consumer```   |---|Consumo de eventos de reproducción para procesamiento analítico.|
