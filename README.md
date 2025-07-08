@@ -205,7 +205,7 @@ A continuación se presenta el diagrama de descomposición del sistema Aleph, do
 ### Patrones Aplicados:
 * **Network Segmentation**
 
-## 6.4 Tokens validation tactic
+## 6.4 Tokens validation pattern
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                                                       |
 |----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -220,7 +220,7 @@ A continuación se presenta el diagrama de descomposición del sistema Aleph, do
 * **Authenticate Actor:** El sistema verifica la identidad del usuario o servicio que está solicitando acceder a un componente o recurso del sistema que se encuentra protegido. El sistema verifica la autenticación del usuario mediante Tokens JWT para cada solicitud que realice. Para esto, el API Gateway actúa como el único punto de entrada para dichas solicitudes y las verifica. Si el Token es valido, redirige la petición al microservicio, si no es válido, rechaza la petición.  
 
 	
-## 6.5 Rate Limiting tactic
+## 6.5 Rate Limiting pattern
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------|
@@ -231,6 +231,8 @@ A continuación se presenta el diagrama de descomposición del sistema Aleph, do
 | **Response**         | El sistema detecta el exceso de solicitudes y responde con un error 429 Too Many Requests, bloqueando temporalmente al origen infractor. |
 | **Response Measure** | Porcentaje de solicitudes bloqueadas por exceder el límite de tasa; reducción de riesgo de denegación de servicio (DoS).    |
 
+### Tácticas Aplicadas
+* **Limit Access:** Se restringe el acceso a los recursos del sistema por servicios que no estén autorizados. Se aplica la validación por Tokens JWT antes de ingresar a los microservicios requeridos, asegurando que solo los componentes definidos para su comunicación puedan interactuar entre sí.
 
 ## 6. Quality Attributes (Performance and Scalability)
 
@@ -284,11 +286,13 @@ A continuación se presenta el diagrama de descomposición del sistema Aleph, do
    - Deberá clonar el repositorio desde GitHub en el escritorio el cual ejecutará el sistema. Podrá hacerlo con el siguiente comando desde Git:
 	```bash git clone <https://github.com/unal-swarch/swarch2025i/tree/main/project/prototype_2/1F>```
 4. **Establecer variables de entorno**
-* Cambia la ruta desde tu terminal para así dirigirte a la ruta del proyecto:
+* Cambie la ruta desde su terminal para así dirigirse a la ruta del proyecto:
  ```bash cd swarch2025i/project/prototype_1/1F```
--  Crea los archivos `.env` necesarios en cada microservicio que los requiera o para Docker Compose. Asegúrate de definir correctamente las variables de entorno requeridas (puertos, credenciales, claves, etc.).
+-  Cree los archivos `.env` necesarios en cada microservicio que los requiera o para Docker Compose. Asegúrase de definir correctamente las variables de entorno requeridas (puertos, credenciales, claves, etc.).
 5. **Configurar los contenedores**
-* Una vez hayas configurado el sistema, con sus archivos `.env`, podrás desplegar todos los contenedores de nuestro sistema para crear debidamente los componentes. Podrás realizarlo por medio del siguiente comando:
+* Una vez hayas configurado el sistema, con sus archivos `.env`, podrá desplegar todos los contenedores de nuestro sistema para crear debidamente los componentes. Podrá realizarlo por medio del siguiente comando:
 ```bash docker compose up --build ```
 6. **Despliegue**
+  
 7. **Acceso al sistema**
+* Podra
