@@ -233,9 +233,10 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 | **Response Measure** | < 500ms de tiempo de respuesta promedio por solicitud en al menos el 95% de los casos<br>< 5% de errores por sobrecarga (códigos 5xx) durante el pico de tráfico |
 
 ### Tácticas arquitectónicas aplicadas:
-* Load balancing: Repartir tráfico entre varias instancias
 * Maintain multiple copies: Desplegar múltiples instancias del microservicio
 * Control resource demand: Cada instancia maneja un subconjunto de tráfico
+* Manage Resources: El balanceo de carga permite distribuir eficientemente el uso de recursos disponibles entre múltiples instancias de un servicio.
+* Increase Resources: porque se habilita la incorporación de nuevas instancias (escalado horizontal) que pueden ser gestionadas por el balanceador para mejorar el rendimiento general del sistema.
 
 ### Patrones aplicados:
 * Load Balancer Pattern
@@ -252,7 +253,8 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 | **Response Measure** | Tiempo de respuesta medio: < 200ms en el 95% de las solicitudes<br>Tasa de errores 5xx: < 1%<br>Redis cache hit rate: ≥ 95% para datos del álbum en los primeros 10 minutos|
 
 ### Tácticas arquitectónicas aplicadas:
-* Introduce Caching (Redis): Reduce latencia y presión sobre la base de datos
+* Manage Resources: El uso de caché reduce la carga sobre las bases de datos principales, liberando recursos y mejorando la eficiencia del sistema.
+* Reduce Computational Overhead: Evita el cómputo repetido de resultados ya generados, almacenándolos en memoria para accesos rápidos.
 
 
 ### Patrones aplicados:
