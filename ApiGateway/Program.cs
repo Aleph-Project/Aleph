@@ -69,7 +69,7 @@ app.Use(async (context, next) =>
     
     // COMENTADO TEMPORALMENTE PARA TESTING DEL CACHE
     // Para todas las demás rutas API, verificar el token
-    /*
+   
     if (path.StartsWith("/api/"))
     {
         var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
@@ -91,7 +91,7 @@ app.Use(async (context, next) =>
         
         // Si llegamos hasta aquí, el token es válido y está autenticado
     }
-    */
+
     
     await next();
 });
