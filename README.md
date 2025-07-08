@@ -124,10 +124,11 @@ A continuación se presenta el diagrama de la estructura en capas del sistema Al
 
 |Capa| Componentes|
 |----|-------|
+|Acceso|```aleph_rproxy_dsk```, ```aleph_rproxy```|
 |Presentación|```aleph_wfe```, ```aleph_dfe```|
-|Orquestación|```aleph_ag```, ```aleph_message_queue```|
-|Lógica|```aleph_profile_ms```, ```aleph_music_ms```, ```aleph_reviews_ms```, ```aleph_analysis_ms```, ```aleph_queue_consumer```, ```aleph_auth_ms```|
-|Datos|```aleph_profile_db```, ```aleph_music_db```, ```aleph_reviews_db```, ```aleph_analysis_db```, ```aleph_auth_db```, ```aleph_profile_bk```, ```aleph_music_bk```, ```aleph_streaming_bk```|
+|Comunicación|```aleph_ag_lb```,```aleph_ag```, ```aleph_message_queue```, ```aleph_profile_ms_lb```, ```aleph_auth_ms_lb```, ```aleph_music_ms_lb```|
+|Lógica|```aleph_queue_consumer```, ```aleph_profile_ms```, ```aleph_music_ms```, ```aleph_reviews_ms```, ```aleph_analysis_ms```, ```aleph_queue_consumer```, ```aleph_auth_ms```, ```aleph_streaming_ms```|
+|Datos|```aleph_profile_db```, ```aleph_music_db```, ```aleph_reviews_db```, ```aleph_analysis_db```, ```aleph_auth_db```, ```aleph_profile_bk```, ```aleph_music_bk```, ```aleph_streaming_bk```, ```aleph_analysis_cache```, ```aleph_reviews_cache```,```aleph_music_cache```
 
 ## 4. Deployment Structure 
 A continuación se presenta el diagrama de despliegue del sistema Aleph, donde se visualizan los contenedores, servicios en la nube y la distribución de los componentes:
@@ -245,9 +246,11 @@ A continuación se presenta el diagrama de descomposición del sistema Aleph, do
 | **Response Measure** | < 500ms de tiempo de respuesta promedio por solicitud en al menos el 95% de los casos<br>< 5% de errores por sobrecarga (códigos 5xx) durante el pico de tráfico |
 
 ### Tácticas arquitectónicas aplicadas:
-* Load balancing: Repartir tráfico entre varias instancias
 * Maintain multiple copies: Desplegar múltiples instancias del microservicio
 * Control resource demand: Cada instancia maneja un subconjunto de tráfico
+* Manage Resources: El balanceo de carga permite distribuir eficientemente el uso de recursos disponibles entre múltiples instancias de un servicio.
+* Increase Resources: porque se habilita la incorporación de nuevas instancias (escalado horizontal) que pueden ser gestionadas por el balanceador para mejorar el rendimiento general del sistema.
+
 
 ### Patrones aplicados:
 * Load Balancer Pattern
@@ -264,7 +267,9 @@ A continuación se presenta el diagrama de descomposición del sistema Aleph, do
 | **Response Measure** | Tiempo de respuesta medio: < 200ms en el 95% de las solicitudes<br>Tasa de errores 5xx: < 1%<br>Redis cache hit rate: ≥ 95% para datos del álbum en los primeros 10 minutos|
 
 ### Tácticas arquitectónicas aplicadas:
-* Introduce Caching (Redis): Reduce latencia y presión sobre la base de datos
+
+* Manage Resources: El uso de caché reduce la carga sobre las bases de datos principales, liberando recursos y mejorando la eficiencia del sistema.
+* Reduce Computational Overhead: Evita el cómputo repetido de resultados ya generados, almacenándolos en memoria para accesos rápidos.
 
 
 ### Patrones aplicados:
