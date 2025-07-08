@@ -292,7 +292,7 @@ A continuación se presenta el diagrama de descomposición del sistema Aleph, do
  	```bash
 	cd swarch2025i/project/prototype_1/1F
 	```
--  Cree los archivos `.env` necesarios en cada microservicio que los requiera o para Docker Compose. Asegúrase de definir correctamente las variables de entorno requeridas (puertos, credenciales, claves, etc.).
+     -  Cree los archivos `.env` necesarios en cada microservicio que los requiera o para Docker Compose. Asegúrase de definir correctamente las variables de entorno requeridas (puertos, 	credenciales, claves, etc.).
 5. **Configurar los contenedores**
    - Una vez hayas configurado el sistema, con sus archivos `.env`, podrá desplegar todos los contenedores de nuestro sistema para crear debidamente los componentes. Podrá realizarlo por medio del siguiente comando:
 	```bash
