@@ -26,11 +26,11 @@ _*Arquitectura de Software*_
  - **Description:** Aleph es un sistema de software de música, creado para que los usuarios puedan explorar, buscar y escuchar música, artistas y álbumes dentro de una sola plataforma. Los usuarios podrán buscar canciones, artistas y álbumes de su preferencia, estándo en la capacidad de utilizar filtros para sus búsquedas en base a las categorías musicales. Seleccionar las canciones de su interés para reproducirlas e interactuar con el reproductor para así poder realizar acciones como subir o bajar el volumen, pausar, acelerar y entre otras acciones con las cuales podrán disfrutar de sus canciones. Además de poder crear listas de reproducción en base a sus gustos músicales. Aleph se caracteriza por ser un sistema donde los usuarios puedan escribir y dejar sus opiniones o comentarios tanto en canciones como en álbumes, convirtiendo a Aleph en un espacio para el intercambio de opiniones y gustos músicales.
 
 ## 2. Architectural Structures Component-and Connector (C&C) Structure
-## 2.1 C&C View (LucidChart)
+## 2.1 C&C View 
 
 A continuación se presenta el diagrama de componentes y conectores del sistema Aleph, donde se visualizan los principales elementos arquitectónicos y sus relaciones:
 
-![Diagrama de Componentes y Conectores]((./images/Logo%20-%20Aleph.png))
+![Diagrama de Componentes y Conectores](./images/diagrama_componentes_conectores.drawio.png)
 
 ## 2.2 Description of architectural styles and patterns used
 
@@ -132,7 +132,7 @@ A continuación se presenta el diagrama de la estructura en capas del sistema Al
 
 ## 4. Deployment Structure 
 A continuación se presenta el diagrama de despliegue del sistema Aleph, donde se visualizan los contenedores, servicios en la nube y la distribución de los componentes:
-![Diagrama de deployment](./images/diagrama_capas.drawio.png)
+![Diagrama de deployment](./images/disgrama_despliegue.drawio.png)
 
 
 ## 5. Decomposition Structure
@@ -282,7 +282,7 @@ A continuación se presenta el diagrama de descomposición del sistema Aleph, do
 1. **Realizar instalaciones previas**
    - Poseer Docker instalado y Docker compose en la máquina.
      
-2. **CLonar el repositorio**
+2. **Clonar el repositorio**
    - Deberá clonar el repositorio desde GitHub en el escritorio el cual ejecutará el sistema. Podrá hacerlo con el siguiente comando desde Git:
 	```bash
 	git clone <https://github.com/unal-swarch/swarch2025i/tree/main/project/prototype_2/1F>
