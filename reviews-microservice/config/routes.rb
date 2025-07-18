@@ -29,7 +29,7 @@ Rails.application.routes.draw do
   delete 'api/v1/reviews/delete_reviews_by_album', to: 'reviews#delete_reviews_by_album'
   delete 'api/v1/reviews/:id', to: 'reviews#destroy'
 
-
-  #
+  # Health check
+  get '/api/v1/reviews/health', to: 'health#show'
 
 end
