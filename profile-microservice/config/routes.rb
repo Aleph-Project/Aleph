@@ -23,4 +23,5 @@ Rails.application.routes.draw do
   get '/api/v1/profiles/cities', to: 'cities#index', as: :cities
   get '/api/v1/profiles/exists-profile/:auth_id', to: 'profiles#profile_exists', as: :profile_exists
   post '/api/v1/profiles/auth_batch', to: 'profiles#auth_batch', as: :auth_batch
+  get '/api/v1/profiles/health', to: 'health#show'
 end

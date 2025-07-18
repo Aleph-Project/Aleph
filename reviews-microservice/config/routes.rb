@@ -30,6 +30,6 @@ Rails.application.routes.draw do
   delete 'api/v1/reviews/:id', to: 'reviews#destroy'
 
 
-  #
+  get '/api/v1/reviews/health', to: 'health#show'
 
 end
