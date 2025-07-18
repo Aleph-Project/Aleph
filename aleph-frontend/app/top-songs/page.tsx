@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { Play, TrendingUp, Headphones, Volume2, Crown } from "lucide-react"
+import { authHttpClient } from "@/lib/httpClient"
 
 type TopSong = {
     title: string
@@ -20,19 +21,30 @@ export default function Top10Page() {
     const fetchTopSongs = async () => {
       setLoading(true)
       try {
-        const response = await fetch("/api/v1/analytics/top-songs")
+        const response = await authHttpClient.get("/api/v1/analytics/top-songs")
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        
         const data = await response.json()
-        setTopSongs(data)
+        
+        // Verificar que data sea un array
+        if (Array.isArray(data)) {
+          setTopSongs(data)
+        } else {
+          console.error("La respuesta no es un array:", data)
+          setTopSongs([])
+        }
       } catch (error) {
         console.error("Error al cargar el top 10:", error)
+        setTopSongs([])
       } finally {
         setLoading(false)
       }
     }
 
     fetchTopSongs()
-
-    
   }, [])
 
   if (loading) {
@@ -51,7 +63,7 @@ export default function Top10Page() {
         <div className="absolute inset-0 overflow-hidden h-80">
           <div className="relative w-full h-full">
             <Image
-              src={topSongs[0]?.album_image_url || "/placeholder.svg"}
+              src={topSongs && topSongs.length > 0 ? topSongs[0]?.album_image_url || "/placeholder.svg" : "/placeholder.svg"}
               alt="Top song background"
               fill
               className="object-cover"
@@ -97,7 +109,7 @@ export default function Top10Page() {
       {/* Lista del top 10 */}
       <div className="max-w-5xl mx-auto px-4 -mt-10 relative z-20">
         <div className="space-y-8">
-          {topSongs.map((song, index) => (
+          {topSongs && topSongs.length > 0 ? topSongs.map((song, index) => (
             <div key={index} className="flex items-center justify-center pt-4 pb-8 space-x-4">
               {/* Número grande en blanco intenso */}
               <div className="w-32 md:w-40 flex items-center justify-center">
@@ -209,7 +221,12 @@ export default function Top10Page() {
                 </div>
               </div>
             </div>
-          ))}
+          ))
+          : (
+            <div className="text-center py-12">
+              <p className="text-zinc-400 text-xl">No hay datos de top songs disponibles</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -224,7 +241,10 @@ export default function Top10Page() {
               </div>
               <p className="text-sm text-zinc-400 mb-1">Total de reproducciones</p>
               <p className="text-3xl font-bold">
-                {topSongs.reduce((sum, song) => sum + song.plays, 0).toLocaleString()}
+                {topSongs && topSongs.length > 0 
+                  ? topSongs.reduce((sum, song) => sum + song.plays, 0).toLocaleString()
+                  : "0"
+                }
               </p>
             </div>
             <div className="bg-zinc-800/70 rounded-xl p-6 flex flex-col items-center text-center">
@@ -232,7 +252,9 @@ export default function Top10Page() {
                 <TrendingUp className="h-8 w-8 text-purple-500" />
               </div>
               <p className="text-sm text-zinc-400 mb-1">Canción más popular</p>
-              <p className="text-xl font-bold truncate max-w-full">{topSongs[0]?.title || "Cargando..."}</p>
+              <p className="text-xl font-bold truncate max-w-full">
+                {topSongs && topSongs.length > 0 ? topSongs[0]?.title : "Sin datos"}
+              </p>
             </div>
             <div className="bg-zinc-800/70 rounded-xl p-6 flex flex-col items-center text-center">
               <div className="bg-purple-600/20 p-4 rounded-full mb-4">

@@ -4,6 +4,7 @@ import { ReactSVGElement } from "react";
 
 import { gql } from '@apollo/client';
 import client from './graphqlClient';
+import { authHttpClient } from '@/lib/httpClient';
 
 // Definición de la interfaz Song que coincide con el modelo en el microservicio
 export interface Song {
@@ -122,13 +123,14 @@ export async function getAllSongs(): Promise<Song | null> {
 // Función para obtener una canción por su ID
 export async function getSongById(id: string): Promise<Song | null> {
   try {
-    // Usar la nueva estructura de URL
-    const response = await fetch(`${MUSIC_API_URL}/songs/${id}`);
+    // Usar la nueva estructura de URL con autenticación
+    const response = await authHttpClient.get(`${MUSIC_API_URL}/songs/${id}`);
     
     if (!response.ok) {
       if (response.status === 404) {
        return null ; // Retornar null si la canción no se encuentra
       }
+      throw new Error(`Error: ${response.status}`);
     }
     
     return response.json();
@@ -505,7 +507,7 @@ export async function getCategoryByIdGraphQL(id: string) {
 
 export async function getReviewsAndProfileBySong(id: string): Promise<ReviewsWithProfilesResponse> {
   try {
-    const response = await fetch(`${COMPOSED_API_URL}/reviews-with-profile/${id}`);
+    const response = await authHttpClient.get(`${COMPOSED_API_URL}/reviews-with-profile/${id}`);
 
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);

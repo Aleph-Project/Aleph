@@ -66,8 +66,10 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
-  config.hosts << "profile-ms:3000"
-  config.hosts << "apigateway"
+  # config.hosts << "profile-ms:3000"
+  # config.hosts << "apigateway"
+  config.hosts << "profile_service"
+  config.hosts << "apigateway_service"
 
 
   # Expiration time for s3 presigned URLs.

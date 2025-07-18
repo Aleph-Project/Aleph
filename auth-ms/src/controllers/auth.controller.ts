@@ -81,3 +81,13 @@ export async function activateDsk(req: Request, res: Response, next: NextFunctio
     next(err);
   }
 }
+
+export async function googleLogin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email, name, googleId } = req.body;
+    const { user, token } = await userService.googleLogin(email, name, googleId);
+    res.json({ user, token });
+  } catch (err) {
+    next(err);
+  }
+}

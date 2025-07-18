@@ -1,6 +1,8 @@
 package api
 
 import (
+	"log"
+
 	gqlhandler "github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-contrib/cors"
@@ -34,17 +36,38 @@ func SetupRouter(db *mongo.Database) *gin.Engine {
 	if err != nil {
 		// Fallback sin servicio de Spotify
 		spotifyService = nil
+		log.Printf("⚠️ Spotify service no disponible: %v", err)
 	}
 
-	musicService := service.NewMusicService(db, spotifyService)
-	handler := NewHandler(musicService, spotifyService)
+	// Intentar crear servicio de cache
+	log.Printf("🔄 Intentando conectar a Redis...")
+	cacheService, err := service.NewCacheService()
+	var musicService *service.MusicService
+	var cacheEnabled bool
+
+	if err != nil {
+		// Fallback: usar MusicService sin cache
+		log.Printf("⚠️ Cache no disponible, usando servicio sin cache: %v", err)
+		musicService = service.NewMusicService(db, spotifyService)
+		cacheEnabled = false
+		cacheService = nil
+	} else {
+		// Usar CachedMusicService cuando cache esté disponible
+		log.Printf("✅ Cache Redis disponible, creando CachedMusicService")
+		// Por ahora usar MusicService regular pero con cache disponible para handlers
+		musicService = service.NewMusicService(db, spotifyService)
+		cacheEnabled = true
+		log.Printf("✅ Cache disponible - handlers pueden usar funciones con cache")
+	}
+
+	handler := NewHandler(musicService, spotifyService, cacheService)
 
 	// Rutas de la API
 	api := r.Group("/api/v1")
 	{
 		// Ruta de health check
 		api.GET("/health", func(c *gin.Context) {
-			c.JSON(200, gin.H{"status": "ok"})
+			c.JSON(200, gin.H{"status": "ok", "cache_enabled": cacheEnabled})
 		})
 
 		// Grupo music (acceso directo para desarrollo)
@@ -71,6 +94,18 @@ func SetupRouter(db *mongo.Database) *gin.Engine {
 			music.GET("/genres/:id", handler.GetGenreByID)
 			music.GET("/genres/slug/:slug", handler.GetGenreBySlug)
 
+			// Rutas de categorías
+			music.GET("/categories", handler.GetCategories)
+
+			// Rutas de cache (solo si cache está disponible)
+			if cacheEnabled && cacheService != nil {
+				cache := music.Group("/cache")
+				{
+					cache.GET("/stats", handler.GetCacheStats)
+					cache.DELETE("/clear", handler.ClearCache)
+				}
+			}
+
 			// Rutas de Spotify
 			spotify := music.Group("/spotify")
 			if spotifyService != nil {
@@ -80,7 +115,7 @@ func SetupRouter(db *mongo.Database) *gin.Engine {
 			}
 
 			// GraphQL endpoint
-			music.POST("/graphql", gin.WrapH(gqlhandler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{MusicService: musicService}}))))
+			music.POST("/graphql", gin.WrapH(gqlhandler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{MusicService: musicService, CacheService: cacheService}}))))
 
 			// Playground (opcional, solo en desarrollo)
 			music.GET("/playground", gin.WrapH(playground.Handler("GraphQL", "/api/v1/music/graphql")))

@@ -1,6 +1,12 @@
 from db import get_connection
+from cache import get_cache, set_cache
 
 def get_top_songs(limit: int = 10):
+    cache_key = f"top_songs:{limit}"
+    cached_result = get_cache(cache_key)
+    if cached_result:
+        return cached_result
+    
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -19,7 +25,9 @@ def get_top_songs(limit: int = 10):
     cursor.close()
     conn.close()
 
-    return [{"title": r[0], "album_image_url": r[1], "plays": r[2]} for r in rows]
+    result = [{"title": r[0], "album_image_url": r[1], "plays": r[2]} for r in rows]
+    set_cache(cache_key, result, expire_seconds=300)
+    return result
 
 
 
@@ -45,6 +53,11 @@ def get_top_albums(limit: int = 10):
 
 
 def get_top_songs_by_country(country: str, limit: int = 10):
+    cache_key = f"top_songs_country:{country}:{limit}"
+    cached_result = get_cache(cache_key)
+    if cached_result:
+        return cached_result
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -65,9 +78,16 @@ def get_top_songs_by_country(country: str, limit: int = 10):
     cursor.close()
     conn.close()
 
-    return [{"title": r[0], "album_image_url": r[1],"plays": r[2]} for r in rows]
-
+    result = [{"title": r[0], "album_image_url": r[1], "plays": r[2]} for r in rows]
+    set_cache(cache_key, result, expire_seconds=300)
+    return result
+    
 def get_top_artists(limit: int = 10):
+    cache_key = f"top_artists:{limit}"
+    cached_result = get_cache(cache_key)
+    if cached_result:
+        return cached_result
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -78,7 +98,6 @@ def get_top_artists(limit: int = 10):
     GROUP BY da.artistname, da.imageurl
     ORDER BY play_count DESC
     LIMIT %s;
-
     """
 
     cursor.execute(query, (limit,))
@@ -86,8 +105,9 @@ def get_top_artists(limit: int = 10):
     cursor.close()
     conn.close()
 
-    return [{"artist": r[0], "image": r[1], "plays": r[2]} for r in rows]
-
+    result = [{"artist": r[0], "image": r[1], "plays": r[2]} for r in rows]
+    set_cache(cache_key, result, expire_seconds=300)
+    return result
 
 
 def get_most_active_users(limit: int = 10):

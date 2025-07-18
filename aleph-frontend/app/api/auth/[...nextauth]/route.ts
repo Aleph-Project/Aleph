@@ -23,6 +23,7 @@ declare module "next-auth" {
 }
 
 const handler = NextAuth({
+    
     providers: [
         // Proveedor Google
         GoogleProvider({
@@ -39,28 +40,29 @@ const handler = NextAuth({
             },
             async authorize(credentials) {
                 try {
-                    // Usa authService para validar login
-                    const res = await loginWithCredentials(credentials?.email, credentials?.password);
-                    // res debe tener { user, token }
-                    const { user, token } = res.data;
-
-                    if (user && token) {
+                    // Llamar al auth-ms a través del API Gateway (URL interna de Docker)
+                    console.log(process.env.APIGATEWAY_INT_URL);
+                    const res = await fetch(`${process.env.APIGATEWAY_INT_URL}/api/v1/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: credentials?.email, password: credentials?.password })
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (res.ok && data.user && data.token) {
                         // Devuelve ambos para que estén disponibles en el callback jwt
-                        return { ...user, backendToken: token };
+                        return { ...data.user, backendToken: data.token };
                     } else {
-                        // Si el backend responde sin user/token pero con error, propaga el error
-                        if (res.data?.error) {
-                            throw new Error(JSON.stringify({ error: res.data.error }));
+                        // Si el backend responde con error, propaga el error
+                        if (data?.error) {
+                            throw new Error(JSON.stringify({ error: data.error }));
                         }
                         return null;
                     }
                 } catch (err: any) {
-                    // Si el error viene del backend, propaga el mensaje de error
-                    if (err.response?.data?.error) {
-                        throw new Error(JSON.stringify({ error: err.response.data.error }));
-                    }
-                    // Si ya es un error lanzado arriba, propágalo tal cual
-                    if (err instanceof Error && err.message.startsWith("{")) {
+                    // Si el error viene del fetch, manejar respuesta
+                    if (err.message && err.message.startsWith("{")) {
                         throw err;
                     }
                     // Error genérico
@@ -80,6 +82,31 @@ const handler = NextAuth({
             if (account?.provider === "google" && profile) {
                 token.googleId = profile.sub;
                 token.image = (profile as { picture?: string }).picture; // Guarda la imagen de Google
+                
+                // ✅ NUEVO: Crear/obtener token del auth-ms para usuarios de Google
+                try {
+                    const googleUserData = {
+                        email: profile.email,
+                        name: profile.name,
+                        googleId: profile.sub,
+                        provider: 'google'
+                    };
+                    
+                    // Llamar al auth-ms a través del API Gateway (URL interna de Docker)
+                    const authResponse = await fetch(`${process.env.APIGATEWAY_INT_URL}/api/v1/auth/google-login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(googleUserData)
+                    });
+                    
+                    if (authResponse.ok) {
+                        const authData = await authResponse.json();
+                        token.backendToken = authData.token;
+                        token.id = authData.user.id;
+                    }
+                } catch (error) {
+                    console.error('Error obteniendo token para usuario de Google:', error);
+                }
             }
             // Si viene de credentials, user tendrá backendToken y datos del usuario
             if (user) {

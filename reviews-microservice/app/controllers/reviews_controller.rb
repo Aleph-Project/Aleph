@@ -21,12 +21,13 @@ class ReviewsController < ApplicationController
         @review = Review.new(review_params_with_defaults)
 
         if @review.save
+            invalidate_review_cache(@review)
             render json: @review, status: :created
         else
             render json: { 
-            error: 'Failed to create review', 
-            details: @review.errors.full_messages,
-            received_params: params.permit(required_params) # Para debug
+                error: 'Failed to create review', 
+                details: @review.errors.full_messages,
+                received_params: params.permit(required_params)
             }, status: :unprocessable_entity
         end
     end
@@ -35,6 +36,7 @@ class ReviewsController < ApplicationController
         if @review.nil?
             render json: { error: 'Review not found' }, status: :not_found
         elsif @review.update(review_params)
+            invalidate_review_cache(@review)
             render json: @review, status: :ok
         else
             render json: { error: 'Failed to update review', details: @review.errors.full_messages }, status: :unprocessable_entity
@@ -48,6 +50,7 @@ class ReviewsController < ApplicationController
         end
         if @review = Review.find_by(id: params[:id])
             if @review.destroy
+                invalidate_review_cache(@review)
                 render json: { message: 'Review deleted successfully' }, status: :ok
             else
                 render json: { error: 'Failed to delete review', details: @review.errors.full_messages }, status: :unprocessable_entity
@@ -63,6 +66,15 @@ class ReviewsController < ApplicationController
             render json: { error: "Parameter 'auth_id' is required" }, status: :bad_request
             return
         end
+
+        cache = CacheService.new
+        cache_key = "reviews:profile:#{params[:auth_id]}"
+
+        cached = cache.fetch(cache_key)
+        if cached
+            render json: cached and return
+        end
+
         @reviews = Review.left_joins(:replicas, :votes)
                          .where(auth_id: params[:auth_id], is_public: true)
                          .select('reviews.*, COUNT(DISTINCT replicas.id) as replicas_count, SUM(CASE WHEN votes.type_vote = true THEN 1 ELSE 0 END) as positive_votes, SUM(CASE WHEN votes.type_vote = false THEN 1 ELSE 0 END) as negative_votes')
@@ -70,6 +82,7 @@ class ReviewsController < ApplicationController
         if @reviews.empty?
             render json: { message: 'No reviews found for this profile' }, status: :not_found
         else
+            cache.write(cache_key, @reviews)
             render json: @reviews, status: :ok
         end
     end
@@ -85,6 +98,7 @@ class ReviewsController < ApplicationController
         if reviews.empty?
             render json: { message: 'No reviews found for this object' }, status: :not_found
         else
+            reviews.each { |review| invalidate_review_cache(review) }
             reviews.destroy_all
             render json: { message: 'All reviews for the object deleted successfully' }, status: :ok
         end
@@ -101,6 +115,7 @@ class ReviewsController < ApplicationController
         if reviews.empty?
             render json: { message: 'No reviews found for this object' }, status: :not_found
         else
+            reviews.each { |review| invalidate_review_cache(review) }
             reviews.destroy_all
             render json: { message: 'All reviews for the object deleted successfully' }, status: :ok
         end
@@ -113,6 +128,15 @@ class ReviewsController < ApplicationController
             render json: { error: "Parameter 'reviewed_object_id' is required" }, status: :bad_request
             return
         end
+
+        cache = CacheService.new
+        cache_key = "reviews:song:public:#{params[:reviewed_object_id]}"
+
+        cached = cache.fetch(cache_key)
+        if cached
+            render json: cached and return
+        end
+
         reviews = Review.left_joins(:replicas, :votes)
                          .where(reviewed_object_id: params[:reviewed_object_id], is_song: true, is_public: true)
                          .select('reviews.*, COUNT(DISTINCT replicas.id) as replicas_count, SUM(CASE WHEN votes.type_vote = true THEN 1 ELSE 0 END) as positive_votes, SUM(CASE WHEN votes.type_vote = false THEN 1 ELSE 0 END) as negative_votes')
@@ -120,6 +144,7 @@ class ReviewsController < ApplicationController
         if reviews.empty?
             render json: { message: 'No reviews found for this object' }, status: :not_found
         else
+            cache.write(cache_key, reviews)
             render json: reviews, status: :ok
         end
     end
@@ -131,6 +156,15 @@ class ReviewsController < ApplicationController
             render json: { error: "Parameter 'reviewed_object_id' is required" }, status: :bad_request
             return
         end
+
+        cache = CacheService.new
+        cache_key = "reviews:album:public:#{params[:reviewed_object_id]}"
+
+        cached = cache.fetch(cache_key)
+        if cached
+            render json: cached and return
+        end
+
         reviews = Review.left_joins(:replicas, :votes)
                          .where(reviewed_object_id: params[:reviewed_object_id], is_song: false, is_public: true)
                          .select('reviews.*, COUNT(DISTINCT replicas.id) as replicas_count, SUM(CASE WHEN votes.type_vote = true THEN 1 ELSE 0 END) as positive_votes, SUM(CASE WHEN votes.type_vote = false THEN 1 ELSE 0 END) as negative_votes')
@@ -138,6 +172,7 @@ class ReviewsController < ApplicationController
         if reviews.empty?
             render json: { message: 'No reviews found for this object' }, status: :not_found
         else
+            cache.write(cache_key, reviews)
             render json: reviews, status: :ok
         end
     end
@@ -149,6 +184,15 @@ class ReviewsController < ApplicationController
             render json: { error: "Parameter 'auth_id' is required" }, status: :bad_request
             return
         end
+
+        cache = CacheService.new
+        cache_key = "reviews:profile:all:#{params[:reviewed_object_id]}"
+
+        cached = cache.fetch(cache_key)
+        if cached
+            render json: cached and return
+        end
+
         @reviews = Review.left_joins(:replicas, :votes)
                          .where(auth_id: params[:auth_id])
                          .select('reviews.*, COUNT(DISTINCT replicas.id) as replicas_count, SUM(CASE WHEN votes.type_vote = true THEN 1 ELSE 0 END) as positive_votes, SUM(CASE WHEN votes.type_vote = false THEN 1 ELSE 0 END) as negative_votes')
@@ -156,6 +200,7 @@ class ReviewsController < ApplicationController
         if @reviews.empty?
             render json: { message: 'No reviews found for this profile' }, status: :not_found
         else
+            cache.write(cache_key, @reviews)
             render json: @reviews, status: :ok
         end
     end
@@ -172,6 +217,7 @@ class ReviewsController < ApplicationController
         else
             @review.is_public = true
             if @review.save
+                reviews.each { |review| invalidate_review_cache(review) }
                 render json: { message: 'Review made public successfully' }, status: :ok
             else
                 render json: { error: 'Failed to make review public', details: @review.errors.full_messages }, status: :unprocessable_entity, details: @review.errors.full_messages
@@ -189,6 +235,7 @@ class ReviewsController < ApplicationController
         if reviews.empty?
             render json: { message: 'No reviews found for this profile' }, status: :not_found
         else
+            reviews.each { |review| invalidate_review_cache(review) }
             reviews.destroy_all
             render json: { message: 'All reviews for the profile deleted successfully' }, status: :ok
         end
@@ -222,5 +269,21 @@ class ReviewsController < ApplicationController
         :is_song
         )
     end
+    end
+
+    #Invalidar cache
+    def invalidate_review_cache(review)
+        cache = CacheService.new
+        #perfiles
+        cache.delete("reviews:profile:#{review.auth_id}")
+        #reviews por perfil (todas)
+        cache.delete("reviews:profile:all:#{review.auth_id}")
+        
+        #reeviews por canción o álbum
+        if review.is_song
+            cache.delete("reviews:song:public:#{review.reviewed_object_id}")
+        else
+            cache.delete("reviews:album:public:#{review.reviewed_object_id}")
+        end
     end
 end

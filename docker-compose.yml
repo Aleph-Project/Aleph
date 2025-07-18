@@ -4,6 +4,7 @@ services:
     build: 
       context: ./profile-microservice
       dockerfile: Dockerfile-dev
+    restart: unless-stopped
     volumes:
       - ./profile-microservice:/usr/src/app
     environment:
@@ -12,6 +13,51 @@ services:
       - AZURE_DB_USER=${AZURE_DB_USER}
       - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
       - AZURE_DB_HOST=${AZURE_DB_HOST}
+    networks:
+      # private_net: 
+      #   ipv4_address: 172.20.1.3
+      private_net: 
+        ipv4_address: 172.20.1.9
+      ms_net:
+        ipv4_address: 172.20.2.4
+  profile-ms-a:
+    container_name: profile-ms-a
+    build:
+      context: ./profile-microservice
+      dockerfile: Dockerfile-dev
+    restart: unless-stopped
+    volumes:
+      - ./profile-microservice:/usr/src/app
+    environment:
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - AZURE_DB_USER=${AZURE_DB_USER}
+      - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
+      - AZURE_DB_HOST=${AZURE_DB_HOST}
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.16
+      ms_net:
+        ipv4_address: 172.20.2.10
+  profile-ms-b:
+    container_name: profile-ms-b
+    build:
+      context: ./profile-microservice
+      dockerfile: Dockerfile-dev
+    restart: unless-stopped
+    volumes:
+      - ./profile-microservice:/usr/src/app
+    environment:
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - AZURE_DB_USER=${AZURE_DB_USER}
+      - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
+      - AZURE_DB_HOST=${AZURE_DB_HOST}
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.17
+      ms_net:
+        ipv4_address: 172.20.2.11
   reviews-ms:
     container_name: reviews-ms
     build: 
@@ -23,39 +69,130 @@ services:
       - AZURE_DB_USER=${AZURE_DB_USER}
       - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
       - AZURE_DB_HOST=${AZURE_DB_HOST}
+      - REDIS_HOST=${REVIEWS_REDIS_HOST}
+      - REDIS_PORT=${REVIEWS_REDIS_PORT}
+      - REDIS_PASSWORD=${REVIEWS_CACHE_PASSWORD}
+      - CACHE_TTL_SECONDS=300
+    networks:
+      # private_net: 
+      #   ipv4_address: 172.20.1.4
+      private_net:
+        ipv4_address: 172.20.1.10
+      ms_net:
+        ipv4_address: 172.20.2.5
+    depends_on:
+      - reviews-cache
+
   music-ms:
     container_name: music-ms
     build:
       context: ./music-ms
       dockerfile: Dockerfile
     restart: unless-stopped
-    # Puerto comentado para que solo sea accesible a través del API Gateway
-    # ports:
-    #   - "3002:3002"
     environment:
-      # - PORT=3002
       - MONGODB_URI=${MONGODB_URI}
       - MONGODB_NAME=${MONGODB_NAME}
       - MONGODB_TIMEOUT=10
       - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
       - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+      - REDIS_HOST=${MUSIC_REDIS_HOST}
+      - REDIS_PORT=${MUSIC_REDIS_PORT}
+      - REDIS_PASSWORD=${MUSIC_CACHE_PASSWORD}
+      - CACHE_TTL_SECONDS=300
+    networks:
+      # private_net:
+      #   ipv4_address: 172.20.1.6
+      private_net:
+        ipv4_address: 172.20.1.13
+      ms_net:
+        ipv4_address: 172.20.2.7
+    depends_on:
+      - music-cache
+  music-ms-a:
+    container_name: music-ms-a
+    build:
+      context: ./music-ms
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.14
+      ms_net:
+        ipv4_address: 172.20.2.8
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_NAME=${MONGODB_NAME}
+      - MONGODB_TIMEOUT=10
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+      - REDIS_HOST=${MUSIC_REDIS_HOST}
+      - REDIS_PORT=${MUSIC_REDIS_PORT}
+      - REDIS_PASSWORD=${MUSIC_CACHE_PASSWORD}
+      - CACHE_TTL_SECONDS=300
+    depends_on:
+      - music-cache
+  music-ms-b:
+    container_name: music-ms-b
+    build:
+      context: ./music-ms
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.15
+      ms_net:
+        ipv4_address: 172.20.2.9
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_NAME=${MONGODB_NAME}
+      - MONGODB_TIMEOUT=10
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+      - REDIS_HOST=${MUSIC_REDIS_HOST}
+      - REDIS_PORT=${MUSIC_REDIS_PORT}
+      - REDIS_PASSWORD=${MUSIC_CACHE_PASSWORD}
+      - CACHE_TTL_SECONDS=300
+    depends_on:
+      - music-cache
+  music-load-balancer:
+    image: nginx:latest
+    container_name: music-load-balancer
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.12
+    # ports: 
+    #   - "8082:80"
+    volumes:
+      - ./music-load-balancer/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - music-ms
+      - music-ms-a
+      - music-ms-b
   streaming-ms:
     container_name: streaming-ms
     build:
       context: ./streaming-ms
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "8081:8080"  # Exponer WebSocket para conexión directa desde el frontend
+    networks:
+      # public_net:
+      #   ipv4_address: 172.20.0.5
+      private_net:
+        ipv4_address: 172.20.1.4
+      # app_net:
+      #   ipv4_address: 172.20.2.15
+    # ports:
+    #   - "8081:8080"  # Exponer WebSocket para conexión directa desde el frontend
     environment:
       - PORT=8080
-      - API_GATEWAY_URL=http://apigateway:8080
+      # - API_GATEWAY_URL=http://apigateway:8080
+      - API_GATEWAY_URL=http://172.20.1.24:80
       - S3_ACCESS_KEY=${MUSIC_S3_ACCESS_KEY}
       - S3_SECRET_KEY=${MUSIC_S3_SECRET_KEY}
       - S3_BUCKET_NAME=${MUSIC_S3_BUCKET_NAME}
       - AWS_REGION=${MUSIC_AWS_REGION}
     depends_on:
-      - apigateway
+      - apigateway-load-balancer
       - music-ms
   aleph-frontend:
     container_name: aleph-frontend
@@ -67,24 +204,71 @@ services:
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-    ports:
-      - "3000:3000"
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - APIGATEWAY_INT_URL=${APIGATEWAY_INT_URL}
+      - NODE_TLS_REJECT_UNAUTHORIZED=0  # Acepta certificados self-signed para desarrollo
+    extra_hosts:
+      - "localhost:host-gateway"  # Permite resolver localhost desde el contenedor
+    networks:
+      public_net:
+        ipv4_address: 172.20.0.3
+      private_net:
+        ipv4_address: 172.20.1.3
+    # ports:
+    #   - "3000:3000"
     depends_on:
       - music-ms
-      - streaming-ms      
+      - streaming-ms   
+
   apigateway:
     container_name: apigateway
     build: 
       context: ./ApiGateway
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+    # ports:
+    #   - "8080:8080"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      private_net: 
+        ipv4_address: 172.20.1.5
+      # app_net:
+      #   ipv4_address: 172.20.2.2
+  apigateway-a:
+    container_name: apigateway-a
+    build:
+      context: ./ApiGateway
+      dockerfile: Dockerfile
+    # ports:
+    #   - "8081:8080"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.20
+  apigateway-b:
+    container_name: apigateway-b
+    build:
+      context: ./ApiGateway
+      dockerfile: Dockerfile
+    # ports:
+    #   - "8082:8080"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.21
   aleph_message_queue:
     image: bitnami/kafka:latest
     container_name: aleph_message_queue
-    ports:
-      - "9092:9092"  
-      - "9093:9093"  
+    networks:
+      # private_net:
+      #   ipv4_address: 172.20.1.9
+      private_net:
+        ipv4_address: 172.20.1.6
+    # ports:
+    #   - "9092:9092"  
+    #   - "9093:9093"  
     environment:
       - KAFKA_KRAFT_MODE=true
       - KAFKA_CFG_NODE_ID=1
@@ -107,20 +291,40 @@ services:
       - AZURE_DB_USER=${AZURE_DB_USER}
       - AZURE_DB_PASSWORD=${AZURE_DB_PASSWORD}
       - AZURE_DB_HOST=${AZURE_DB_HOST}
-      - ANALYSIS_DB_NAME=${ANALYSIS_DB_NAME} 
+      - ANALYSIS_DB_NAME=${ANALYSIS_DB_NAME}
+    networks:
+      # private_net:
+      #   ipv4_address: 172.20.1.10
+      private_net:
+        ipv4_address: 172.20.1.7
+      ms_net:
+        ipv4_address: 172.20.2.2
   analysis-ms:
     container_name: analysis-ms
     build:
       context: ./analysis-ms
       dockerfile: Dockerfile
-    ports:
-      - "8001:8000"  
+    networks:
+      # private_net:
+      #   ipv4_address: 172.20.1.8
+      private_net:
+        ipv4_address: 172.20.1.8
+      ms_net:
+        ipv4_address: 172.20.2.3
+    #ports:
+    #   - "8001:8000"  
     environment:
       - DB_HOST=${AZURE_DB_HOST}
       - DB_PORT=5432
       - DB_NAME=${ANALYSIS_DB_NAME}
       - DB_USER=${AZURE_DB_USER}
       - DB_PASSWORD=${AZURE_DB_PASSWORD}
+      - REDIS_HOST=${ANALYSIS_REDIS_HOST}
+      - REDIS_PORT=${ANALYSIS_REDIS_PORT}
+      - REDIS_PASSWORD=${ANALYSIS_CACHE_PASSWORD}
+      - CACHE_TTL_SECONDS=300
+    depends_on:
+      - analysis-cache
   auth-ms:
     container_name: auth-ms
     build:
@@ -135,7 +339,225 @@ services:
       - EMAIL_USER=alephmusicmanagement@gmail.com
       - EMAIL_PASS=${EMAIL_PASS}
       - EMAIL_FROM=Aleph <alephmusicmanagement@gmail.com>
-      - FRONTEND_URL=http://localhost:3000
+      - FRONTEND_URL=https://localhost
       - AUTH_MONGO_URI=${AUTH_MONGO_URI}
+    networks:
+      # private_net:
+      #   ipv4_address: 172.20.1.5
+      private_net:
+        ipv4_address: 172.20.1.11
+      ms_net:
+        ipv4_address: 172.20.2.6
+    # ports:
+    #   - "4000:4000"
+  auth-ms-a:
+    container_name: auth-ms-a
+    build:
+      context: ./auth-ms
+      dockerfile: Dockerfile
+    volumes:
+      - ./auth-ms:/app
+      - /app/node_modules
+    environment:
+      - PORT=4000
+      - JWT_SECRET=${JWT_SECRET}
+      - EMAIL_USER=alephmusicmanagement@gmail.com
+      - EMAIL_PASS=${EMAIL_PASS}
+      - EMAIL_FROM=Aleph <alephmusicmanagement@gmail.com>
+      - FRONTEND_URL=https://localhost
+      - AUTH_MONGO_URI=${AUTH_MONGO_URI}
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.18
+      ms_net:
+        ipv4_address: 172.20.2.12
+  auth-ms-b:
+    container_name: auth-ms-b
+    build:
+      context: ./auth-ms
+      dockerfile: Dockerfile
+    volumes:
+      - ./auth-ms:/app
+      - /app/node_modules
+    environment:
+      - PORT=4000
+      - JWT_SECRET=${JWT_SECRET}
+      - EMAIL_USER=alephmusicmanagement@gmail.com
+      - EMAIL_PASS=${EMAIL_PASS}
+      - EMAIL_FROM=Aleph <alephmusicmanagement@gmail.com>
+      - FRONTEND_URL=https://localhost
+      - AUTH_MONGO_URI=${AUTH_MONGO_URI}
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.19
+      ms_net:
+        ipv4_address: 172.20.2.13
+  reverse-proxy:
+    container_name: reverse-proxy
+    build:
+      context: ./reverse-proxy
+      dockerfile: Dockerfile
+    networks:
+      public_net:
+        ipv4_address: 172.20.0.2
+      private_net:
+        ipv4_address: 172.20.1.2
     ports:
-      - "4000:4000"
+      - "443:443"
+    depends_on:
+      # - apigateway
+      # - apigateway-load-balancer 
+      - aleph-frontend
+
+  reverse-proxy-dsk:
+    container_name: reverse-proxy-dsk
+    build:
+      context: ./reverse-proxy-dsk
+      dockerfile: Dockerfile
+    networks:
+      public_net:
+        ipv4_address: 172.20.0.4
+      private_net:
+        ipv4_address: 172.20.1.28
+    ports:
+      - "444:444"
+    depends_on:
+      # - apigateway
+      - apigateway-load-balancer 
+
+  auth-load-balancer:
+    image: nginx:latest
+    container_name: auth-load-balancer
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.22
+    volumes:
+      - ./auth-load-balancer/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - auth-ms
+      - auth-ms-a
+      - auth-ms-b
+
+  profile-load-balancer:
+    image: nginx:latest
+    container_name: profile-load-balancer
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.23
+    volumes:
+      - ./profile-load-balancer/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - profile-ms
+      - profile-ms-a
+      - profile-ms-b
+
+  apigateway-load-balancer:
+    image: nginx:latest
+    container_name: apigateway-load-balancer
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.24
+    # ports:
+    #   - "8083:80"
+    volumes:
+      - ./apigateway-load-balancer/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - apigateway
+      - apigateway-a
+      - apigateway-b
+  
+  analysis-cache:
+    image: redis:7-alpine
+    container_name: analysis-cache
+    restart: unless-stopped
+    command: redis-server --requirepass ${ANALYSIS_CACHE_PASSWORD}
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.26
+    environment:
+      - REDIS_HOST=${ANALYSIS_REDIS_HOST}
+      - REDIS_PORT=${ANALYSIS_REDIS_PORT}
+      - REDIS_PASSWORD=${ANALYSIS_CACHE_PASSWORD}
+    # Configuración de memoria y optimizaciones
+    sysctls:
+      - net.core.somaxconn=511
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  reviews-cache:
+    image: redis:7-alpine
+    container_name: reviews-cache
+    restart: unless-stopped
+    command: redis-server --requirepass ${REVIEWS_CACHE_PASSWORD}
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.27
+    environment:
+      - REDIS_HOST=${REVIEWS_REDIS_HOST}
+      - REDIS_PORT=${REVIEWS_REDIS_PORT}
+      - REDIS_PASSWORD=${REVIEWS_CACHE_PASSWORD}
+    # Configuración de memoria y optimizaciones
+    sysctls:
+      - net.core.somaxconn=511
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  music-cache:
+    image: redis:7-alpine
+    container_name: music-cache
+    restart: unless-stopped
+    command: redis-server --requirepass ${MUSIC_CACHE_PASSWORD}
+    networks:
+      private_net:
+        ipv4_address: 172.20.1.25
+    environment:
+      - REDIS_HOST=${MUSIC_REDIS_HOST}
+      - REDIS_PORT=${MUSIC_REDIS_PORT}
+      - REDIS_PASSWORD=${MUSIC_CACHE_PASSWORD}
+    # Configuración de memoria y optimizaciones
+    sysctls:
+      - net.core.somaxconn=511
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+networks:
+  public_net:
+    driver: bridge
+    internal: false
+    ipam: 
+      config:
+        - subnet: 172.20.0.0/26
+          gateway: 172.20.0.1
+  
+  private_net: 
+    driver: bridge
+    internal: true
+    ipam:
+      config: 
+        - subnet: 172.20.1.0/26
+          gateway: 172.20.1.1
+  
+  ms_net:
+    driver: bridge
+    internal: false
+    ipam:
+      config: 
+        - subnet: 172.20.2.0/26
+          gateway: 172.20.2.1
+
+
+
+
+

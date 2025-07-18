@@ -16,7 +16,7 @@ Rails.application.configure do
   config.server_timing = true
 
   config.hosts << "reviews-ms:3000"
-  config.hosts << "apigateway"
+  config.hosts << "apigateway_service"
 
   # Enable/disable Action Controller caching. By default Action Controller caching is disabled.
   # Run rails dev:cache to toggle Action Controller caching.

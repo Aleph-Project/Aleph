@@ -22,15 +22,19 @@ _*Arquitectura de Software*_
 
 ## Software System
  - **Name:** Aleph.
- - **Logo:** ![project/prototype_1/1F/Logo - Aleph.png](./Logo%20-%20Aleph.png)
+ - **Logo:** ![project/prototype_1/1F/Logo - Aleph.png](./images/Logo%20-%20Aleph.png)
  - **Description:** Aleph es un sistema de software de música, creado para que los usuarios puedan explorar, buscar y escuchar música, artistas y álbumes dentro de una sola plataforma. Los usuarios podrán buscar canciones, artistas y álbumes de su preferencia, estándo en la capacidad de utilizar filtros para sus búsquedas en base a las categorías musicales. Seleccionar las canciones de su interés para reproducirlas e interactuar con el reproductor para así poder realizar acciones como subir o bajar el volumen, pausar, acelerar y entre otras acciones con las cuales podrán disfrutar de sus canciones. Además de poder crear listas de reproducción en base a sus gustos músicales. Aleph se caracteriza por ser un sistema donde los usuarios puedan escribir y dejar sus opiniones o comentarios tanto en canciones como en álbumes, convirtiendo a Aleph en un espacio para el intercambio de opiniones y gustos músicales.
 
 ## 2. Architectural Structures Component-and Connector (C&C) Structure
+<<<<<<< HEAD
 ## 2.1 C&C View (LucidChart)
+=======
+## 2.1 C&C View 
+>>>>>>> origin/aleph-performance
 
 A continuación se presenta el diagrama de componentes y conectores del sistema Aleph, donde se visualizan los principales elementos arquitectónicos y sus relaciones:
 
-![Diagrama de Componentes y Conectores](./Componentes_Conectores.png)
+![Diagrama de Componentes y Conectores](./images/diagrama_componentes_conectores.drawio.png)
 
 ## 2.2 Description of architectural styles and patterns used
 
@@ -61,14 +65,23 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 |```aleph_ap_lb (Load Balancer API Gateway)```| Comunicación |Se encarga de la distribución del tráfico entrante hacia alguna de las instancias de API Gateway disponibles. El balanceo está determinado por el algoritmo *Least Connection* (dirección del tráfico al servidor con menos conexiones).|
 |```aleph_ag (API Gateway)```|Comunicación|Orquestador central que permite que los componentes de frontend se comuniquen con los distintos microservicios. Gestiona la recepción de peticiones HTTP (GET, POST, PATCH, DELETE), enruta hacia los microservicios apropiados y compone respuestas cuando se requiere información de múltiples fuentes.|
 |```aleph_profile_ms_lb```| Comunicación | Se encarga de la distribución del tráfico dirigido hacia las instancias del microservicio ``aleph_profile_ms`` que se encuentren disponibles. El balanceo se realiza bajo el algoritmo *Least Connection*  (dirección del tráfico al servidor con menos conexiones). |
+<<<<<<< HEAD
 |```aleph_auth_ms_lb```| Comunicación |Se encarga de la distribución del tráfico dirigido hacia las instancias del microservicio ```aleph_auth_ms```.|
 |```aleph_music_ms_lb```| Comunicación | Se encarga de la distribución del tráfico dirigido hacia las instancias del microservicio ``aleph_music_ms`` que se encuentren disponibles. El balanceo se realiza bajo el algoritmo *Least Connection*  (dirección del tráfico al servidor con menos conexiones). |
 |```aleph_message_queue```|Comunicación|Sistema de mensajería implementado con Apache Kafka. Recolecta eventos como song-played generados por acciones del usuario, y permite su consumo por otros servicios para análisis posterior.|
 |```aleph_profile_ms```|Lógica|Microservicio encargado de gestionar la información de perfiles de usuarios, como datos personales, entre ellos su país de origen. Se apoya en una base de datos (aleph_profile_db).|
+=======
+|```aleph_profile_ms```|Lógica|Microservicio encargado de gestionar la información de perfiles de usuarios, como datos personales, entre ellos su país de origen. Se apoya en una base de datos (aleph_profile_db).|
+|```aleph_music_ms_lb```| Comunicación | Se encarga de la distribución del tráfico dirigido hacia las instancias del microservicio ``aleph_music_ms`` que se encuentren disponibles. El balanceo se realiza bajo el algoritmo *Least Connection*  (dirección del tráfico al servidor con menos conexiones). |
+>>>>>>> origin/aleph-performance
 |```aleph_music_ms```|Lógica|Administra la información de artistas, canciones, álbumes y listas de reproducción personalizadas. Implementa búsqueda por filtros y visualización detallada. Utiliza ```aleph_music_db```, una base de datos MongoDB alojada en Atlas, para manejar datos flexibles (como letras, portadas, categorías).|
 |```aleph_reviews_ms```|Lógica|Microservicio encargado de la gestión de reseñas para canciones y álbumes, tomando en cuenta la reseña principal, el voto realizado y los hilos de comentarios qué otros usuarios le realicen a la reseña. Este componente gestionará las operaciones de CREATE para la creación de reseñas, UPDATE para la actualización de reseñas, GET para la visualización de reseñas y DELETE para su eliminación, qué serán realizadas hacia la base de datos (```aleph_reviews_db```).|
 |```aleph_auth_ms```|Lógica|	Servicio interno para autenticación, construido con Node.js, Express y TypeScript. Expone endpoints REST para registro, login, recuperación y cambio de contraseña. Utiliza JWT, correo de confirmación y se comunica con aleph_auth_db (MongoDB). Su implementación elimina la dependencia de Auth0 en entornos internos.|
 |```aleph_analysis_ms```|Lógica|Microservicio de analítica que expone endpoints para obtener estadísticas como canciones más reproducidas y análisis por ubicación. Consulta directamente aleph_analysis_db, una base PostgreSQL con modelo estrella.|
+<<<<<<< HEAD
+=======
+|```aleph_message_queue```|Comunicación|Sistema de mensajería implementado con Apache Kafka. Recolecta eventos como song-played generados por acciones del usuario, y permite su consumo por otros servicios para análisis posterior.|
+>>>>>>> origin/aleph-performance
 |```aleph_queue_consumer```|Lógica|	Consumer suscrito al topic de Kafka. Procesa eventos de reproducción de canciones, consulta datos a otros microservicios, enriquece la información y la almacena en ```aleph_analysis_db``` siguiendo el modelo estrella.|
 |```aleph_music_db```|Data|Base de datos del microservicio de canciones, se encarga de manejar datos de las canciones, artistas y álbumes dentro del sistema (nombre del artista, duración de la canción, nombre del álbum, nombre de la canción, letra de las canciones, categorías y filtros, etc.). Para esto se optó por una base de datos MongoDB, debido a que es una base de datos flexible y escalable, permitiendo el constante crecimiento de la base de datos para las canciones, siendo la base de datos más grande para nuestro sistema. Adicionalmente, está en la capacidad de manejar documentos con estructuras variables, los cuales están incorporados en este servicio ya que los datos de las canciones manejan las portadas, letras, categorías, etc. |
 |```aleph_reviews_db```|Data|Base de datos principal del microservicio de reseñas, encargada de la persistencia de las reseñas, qué incluye las reseñas (título, cuerpo, rating, fechas de creación y actualización, …), las réplicas (comentarios realizados dentro de las reseñas, representados en forma de hilos), y los votos (positivos o negativos). Es una base de datos relacional PostgreSQL.|
@@ -87,6 +100,7 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 ### Relations
 | Componente 1  | Componente 2 | 	Tipo de Conector| Descripción|
 |----------|----------|----------| ----------|
+<<<<<<< HEAD
 | ```aleph_rproxy```   | ```aleph_dfe```   |HTTPS|Enrutamiento de solicitudes del escritorio del usuario desde el proxy inverso hacia el desktop frontend.|
 | ```aleph_rproxy_dsk```   | ```aleph_wfe```   |HTTPS|Enrutamiento de solicitudes web desde el proxy inverso hacia el web frontend.|
 | ```aleph_rproxy```   | ```aleph_ag_lb```   |HTTP|Enrutamiento de solicitudes web externas desde el reverse proxy hacia el balanceador del API Gateway.|
@@ -119,6 +133,44 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 | ```aleph_dfe```   | ```aleph_auth (SaaS)```   |-|El desktop usa el SDK nativo de Auth0 para Electron, autenticando y almacenando tokens en el sistema operativo.|
 
 ## 3. Layered Structure
+=======
+| ```aleph_rproxy_dsk```   | ```aleph_dfe```   |HTTPS|Enrutamiento de solicitudes del escritorio del usuario desde el proxy inverso hacia el desktop frontend.|
+| ```aleph_rproxy```   | ```aleph_wfe```   |HTTPS|Enrutamiento de solicitudes web desde el proxy inverso hacia el web frontend.|
+| ```aleph_rproxy```   | ```aleph_ag_lb```   |HTTP|Enrutamiento de solicitudes web externas desde el reverse proxy hacia el balanceador del API Gateway.|
+| ```aleph_rproxy_dsk```   | ```aleph_ag_lb```   |HTTP|Enrutamiento de solicitudes del escritorio del usuario externas desde el reverse proxy hacia el balanceador del API Gateway.|
+| ```aleph_ag_lb```   | ```aleph_ag```   |HTTP|Balanceo de carga para solicitudes al API Gateway.
+| ```aleph_ag```   | ```aleph_message_queue```   |TCP|Publicación de eventos como: song-played.|
+| ```aleph_message_queue```   | ```aleph_queue_consumer```   |TCP|Consumo de eventos de reproducción para procesamiento analítico.|
+| ```aleph_queue_consumer```   | ```aleph_analysis_db```   |REST|Inserción e una base de datos PostgreSQL estructurada bajo modelo estrella.|
+| ```aleph_ag```   | ```aleph_analysis_ms```   |HTTP - REST|Consultas analíticas solicitadas desde el frontend.
+| ```aleph_analysis_ms```   | ```aleph_analysis_db```   |TCP|Lectura de datos analíticos para generar reportes.|
+| ```aleph_analysis_ms```   | ```aleph_analysis_cache ```   |TCP|	Cacheo de resultados analíticos frecuentemente consultados.|
+| ```aleph_ag```   | ```aleph_profile_ms_lb```   |HTTP - REST|	Acceso balanceado al microservicio de perfiles.
+| ```aleph_profile_ms_lb```| ```aleph_profile_ms```   |HTTP - REST|	Balanceo de carga hacia la lógica del microservicio de perfiles.
+| ```aleph_profile_ms```   | ```aleph_profile_db```   |TCP|Persistencia de datos de usuario.|
+| ```aleph_profile_ms```   | ```aleph_profile_bk```   |REST|Almacenamiento de archivos relacionados a usuarios (Haciendo uso de S3).|
+| ```aleph_ag```   | ```aleph_reviews_ms```   |HTTP - REST|Gestión de reseñas y votos a través del API Gateway.|
+| ```aleph_reviews_ms```   | ```aleph_reviews_db```   |TCP|Persistencia de reseñas y votaciones.|
+| ```aleph_reviews_ms```   | ```aleph_reviews_cache```   |TCP|Almacenamiento en caché de reseñas consultadas frecuentemente.|
+| ```aleph_ag```   | ```aleph_auth_ms_lb```   |HTTP - REST|Acceso a endpoints de autenticación desde el frontend vía el API Gateway.|
+| ```aleph_auth_ms_lb```   | ```aleph_auth_ms```   |HTTP - REST|Balanceo de carga para el microservicio de autenticación.|
+| ```aleph_auth_ms```   | ```aleph_auth_db```   |TCP|Base de datos con credenciales.|
+| ```aleph_ag```   | ```aleph_music_ms_lb```  |HTTP - GraphQL|	Enrutamiento balanceado hacia el microservicio de música.|
+| ```aleph_music_ms_lb```   | ```aleph_music_ms```  |HTTP - GraphQL|Balanceo de carga para acceso a catálogos musicales.|
+| ```aleph_music_ms```   | ```aleph_music_db```   |TCP|	Metadatos musicales y relaciones con artistas, álbumes y géneros.|
+| ```aleph_music_ms```   | ```aleph_music_bk```   |REST|	Almacenamiento de archivos de audio (tracks).|
+| ```aleph_music_ms```   | ```aleph_music_cache```   |TCP|Cache de metadatos o respuestas a consultas frecuentes del catálogo.|
+| ```aleph_ag```   | ```aleph_streaming_ms```   |GraphQL|	Enrutamiento a microservicio de streaming desde el API Gateway.|
+| ```aleph_rproxy```   | ```aleph_streaming_ms```   |WebSocket|Manejo de conexión WebSocket desde el cliente hacia el microservicio de streaming a través del reverse proxy.|
+| ```aleph_wfe```   | ```aleph_auth (SaaS)```   |HTTP/HTTPS|El frontend web usa la librería oficial de Auth0 para autenticación segura con redirección y manejo de sesión.|
+| ```aleph_dfe```   | ```aleph_auth (SaaS)```   |HTTP/HTTPS|El desktop usa el SDK nativo de Auth0 para Electron, autenticando y almacenando tokens en el sistema operativo.|
+
+## 3. Layered Structure
+A continuación se presenta el diagrama de la estructura en capas del sistema Aleph, donde se visualizan las cuatro capas principales y la distribución de los componentes:
+
+![Diagrama de capas](./images/diagrama_capas.drawio.png)
+
+>>>>>>> origin/aleph-performance
 |Capa| Componentes|
 |----|-------|
 |Acceso|```aleph_rproxy_dsk```, ```aleph_rproxy```|
@@ -127,6 +179,18 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 |Lógica|```aleph_queue_consumer```, ```aleph_profile_ms```, ```aleph_music_ms```, ```aleph_reviews_ms```, ```aleph_analysis_ms```, ```aleph_queue_consumer```, ```aleph_auth_ms```, ```aleph_streaming_ms```|
 |Datos|```aleph_profile_db```, ```aleph_music_db```, ```aleph_reviews_db```, ```aleph_analysis_db```, ```aleph_auth_db```, ```aleph_profile_bk```, ```aleph_music_bk```, ```aleph_streaming_bk```, ```aleph_analysis_cache```, ```aleph_reviews_cache```,```aleph_music_cache```
 
+<<<<<<< HEAD
+=======
+## 4. Deployment Structure 
+A continuación se presenta el diagrama de despliegue del sistema Aleph, donde se visualizan los contenedores, servicios en la nube y la distribución de los componentes:
+![Diagrama de deployment](./images/disgrama_despliegue.drawio.png)
+
+
+## 5. Decomposition Structure
+A continuación se presenta el diagrama de descomposición del sistema Aleph, donde se visualizan las funcionalidades principales y la distribución de los componentes involucrados:
+![Diagrama de descomposition](./images/diagrama_descomposicion.drawio.png)
+
+>>>>>>> origin/aleph-performance
 
 ## 6. Quality Attributes (Security)
 ## 6.1. Secure Chanel Pattern
@@ -175,6 +239,10 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 
 
 ## 6.3 Network Segmentation Pattern
+<<<<<<< HEAD
+=======
+![Diagrama de segmentación de red](./images/diagrama_segmentacion_red.drawio.png)
+>>>>>>> origin/aleph-performance
 ### Scenario:
 | Elemento         | Descripción del Comportamiento del Sistema                                                                                                                                    |
 |------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -192,7 +260,11 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 ### Patrones Aplicados:
 * **Network Segmentation**
 
+<<<<<<< HEAD
 ## 6.4 Tokens validation tactic
+=======
+## 6.4 Tokens validation pattern
+>>>>>>> origin/aleph-performance
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                                                       |
 |----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -207,7 +279,11 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 * **Authenticate Actor:** El sistema verifica la identidad del usuario o servicio que está solicitando acceder a un componente o recurso del sistema que se encuentra protegido. El sistema verifica la autenticación del usuario mediante Tokens JWT para cada solicitud que realice. Para esto, el API Gateway actúa como el único punto de entrada para dichas solicitudes y las verifica. Si el Token es valido, redirige la petición al microservicio, si no es válido, rechaza la petición.  
 
 	
+<<<<<<< HEAD
 ## 6.5 Rate Limiting tactic
+=======
+## 6.5 Rate Limiting pattern
+>>>>>>> origin/aleph-performance
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------|
@@ -218,6 +294,11 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 | **Response**         | El sistema detecta el exceso de solicitudes y responde con un error 429 Too Many Requests, bloqueando temporalmente al origen infractor. |
 | **Response Measure** | Porcentaje de solicitudes bloqueadas por exceder el límite de tasa; reducción de riesgo de denegación de servicio (DoS).    |
 
+<<<<<<< HEAD
+=======
+### Tácticas Aplicadas
+* **Limit Access:** Se restringe el acceso a los recursos del sistema por servicios que no estén autorizados. Se aplica la validación por Tokens JWT antes de ingresar a los microservicios requeridos, asegurando que solo los componentes definidos para su comunicación puedan interactuar entre sí.
+>>>>>>> origin/aleph-performance
 
 ## 6. Quality Attributes (Performance and Scalability)
 
@@ -238,6 +319,10 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 * Manage Resources: El balanceo de carga permite distribuir eficientemente el uso de recursos disponibles entre múltiples instancias de un servicio.
 * Increase Resources: porque se habilita la incorporación de nuevas instancias (escalado horizontal) que pueden ser gestionadas por el balanceador para mejorar el rendimiento general del sistema.
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/aleph-performance
 ### Patrones aplicados:
 * Load Balancer Pattern
 
@@ -253,6 +338,10 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 | **Response Measure** | Tiempo de respuesta medio: < 200ms en el 95% de las solicitudes<br>Tasa de errores 5xx: < 1%<br>Redis cache hit rate: ≥ 95% para datos del álbum en los primeros 10 minutos|
 
 ### Tácticas arquitectónicas aplicadas:
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/aleph-performance
 * Manage Resources: El uso de caché reduce la carga sobre las bases de datos principales, liberando recursos y mejorando la eficiencia del sistema.
 * Reduce Computational Overhead: Evita el cómputo repetido de resultados ya generados, almacenándolos en memoria para accesos rápidos.
 
@@ -260,3 +349,43 @@ A continuación se presenta el diagrama de componentes y conectores del sistema 
 ### Patrones aplicados:
 * Cache Aside Pattern: Las canciones y metadatos del álbum están cacheados desde el primer acceso
 
+<<<<<<< HEAD
+=======
+## Prototype
+
+1. **Realizar instalaciones previas**
+   - Poseer Docker instalado y Docker compose en la máquina.
+     
+2. **Clonar el repositorio**
+   - Deberá clonar el repositorio desde GitHub en el escritorio el cual ejecutará el sistema. Podrá hacerlo con el siguiente comando desde Git:
+	```bash
+	git clone <https://github.com/unal-swarch/swarch2025i/tree/main/project/prototype_2/1F>
+ 	```
+4. **Establecer variables de entorno**
+    - Cambie la ruta desde su terminal para así dirigirse a la ruta del proyecto:
+ 	```bash
+	cd swarch2025i/project/prototype_1/1F
+	```
+     -  Cree los archivos `.env` necesarios en cada microservicio que los requiera o para Docker Compose. Asegúrase de definir correctamente las variables de entorno requeridas (puertos, 	credenciales, claves, etc.).
+5. **Configurar los contenedores**
+   - Una vez hayas configurado el sistema, con sus archivos `.env`, podrá desplegar todos los contenedores de nuestro sistema para crear debidamente los componentes. Podrá realizarlo por medio del siguiente comando:
+	```bash
+	docker compose up --build
+	```
+
+6. **Despliegue**
+   - Verifique que todos los contenedores estén corriendo correctamente:
+     	```bash
+     	docker ps
+     	```
+   - Puedes revisar los logs de los servicios para asegurarte de que no haya errores:
+     	```bash
+     	docker compose logs -f
+     	```
+7. **Acceso al sistema**
+   - Podrá acceder a nuestro sistema desde el navegador web con la URL y el puerto configurados.
+   - Si tienes un cliente de escritorio. Es importante que ejecute el siguiente comando:
+     
+	```bash
+     	npm run build
+>>>>>>> origin/aleph-performance

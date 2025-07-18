@@ -26,13 +26,15 @@ import (
 type Handler struct {
 	musicService   *service.MusicService
 	spotifyService *service.SpotifyService
+	cacheService   *service.CacheService
 }
 
 // NewHandler crea un nuevo handler
-func NewHandler(musicService *service.MusicService, spotifyService *service.SpotifyService) *Handler {
+func NewHandler(musicService *service.MusicService, spotifyService *service.SpotifyService, cacheService *service.CacheService) *Handler {
 	return &Handler{
 		musicService:   musicService,
 		spotifyService: spotifyService,
+		cacheService:   cacheService,
 	}
 }
 
@@ -289,6 +291,17 @@ func (h *Handler) ImportArtistFromSpotify(c *gin.Context) {
 		})
 	}
 
+	// 🔄 INVALIDACIÓN AUTOMÁTICA DE CACHE
+	if h.cacheService != nil {
+		ctx := c.Request.Context()
+		// Invalidar cache de álbumes, canciones y artistas
+		h.cacheService.DeletePattern(ctx, h.cacheService.GenerateKey("albums", "*"))
+		h.cacheService.DeletePattern(ctx, h.cacheService.GenerateKey("songs", "*"))
+		h.cacheService.DeletePattern(ctx, h.cacheService.GenerateKey("artists", "*"))
+
+		fmt.Printf("🔄 CACHE INVALIDATED: Artist imported, cache cleared\n")
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Artist imported successfully",
 		"artist": map[string]interface{}{
@@ -513,6 +526,16 @@ func (h *Handler) ImportAlbumFromSpotify(c *gin.Context) {
 		}
 	}
 
+	// 🔄 INVALIDACIÓN AUTOMÁTICA DE CACHE
+	if h.cacheService != nil {
+		// Invalidar cache de álbumes, canciones y artistas
+		h.cacheService.DeletePattern(ctx, h.cacheService.GenerateKey("albums", "*"))
+		h.cacheService.DeletePattern(ctx, h.cacheService.GenerateKey("songs", "*"))
+		h.cacheService.DeletePattern(ctx, h.cacheService.GenerateKey("artists", "*"))
+
+		fmt.Printf("🔄 CACHE INVALIDATED: Album imported, cache cleared\n")
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Album imported successfully",
 		"album": map[string]interface{}{
@@ -570,10 +593,61 @@ func (h *Handler) GetSongs(c *gin.Context) {
 		}
 	}
 
-	fmt.Printf("Parámetros de paginación: limit=%d, skip=%d\n", limit, skip)
+	// 🆕 Verificar si hay filtro por album_id
+	albumID := c.Query("album_id")
 
-	// Llamar al servicio para obtener las canciones
-	songs, err := h.musicService.GetSongs(ctx, limit, skip)
+	fmt.Printf("Parámetros de paginación: limit=%d, skip=%d, album_id=%s\n", limit, skip, albumID)
+
+	// Usar cache si está disponible
+	var songs []models.SongWithDetails
+	var err error
+
+	if h.cacheService != nil {
+		var cacheKey string
+
+		// Generar clave de cache diferente si hay album_id
+		if albumID != "" {
+			cacheKey = h.cacheService.GenerateKey("songs", fmt.Sprintf("album_%s_limit_%d_skip_%d", albumID, limit, skip))
+		} else {
+			cacheKey = h.cacheService.GenerateKey("songs", fmt.Sprintf("limit_%d_skip_%d", limit, skip))
+		}
+
+		// Intentar obtener del cache
+		err = h.cacheService.Get(ctx, cacheKey, &songs)
+		if err == nil {
+			if albumID != "" {
+				fmt.Printf("✅ CACHE HIT: GetSongs(album_id=%s, limit=%d, skip=%d)\n", albumID, limit, skip)
+			} else {
+				fmt.Printf("✅ CACHE HIT: GetSongs(limit=%d, skip=%d)\n", limit, skip)
+			}
+		} else {
+			// Cache miss - obtener de la base de datos
+			if albumID != "" {
+				fmt.Printf("🔍 CACHE MISS: GetSongs(album_id=%s, limit=%d, skip=%d) - consultando DB\n", albumID, limit, skip)
+				// 🆕 Usar consulta filtrada por album_id
+				songs, err = h.musicService.GetSongsByAlbumID(ctx, albumID, limit, skip)
+			} else {
+				fmt.Printf("🔍 CACHE MISS: GetSongs(limit=%d, skip=%d) - consultando DB\n", limit, skip)
+				songs, err = h.musicService.GetSongs(ctx, limit, skip)
+			}
+
+			if err == nil {
+				// Guardar en cache para próximas consultas
+				if cacheErr := h.cacheService.Set(ctx, cacheKey, songs); cacheErr != nil {
+					fmt.Printf("⚠️ Error guardando en cache: %v\n", cacheErr)
+				}
+			}
+		}
+	} else {
+		// Fallback al servicio regular
+		if albumID != "" {
+			songs, err = h.musicService.GetSongsByAlbumID(ctx, albumID, limit, skip)
+		} else {
+			songs, err = h.musicService.GetSongs(ctx, limit, skip)
+		}
+		fmt.Printf("🔄 Usando MusicService regular (sin cache)\n")
+	}
+
 	if err != nil {
 		fmt.Printf("Error al obtener las canciones: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener las canciones: " + err.Error()})
@@ -676,7 +750,7 @@ func (h *Handler) GetSongs(c *gin.Context) {
 			"cover_url":          coverURL,
 			"created_at":         song.CreatedAt.Format(time.RFC3339),
 			"duration":           durationStr,
-			"genre":              "Indie",                     // Valor por defecto, puedes obtener el género real si lo tienes
+			"genre":              "Indie",
 			"likes":              100000 + rand.Intn(900000),  // Valor aleatorio para simular likes
 			"plays":              500000 + rand.Intn(1500000), // Valor aleatorio para simular reproducciones
 			"release_date":       albumReleaseDate,
@@ -706,8 +780,34 @@ func (h *Handler) GetSong(c *gin.Context) {
 		return
 	}
 
-	// Obtener la canción de la base de datos
-	songDetails, err := h.musicService.GetSong(ctx, songID)
+	// 🆕 Usar cache si está disponible
+	var songDetails *models.SongWithDetails
+
+	if h.cacheService != nil {
+		// Generar clave de cache para esta canción específica
+		cacheKey := h.cacheService.GenerateKey("song", songID)
+
+		// Intentar obtener del cache
+		err = h.cacheService.Get(ctx, cacheKey, &songDetails)
+		if err == nil {
+			fmt.Printf("✅ CACHE HIT: GetSong(%s)\n", songID)
+		} else {
+			// Cache miss - obtener de la base de datos
+			fmt.Printf("🔍 CACHE MISS: GetSong(%s) - consultando DB\n", songID)
+			songDetails, err = h.musicService.GetSong(ctx, songID)
+			if err == nil {
+				// Guardar en cache para próximas consultas
+				if cacheErr := h.cacheService.Set(ctx, cacheKey, songDetails); cacheErr != nil {
+					fmt.Printf("⚠️ Error guardando en cache: %v\n", cacheErr)
+				}
+			}
+		}
+	} else {
+		// Fallback al servicio regular
+		songDetails, err = h.musicService.GetSong(ctx, songID)
+		fmt.Printf("🔄 Usando MusicService regular (sin cache)\n")
+	}
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener la canción: " + err.Error()})
 		return
@@ -805,6 +905,22 @@ func (h *Handler) UpdateSongAudioURL(c *gin.Context) {
 		return
 	}
 
+	// 🔄 INVALIDACIÓN AUTOMÁTICA DE CACHE
+	if h.cacheService != nil {
+		ctx := c.Request.Context()
+
+		// Invalidar cache específico de esta canción
+		songCacheKey := h.cacheService.GenerateKey("song", songID)
+		h.cacheService.Delete(ctx, songCacheKey)
+
+		// Invalidar cache de listados de canciones (porque pueden incluir esta canción)
+		songsPattern := h.cacheService.GenerateKey("songs", "*")
+		h.cacheService.DeletePattern(ctx, songsPattern)
+
+		// Log de invalidación
+		fmt.Printf("🔄 CACHE INVALIDATED: Song %s updated, cache cleared\n", songID)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "URL de audio actualizada exitosamente",
 		"audio_url": request.AudioURL,
@@ -820,10 +936,38 @@ func (h *Handler) SearchSongsByName(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	songsDetails, err := h.musicService.SearchSongsByName(ctx, name)
-	if err != nil {
-		c.JSON(500, gin.H{"error": "Error al buscar canciones: " + err.Error()})
-		return
+
+	// 🆕 Usar cache si está disponible
+	var songsDetails []models.SongWithDetails
+
+	if h.cacheService != nil {
+		// Generar clave de cache para esta búsqueda
+		cacheKey := h.cacheService.GenerateKey("search", "songs_name_"+name)
+
+		// Intentar obtener del cache
+		err := h.cacheService.Get(ctx, cacheKey, &songsDetails)
+		if err == nil {
+			fmt.Printf("✅ CACHE HIT: SearchSongsByName(%s)\n", name)
+		} else {
+			// Cache miss - obtener de la base de datos
+			fmt.Printf("🔍 CACHE MISS: SearchSongsByName(%s) - consultando DB\n", name)
+			songsDetails, err = h.musicService.SearchSongsByName(ctx, name)
+			if err == nil {
+				// Guardar en cache para próximas consultas
+				if cacheErr := h.cacheService.Set(ctx, cacheKey, songsDetails); cacheErr != nil {
+					fmt.Printf("⚠️ Error guardando en cache: %v\n", cacheErr)
+				}
+			}
+		}
+	} else {
+		// Fallback al servicio regular
+		var err error
+		songsDetails, err = h.musicService.SearchSongsByName(ctx, name)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Error al buscar canciones: " + err.Error()})
+			return
+		}
+		fmt.Printf("🔄 Usando MusicService regular (sin cache)\n")
 	}
 
 	if len(songsDetails) == 0 {
@@ -882,11 +1026,37 @@ func (h *Handler) GetAlbums(c *gin.Context) {
 	// Obtener el contexto de la petición
 	ctx := c.Request.Context()
 
-	// Llamar al servicio para obtener todos los álbumes
-	albums, err := h.musicService.GetAlbums(ctx)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener los álbumes: " + err.Error()})
-		return
+	// 🆕 Usar cache si está disponible
+	var albums []models.Album
+
+	if h.cacheService != nil {
+		// Generar clave de cache para todos los álbumes
+		cacheKey := h.cacheService.GenerateKey("albums", "all")
+
+		// Intentar obtener del cache
+		err := h.cacheService.Get(ctx, cacheKey, &albums)
+		if err == nil {
+			fmt.Printf("✅ CACHE HIT: GetAlbums()\n")
+		} else {
+			// Cache miss - obtener de la base de datos
+			fmt.Printf("🔍 CACHE MISS: GetAlbums() - consultando DB\n")
+			albums, err = h.musicService.GetAlbums(ctx)
+			if err == nil {
+				// Guardar en cache para próximas consultas
+				if cacheErr := h.cacheService.Set(ctx, cacheKey, albums); cacheErr != nil {
+					fmt.Printf("⚠️ Error guardando en cache: %v\n", cacheErr)
+				}
+			}
+		}
+	} else {
+		// Fallback al servicio regular
+		var err error
+		albums, err = h.musicService.GetAlbums(ctx)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener los álbumes: " + err.Error()})
+			return
+		}
+		fmt.Printf("🔄 Usando MusicService regular (sin cache)\n")
 	}
 
 	// Formatear la respuesta según el formato requerido por el frontend
@@ -946,8 +1116,34 @@ func (h *Handler) GetAlbum(c *gin.Context) {
 		return
 	}
 
-	// Obtener el álbum de la base de datos
-	album, err := h.musicService.GetAlbumByID(ctx, objectID)
+	// 🆕 Usar cache si está disponible
+	var album *models.Album
+
+	if h.cacheService != nil {
+		// Generar clave de cache para este álbum específico
+		cacheKey := h.cacheService.GenerateKey("album", albumID)
+
+		// Intentar obtener del cache
+		err = h.cacheService.Get(ctx, cacheKey, &album)
+		if err == nil {
+			fmt.Printf("✅ CACHE HIT: GetAlbum(%s)\n", albumID)
+		} else {
+			// Cache miss - obtener de la base de datos
+			fmt.Printf("🔍 CACHE MISS: GetAlbum(%s) - consultando DB\n", albumID)
+			album, err = h.musicService.GetAlbumByID(ctx, objectID)
+			if err == nil {
+				// Guardar en cache para próximas consultas
+				if cacheErr := h.cacheService.Set(ctx, cacheKey, album); cacheErr != nil {
+					fmt.Printf("⚠️ Error guardando en cache: %v\n", cacheErr)
+				}
+			}
+		}
+	} else {
+		// Fallback al servicio regular
+		album, err = h.musicService.GetAlbumByID(ctx, objectID)
+		fmt.Printf("🔄 Usando MusicService regular (sin cache)\n")
+	}
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener el álbum: " + err.Error()})
 		return
@@ -1005,11 +1201,37 @@ func (h *Handler) GetArtists(c *gin.Context) {
 		}
 	}
 
-	// Llamar al servicio para obtener los artistas
-	artists, err := h.musicService.GetArtists(ctx, limit, skip)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener los artistas: " + err.Error()})
-		return
+	// 🆕 Usar cache si está disponible
+	var artists []models.Artist
+
+	if h.cacheService != nil {
+		// Generar clave de cache para esta combinación de parámetros
+		cacheKey := h.cacheService.GenerateKey("artists", fmt.Sprintf("limit_%d_skip_%d", limit, skip))
+
+		// Intentar obtener del cache
+		err := h.cacheService.Get(ctx, cacheKey, &artists)
+		if err == nil {
+			fmt.Printf("✅ CACHE HIT: GetArtists(limit=%d, skip=%d)\n", limit, skip)
+		} else {
+			// Cache miss - obtener de la base de datos
+			fmt.Printf("🔍 CACHE MISS: GetArtists(limit=%d, skip=%d) - consultando DB\n", limit, skip)
+			artists, err = h.musicService.GetArtists(ctx, limit, skip)
+			if err == nil {
+				// Guardar en cache para próximas consultas
+				if cacheErr := h.cacheService.Set(ctx, cacheKey, artists); cacheErr != nil {
+					fmt.Printf("⚠️ Error guardando en cache: %v\n", cacheErr)
+				}
+			}
+		}
+	} else {
+		// Fallback al servicio regular
+		var err error
+		artists, err = h.musicService.GetArtists(ctx, limit, skip)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener los artistas: " + err.Error()})
+			return
+		}
+		fmt.Printf("🔄 Usando MusicService regular (sin cache)\n")
 	}
 
 	// Formatear respuesta según el formato requerido por el frontend
@@ -1038,10 +1260,41 @@ func (h *Handler) GetArtist(c *gin.Context) {
 	// Obtener el contexto de la petición
 	ctx := c.Request.Context()
 
-	// Llamar al servicio para obtener el artista con sus detalles
-	artistWithDetails, err := h.musicService.GetArtist(ctx, artistID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener el artista: " + err.Error()})
+	// 🆕 Usar cache si está disponible
+	var artistWithDetails *models.ArtistWithDetails
+
+	if h.cacheService != nil {
+		// Generar clave de cache para este artista específico
+		cacheKey := h.cacheService.GenerateKey("artist", artistID)
+
+		// Intentar obtener del cache
+		err := h.cacheService.Get(ctx, cacheKey, &artistWithDetails)
+		if err == nil {
+			fmt.Printf("✅ CACHE HIT: GetArtist(%s)\n", artistID)
+		} else {
+			// Cache miss - obtener de la base de datos
+			fmt.Printf("🔍 CACHE MISS: GetArtist(%s) - consultando DB\n", artistID)
+			artistWithDetails, err = h.musicService.GetArtist(ctx, artistID)
+			if err == nil {
+				// Guardar en cache para próximas consultas
+				if cacheErr := h.cacheService.Set(ctx, cacheKey, artistWithDetails); cacheErr != nil {
+					fmt.Printf("⚠️ Error guardando en cache: %v\n", cacheErr)
+				}
+			}
+		}
+	} else {
+		// Fallback al servicio regular
+		var err error
+		artistWithDetails, err = h.musicService.GetArtist(ctx, artistID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener el artista: " + err.Error()})
+			return
+		}
+		fmt.Printf("🔄 Usando MusicService regular (sin cache)\n")
+	}
+
+	if artistWithDetails == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Artista no encontrado"})
 		return
 	}
 
@@ -1069,11 +1322,37 @@ func (h *Handler) GetCategories(c *gin.Context) {
 	// Obtener el contexto de la petición
 	ctx := c.Request.Context()
 
-	// Llamar al servicio para obtener todos los géneros
-	genres, err := h.musicService.GetGenres(ctx)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener las categorías: " + err.Error()})
-		return
+	// 🆕 Usar cache si está disponible
+	var genres []map[string]interface{}
+
+	if h.cacheService != nil {
+		// Generar clave de cache para todas las categorías
+		cacheKey := h.cacheService.GenerateKey("categories", "all")
+
+		// Intentar obtener del cache
+		err := h.cacheService.Get(ctx, cacheKey, &genres)
+		if err == nil {
+			fmt.Printf("✅ CACHE HIT: GetCategories()\n")
+		} else {
+			// Cache miss - obtener de la base de datos
+			fmt.Printf("🔍 CACHE MISS: GetCategories() - consultando DB\n")
+			genres, err = h.musicService.GetGenres(ctx)
+			if err == nil {
+				// Guardar en cache para próximas consultas
+				if cacheErr := h.cacheService.Set(ctx, cacheKey, genres); cacheErr != nil {
+					fmt.Printf("⚠️ Error guardando en cache: %v\n", cacheErr)
+				}
+			}
+		}
+	} else {
+		// Fallback al servicio regular
+		var err error
+		genres, err = h.musicService.GetGenres(ctx)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener las categorías: " + err.Error()})
+			return
+		}
+		fmt.Printf("🔄 Usando MusicService regular (sin cache)\n")
 	}
 
 	// Agrupar los géneros en "categorías" para mantener compatibilidad
@@ -1138,11 +1417,37 @@ func (h *Handler) GetGenres(c *gin.Context) {
 	// Obtener el contexto de la petición
 	ctx := c.Request.Context()
 
-	// Llamar al servicio para obtener los géneros
-	genres, err := h.musicService.GetGenres(ctx)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener los géneros: " + err.Error()})
-		return
+	// 🆕 Usar cache si está disponible
+	var genres []map[string]interface{}
+
+	if h.cacheService != nil {
+		// Generar clave de cache para todos los géneros
+		cacheKey := h.cacheService.GenerateKey("genres", "all")
+
+		// Intentar obtener del cache
+		err := h.cacheService.Get(ctx, cacheKey, &genres)
+		if err == nil {
+			fmt.Printf("✅ CACHE HIT: GetGenres()\n")
+		} else {
+			// Cache miss - obtener de la base de datos
+			fmt.Printf("🔍 CACHE MISS: GetGenres() - consultando DB\n")
+			genres, err = h.musicService.GetGenres(ctx)
+			if err == nil {
+				// Guardar en cache para próximas consultas
+				if cacheErr := h.cacheService.Set(ctx, cacheKey, genres); cacheErr != nil {
+					fmt.Printf("⚠️ Error guardando en cache: %v\n", cacheErr)
+				}
+			}
+		}
+	} else {
+		// Fallback al servicio regular
+		var err error
+		genres, err = h.musicService.GetGenres(ctx)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener los géneros: " + err.Error()})
+			return
+		}
+		fmt.Printf("🔄 Usando MusicService regular (sin cache)\n")
 	}
 
 	c.JSON(http.StatusOK, genres)
@@ -1155,11 +1460,37 @@ func (h *Handler) GetGenreByID(c *gin.Context) {
 	// Obtener el contexto de la petición
 	ctx := c.Request.Context()
 
-	// Llamar al servicio para obtener el género
-	genre, err := h.musicService.GetGenreByID(ctx, genreID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener el género: " + err.Error()})
-		return
+	// 🆕 Usar cache si está disponible
+	var genre map[string]interface{}
+
+	if h.cacheService != nil {
+		// Generar clave de cache para este género específico
+		cacheKey := h.cacheService.GenerateKey("genre", genreID)
+
+		// Intentar obtener del cache
+		err := h.cacheService.Get(ctx, cacheKey, &genre)
+		if err == nil {
+			fmt.Printf("✅ CACHE HIT: GetGenreByID(%s)\n", genreID)
+		} else {
+			// Cache miss - obtener de la base de datos
+			fmt.Printf("🔍 CACHE MISS: GetGenreByID(%s) - consultando DB\n", genreID)
+			genre, err = h.musicService.GetGenreByID(ctx, genreID)
+			if err == nil {
+				// Guardar en cache para próximas consultas
+				if cacheErr := h.cacheService.Set(ctx, cacheKey, genre); cacheErr != nil {
+					fmt.Printf("⚠️ Error guardando en cache: %v\n", cacheErr)
+				}
+			}
+		}
+	} else {
+		// Fallback al servicio regular
+		var err error
+		genre, err = h.musicService.GetGenreByID(ctx, genreID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener el género: " + err.Error()})
+			return
+		}
+		fmt.Printf("🔄 Usando MusicService regular (sin cache)\n")
 	}
 
 	c.JSON(http.StatusOK, genre)
@@ -1172,11 +1503,37 @@ func (h *Handler) GetGenreBySlug(c *gin.Context) {
 	// Obtener el contexto de la petición
 	ctx := c.Request.Context()
 
-	// Llamar al servicio para obtener el género por slug
-	genre, err := h.musicService.GetGenreBySlug(ctx, slug)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener el género: " + err.Error()})
-		return
+	// 🆕 Usar cache si está disponible
+	var genre map[string]interface{}
+
+	if h.cacheService != nil {
+		// Generar clave de cache para este slug específico
+		cacheKey := h.cacheService.GenerateKey("genre_slug", slug)
+
+		// Intentar obtener del cache
+		err := h.cacheService.Get(ctx, cacheKey, &genre)
+		if err == nil {
+			fmt.Printf("✅ CACHE HIT: GetGenreBySlug(%s)\n", slug)
+		} else {
+			// Cache miss - obtener de la base de datos
+			fmt.Printf("🔍 CACHE MISS: GetGenreBySlug(%s) - consultando DB\n", slug)
+			genre, err = h.musicService.GetGenreBySlug(ctx, slug)
+			if err == nil {
+				// Guardar en cache para próximas consultas
+				if cacheErr := h.cacheService.Set(ctx, cacheKey, genre); cacheErr != nil {
+					fmt.Printf("⚠️ Error guardando en cache: %v\n", cacheErr)
+				}
+			}
+		}
+	} else {
+		// Fallback al servicio regular
+		var err error
+		genre, err = h.musicService.GetGenreBySlug(ctx, slug)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener el género: " + err.Error()})
+			return
+		}
+		fmt.Printf("🔄 Usando MusicService regular (sin cache)\n")
 	}
 
 	c.JSON(http.StatusOK, genre)
@@ -1238,4 +1595,40 @@ func containsObjectID(list []primitive.ObjectID, id primitive.ObjectID) bool {
 		}
 	}
 	return false
+}
+
+// GetCacheStats obtiene estadísticas del cache
+func (h *Handler) GetCacheStats(c *gin.Context) {
+	if h.cacheService == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Cache not available"})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	stats, err := h.cacheService.GetStats(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error getting cache stats", "details": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"cache_stats": stats})
+}
+
+// ClearCache limpia todo el cache
+func (h *Handler) ClearCache(c *gin.Context) {
+	if h.cacheService == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Cache not available"})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	// Limpiar todo el cache del namespace de música
+	err := h.cacheService.DeletePattern(ctx, "aleph:music:*")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error clearing cache", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Cache cleared successfully"})
 }

@@ -26,8 +26,9 @@ type Song struct {
 }
 
 type StreamRequest struct {
-	Type   string `json:"type"` // "play", "pause", "stop", "resume"
-	SongID string `json:"songId"`
+	Type      string `json:"type"` // "play", "pause", "stop", "resume"
+	SongID    string `json:"songId"`
+	UserToken string `json:"userToken,omitempty"`
 }
 
 type StreamResponse struct {
@@ -283,7 +284,16 @@ func publishSongPlayedEvent(userID, songID string, startTime time.Time, duration
 	log.Printf("ENVIANDO A KAFKA - Endpoint: %s", kafkaEndpoint)
 	log.Printf("PAYLOAD JSON: %s", string(jsonBody))
 
-	resp, err := http.Post(kafkaEndpoint, "application/json", bytes.NewBuffer(jsonBody))
+	// Crear request con header de servicio interno
+	req, err := http.NewRequest("POST", kafkaEndpoint, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return fmt.Errorf("error creando request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Internal-Service", "streaming-ms")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("ERROR enviando a Kafka: %v", err)
 		return fmt.Errorf("error enviando evento a Kafka: %v", err)
@@ -299,7 +309,7 @@ func publishSongPlayedEvent(userID, songID string, startTime time.Time, duration
 	return nil
 }
 
-func getSongFromMusicMS(songID string) (*Song, error) {
+func getSongFromMusicMS(songID string, userToken string) (*Song, error) {
 	apiGatewayURL := os.Getenv("API_GATEWAY_URL")
 	if apiGatewayURL == "" {
 		apiGatewayURL = "http://apigateway:8080" // Cambia esto según tu entorno
@@ -317,8 +327,29 @@ func getSongFromMusicMS(songID string) (*Song, error) {
 		return nil, err
 	}
 
-	log.Printf("Consultando music-ms (GraphQL) en: %s con id: %s", graphqlURL, songID)
-	resp, err := http.Post(graphqlURL, "application/json", bytes.NewBuffer(jsonBody))
+	if userToken != "" {
+		log.Printf("Consultando music-ms (GraphQL) en: %s con id: %s usando Bearer token", graphqlURL, songID)
+	} else {
+		log.Printf("Consultando music-ms (GraphQL) en: %s con id: %s usando X-Internal-Service header", graphqlURL, songID)
+	}
+
+	// Crear request con token de usuario
+	req, err := http.NewRequest("POST", graphqlURL, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// Usar token del usuario para autenticación
+	if userToken != "" {
+		req.Header.Set("Authorization", "Bearer "+userToken)
+	} else {
+		// Fallback: header de servicio interno si no hay token de usuario
+		req.Header.Set("X-Internal-Service", "streaming-ms")
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -411,7 +442,18 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		case "play":
 			log.Printf("Solicitud de reproducción para canción ID: %s de user_id: %s", request.SongID, currentUserID)
 
-			song, err := getSongFromMusicMS(request.SongID)
+			// Verificar que el usuario esté autenticado
+			if request.UserToken == "" {
+				log.Printf("Token de usuario requerido para reproducir canción")
+				response := StreamResponse{
+					Type:    "error",
+					Message: "Debe iniciar sesión para reproducir canciones",
+				}
+				conn.WriteJSON(response)
+				continue
+			}
+
+			song, err := getSongFromMusicMS(request.SongID, request.UserToken)
 			if err != nil {
 				log.Printf("Error obteniendo canción: %v", err)
 				response := StreamResponse{

@@ -12,6 +12,7 @@ import { loadEnv } from './utils/env';
 import { redirect } from 'next/dist/server/api-utils';
 const envLoaded = loadEnv();
 console.log('Variables de entorno cargadas:', envLoaded);
+import https from "https";
 
 
 // Carga adicional con dotenv como respaldo
@@ -113,9 +114,9 @@ ipcMain.handle('clear-auth-token', async () => {
   }
 })
 
-ipcMain.handle('auth:login', async (_, email: string, password: string) => {
+/*ipcMain.handle('auth:login', async (_, email: string, password: string) => {
   try {
-    const response = await axios.post('http://localhost:8080/api/v1/auth/login', { 
+    const response = await axios.post('https://localhost:443/api/v1/auth/login', { 
       email, 
       password 
     });
@@ -136,8 +137,35 @@ ipcMain.handle('auth:login', async (_, email: string, password: string) => {
     console.error('Login error:', error);
     return { success: false, message: error.response?.data?.error || 'Login failed' };
   }
-});
+});*/
 
+ipcMain.handle('auth:login', async (_, email: string, password: string) => {
+  try {
+    const response = await axios.post(
+      'https://localhost:444/api/v1/auth/login',
+      { email, password },
+      {
+        headers: { Host: "aleph-dsk" },
+        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+      }
+    );
+    if (response.data.token) {
+      await keytar.setPassword('aleph-frontend-dsk', 'auth-token', response.data.token);
+      if (response.data.refreshToken) {
+        await keytar.setPassword('aleph-frontend-dsk', 'refresh-token', response.data.refreshToken);
+      }
+      return { success: true, user: response.data.user, token: response.data.refreshToken };
+    } else {
+      return { 
+        success: false, 
+        message: 'No token received from server' 
+      };
+    }
+  } catch (error: any) {
+    console.error('Login error:', error);
+    return { success: false, message: error.response?.data?.error || 'Login failed' };
+  }
+});
 
 // Manejadores IPC para autenticación
 ipcMain.handle('auth0-login', async () => {
@@ -199,13 +227,63 @@ ipcMain.handle('clear-refresh-token', async () => {
   }
 });
 
+/*ipcMain.handle('auth:register', async (_, data) => {
+    console.log('=== REGISTER DSK HANDLER START ===');
+    console.log('Received data:', data);
+    
+    try {
+        console.log('Making API call to: https://localhost:443/api/v1/auth/register-dsk');
+        const response = await axios.post('https://localhost:443/api/v1/auth/register-dsk', data);
+        console.log('Registration response:', response.data);
+        //No se espera al token para que el usuario active primero su cuenta
+        if (response.data.user) {
+            console.log('User created successfully, activation required');
+            return { 
+                success: true, 
+                message: response.data.message || 'User registered successfully. Check your email for activation code.',
+                user: response.data.user,
+                code: response.data.code, 
+                autoLogin: false 
+            };
+        } else {
+            console.log('Unexpected response format');
+            return { 
+                success: false, 
+                message: 'Unexpected response from server'
+            };
+        }
+    } catch (error: any) {
+        console.log('=== ERROR CAUGHT ===');
+        console.log('Error details:', error.message);
+        console.log('Error response:', error.response?.data);
+        console.log('Error status:', error.response?.status);
+        
+        const errorMessage = error.response?.data?.error || error.message || 'An error occurred during registration';
+        console.log('Returning error result:', { success: false, message: errorMessage });
+        
+        return {
+            success: false,
+            message: errorMessage
+        };
+    } finally {
+        console.log('=== REGISTER DSK HANDLER END ===');
+    }
+});*/
+
 ipcMain.handle('auth:register', async (_, data) => {
     console.log('=== REGISTER DSK HANDLER START ===');
     console.log('Received data:', data);
     
     try {
-        console.log('Making API call to: http://localhost:8080/api/v1/auth/register-dsk');
-        const response = await axios.post('http://localhost:8080/api/v1/auth/register-dsk', data);
+        console.log('Making API call to: https://localhost:444/api/v1/auth/register-dsk');
+        const response = await axios.post(
+            'https://localhost:444/api/v1/auth/register-dsk',
+            data,
+            {
+                headers: { Host: "aleph-dsk" },
+                httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+            }
+        );
         console.log('Registration response:', response.data);
         //No se espera al token para que el usuario active primero su cuenta
         if (response.data.user) {
@@ -242,13 +320,69 @@ ipcMain.handle('auth:register', async (_, data) => {
     }
 });
 
+/*ipcMain.handle('auth:activate', async (_, { email, code }) => {
+    console.log('=== ACTIVATE USER HANDLER START ===');
+    console.log('Activating user:', { email, code: code ? 'PROVIDED' : 'MISSING' });
+    
+    try {
+        console.log('Making API call to: https://localhost:443/api/v1/auth/activate-dsk');
+        const response = await axios.post('https://localhost:443/api/v1/auth/activate-dsk', { email, code });
+        console.log('Activation response:', response.data);
+        
+        if (response.data.user) {
+            console.log('User activated successfully');
+            
+            //Si se recibe un token se almacena
+            if (response.data.token) {
+                console.log('Token received after activation, storing...');
+                await keytar.setPassword('aleph-frontend-dsk', 'auth-token', response.data.token);
+                console.log('Token stored successfully');
+            }
+            
+            return { 
+                success: true, 
+                message: response.data.message || 'Account activated successfully',
+                user: response.data.user,
+                token: response.data.token || null
+            };
+        } else {
+            return { 
+                success: false, 
+                message: 'Unexpected response from server'
+            };
+        }
+    } catch (error: any) {
+        console.log('=== ACTIVATION ERROR CAUGHT ===');
+        console.log('Error details:', error.message);
+        console.log('Error response:', error.response?.data);
+        console.log('Error status:', error.response?.status);
+        
+        const errorMessage = error.response?.data?.error || error.message || 'Invalid or expired code';
+        console.log('Returning error result:', { success: false, message: errorMessage });
+        
+        return {
+            success: false,
+            message: errorMessage
+        };
+    } finally {
+        console.log('=== ACTIVATE USER HANDLER END ===');
+    }
+});*/
+
 ipcMain.handle('auth:activate', async (_, { email, code }) => {
     console.log('=== ACTIVATE USER HANDLER START ===');
     console.log('Activating user:', { email, code: code ? 'PROVIDED' : 'MISSING' });
     
     try {
-        console.log('Making API call to: http://localhost:8080/api/v1/auth/activate-dsk');
-        const response = await axios.post('http://localhost:8080/api/v1/auth/activate-dsk', { email, code });
+        console.log('Making API call to: https://localhost:444/api/v1/auth/activate-dsk');
+        const response = await axios.post(
+            'https://localhost:444/api/v1/auth/activate-dsk',
+            { email, code },
+            {
+                headers: { Host: "aleph-dsk" },
+                httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+            }
+        );
         console.log('Activation response:', response.data);
         
         if (response.data.user) {
