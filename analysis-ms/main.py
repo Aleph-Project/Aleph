@@ -3,4 +3,8 @@ from routes import analytics
 
 app = FastAPI(title="Aleph Analysis Service")
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 app.include_router(analytics.router, prefix="/api/v1/analytics")

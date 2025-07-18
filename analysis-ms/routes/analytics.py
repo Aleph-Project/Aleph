@@ -1,10 +1,16 @@
 from fastapi import APIRouter, Query
+import logging
 from queries.analytics import (
     get_top_songs, get_top_artists, get_top_albums,
     get_top_songs_by_country, get_most_active_users
 )
 
 router = APIRouter()
+
+@router.get("/health")
+def analytics_health_check():
+    logging.info("HEALTH CHECK RECIBIDO en ANALYSIS-MS")
+    return {"status": "ok"}
 
 @router.get("/top-songs")
 def top_songs(limit: int = Query(10, gt=0, le=100)):
