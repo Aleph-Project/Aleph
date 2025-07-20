@@ -37,6 +37,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
+# Instalar ca-certificates y agregar el certificado
+RUN apk add --no-cache ca-certificates
+COPY certs/cert.pem /usr/local/share/ca-certificates/aleph-cert.pem
+RUN update-ca-certificates
+
+
 # Cambiar al usuario no root
 USER nextjs
 
