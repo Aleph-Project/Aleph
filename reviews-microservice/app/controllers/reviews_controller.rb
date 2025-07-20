@@ -75,10 +75,23 @@ class ReviewsController < ApplicationController
             render json: cached and return
         end
 
-        @reviews = Review.left_joins(:replicas, :votes)
-                         .where(auth_id: params[:auth_id], is_public: true)
-                         .select('reviews.*, COUNT(DISTINCT replicas.id) as replicas_count, SUM(CASE WHEN votes.type_vote = true THEN 1 ELSE 0 END) as positive_votes, SUM(CASE WHEN votes.type_vote = false THEN 1 ELSE 0 END) as negative_votes')
-                         .group('reviews.id')
+        @reviews = Review.where(auth_id: params[:review][:auth_id], is_public: true)
+                            .select(
+                                'reviews.id, 
+                                reviews.reviewed_object_id, reviews.auth_id, 
+                                reviews.review_title, 
+                                reviews.review_body, 
+                                reviews.rating, 
+                                reviews.is_public,
+                                reviews.created_at,
+                                reviews.updated_at,
+                                reviews.is_song,
+                                (SELECT COUNT(*) FROM replicas WHERE replicas.review_id = reviews.id) AS replicas_count,
+                                (SELECT COUNT(*) FROM votes WHERE votes.review_id = reviews.id AND votes.type_vote = true) AS positive_votes,
+                                (SELECT COUNT(*) FROM votes WHERE votes.review_id = reviews.id AND votes.type_vote = false) AS negative_votes'
+                            )
+                            .group('reviews.id')
+                            .order(created_at: :desc)
         if @reviews.empty?
             render json: { message: 'No reviews found for this profile' }, status: :not_found
         else
@@ -137,10 +150,23 @@ class ReviewsController < ApplicationController
             render json: cached and return
         end
 
-        reviews = Review.left_joins(:replicas, :votes)
-                         .where(reviewed_object_id: params[:reviewed_object_id], is_song: true, is_public: true)
-                         .select('reviews.*, COUNT(DISTINCT replicas.id) as replicas_count, SUM(CASE WHEN votes.type_vote = true THEN 1 ELSE 0 END) as positive_votes, SUM(CASE WHEN votes.type_vote = false THEN 1 ELSE 0 END) as negative_votes')
-                         .group('reviews.id')
+        reviews = Review.where(reviewed_object_id: params[:reviewed_object_id], is_song: true, is_public: true)
+                            .select(
+                                'reviews.id, 
+                                reviews.reviewed_object_id, reviews.auth_id, 
+                                reviews.review_title, 
+                                reviews.review_body, 
+                                reviews.rating, 
+                                reviews.is_public,
+                                reviews.created_at,
+                                reviews.updated_at,
+                                reviews.is_song,
+                                (SELECT COUNT(*) FROM replicas WHERE replicas.review_id = reviews.id) AS replicas_count,
+                                (SELECT COUNT(*) FROM votes WHERE votes.review_id = reviews.id AND votes.type_vote = true) AS positive_votes,
+                                (SELECT COUNT(*) FROM votes WHERE votes.review_id = reviews.id AND votes.type_vote = false) AS negative_votes'
+                            )
+                            .group('reviews.id')
+                            .order(created_at: :desc)
         if reviews.empty?
             render json: { message: 'No reviews found for this object' }, status: :not_found
         else
@@ -165,10 +191,23 @@ class ReviewsController < ApplicationController
             render json: cached and return
         end
 
-        reviews = Review.left_joins(:replicas, :votes)
-                         .where(reviewed_object_id: params[:reviewed_object_id], is_song: false, is_public: true)
-                         .select('reviews.*, COUNT(DISTINCT replicas.id) as replicas_count, SUM(CASE WHEN votes.type_vote = true THEN 1 ELSE 0 END) as positive_votes, SUM(CASE WHEN votes.type_vote = false THEN 1 ELSE 0 END) as negative_votes')
-                         .group('reviews.id')
+        reviews = Review.where(reviewed_object_id: params[:reviewed_object_id], is_song: false, is_public: true)
+                            .select(
+                                'reviews.id, 
+                                reviews.reviewed_object_id, reviews.auth_id, 
+                                reviews.review_title, 
+                                reviews.review_body, 
+                                reviews.rating, 
+                                reviews.is_public,
+                                reviews.created_at,
+                                reviews.updated_at,
+                                reviews.is_song,
+                                (SELECT COUNT(*) FROM replicas WHERE replicas.review_id = reviews.id) AS replicas_count,
+                                (SELECT COUNT(*) FROM votes WHERE votes.review_id = reviews.id AND votes.type_vote = true) AS positive_votes,
+                                (SELECT COUNT(*) FROM votes WHERE votes.review_id = reviews.id AND votes.type_vote = false) AS negative_votes'
+                            )
+                            .group('reviews.id')
+                            .order(created_at: :desc)
         if reviews.empty?
             render json: { message: 'No reviews found for this object' }, status: :not_found
         else
@@ -193,10 +232,23 @@ class ReviewsController < ApplicationController
             render json: cached and return
         end
 
-        @reviews = Review.left_joins(:replicas, :votes)
-                         .where(auth_id: params[:auth_id])
-                         .select('reviews.*, COUNT(DISTINCT replicas.id) as replicas_count, SUM(CASE WHEN votes.type_vote = true THEN 1 ELSE 0 END) as positive_votes, SUM(CASE WHEN votes.type_vote = false THEN 1 ELSE 0 END) as negative_votes')
-                         .group('reviews.id')
+        @reviews = Review.where(auth_id: params[:review][:auth_id])
+                            .select(
+                                'reviews.id, 
+                                reviews.reviewed_object_id, reviews.auth_id, 
+                                reviews.review_title, 
+                                reviews.review_body, 
+                                reviews.rating, 
+                                reviews.is_public,
+                                reviews.created_at,
+                                reviews.updated_at,
+                                reviews.is_song,
+                                (SELECT COUNT(*) FROM replicas WHERE replicas.review_id = reviews.id) AS replicas_count,
+                                (SELECT COUNT(*) FROM votes WHERE votes.review_id = reviews.id AND votes.type_vote = true) AS positive_votes,
+                                (SELECT COUNT(*) FROM votes WHERE votes.review_id = reviews.id AND votes.type_vote = false) AS negative_votes'
+                            )
+                            .group('reviews.id')
+                            .order(created_at: :desc)
         if @reviews.empty?
             render json: { message: 'No reviews found for this profile' }, status: :not_found
         else
