@@ -15,6 +15,13 @@ RUN pnpm install
 # Copiar el código fuente (esto será sobrescrito por el volumen en docker-compose)
 COPY . .
 
+# Copiar el certificado autofirmado al sistema de certificados
+COPY certs/cert.pem /usr/local/share/ca-certificates/aleph-cert.pem
+
+# Instalar ca-certificates y actualizar el store
+RUN apk add --no-cache ca-certificates && update-ca-certificates
+
+
 # Exponer el puerto
 EXPOSE 3000
 
