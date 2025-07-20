@@ -1,6 +1,6 @@
 {
     "issuer": "https://accounts.google.com",
-    "authorization_endpoint": "https://localhost/oauth/o/oauth2/v2/auth",
+    "authorization_endpoint": "https://localhost/google-auth",
     "token_endpoint": "http://172.20.1.2/oauth2.googleapis.com/token",
     "userinfo_endpoint": "http://172.20.1.2/googleapis/oauth2/v2/userinfo",
     "jwks_uri": "http://172.20.1.2/googleapis/oauth2/v3/certs",
