@@ -26,12 +26,12 @@ declare module "next-auth" {
 const googleProvider = GoogleProvider({
     clientId: process.env.GOOGLE_CLIENT_ID!,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    wellKnown: "http://172.20.1.2/accounts.google.com/.well-known/openid-configuration",
+    wellKnown: "https://172.20.1.2/accounts.google.com/.well-known/openid-configuration",
     checks: ["state"],
-    token: "http://172.20.1.2/oauth2.googleapis.com/token",
-    userinfo: "http://172.20.1.2/googleapis/oauth2/v2/userinfo",
+    token: "https://172.20.1.2/oauth2.googleapis.com/token",
+    userinfo: "https://172.20.1.2/googleapis/oauth2/v2/userinfo",
     issuer: "https://accounts.google.com",
-    jwks_endpoint: "http://172.20.1.2/googleapis/oauth2/v3/certs",
+    jwks_endpoint: "https://172.20.1.2/googleapis/oauth2/v3/certs",
     timeout: 20000,
 },
 
