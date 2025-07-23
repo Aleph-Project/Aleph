@@ -83,7 +83,18 @@ test:
 # for a full overview on how database connection configuration can be specified.
 #
 production:
-  <<: *default
-  database: reviews_production
-  username: <%= ENV['POSTGRES_USER'] %>
-  password: <%= ENV['POSTGRES_PASSWORD'] %>
+  primary:
+    <<: *default
+    database: profiles_production
+
+  cable:
+    <<: *default
+    database: profiles_production
+
+  queue:
+    <<: *default
+    database: profiles_production
+
+  cache:
+    <<: *default
+    database: profiles_production
