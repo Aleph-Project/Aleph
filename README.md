@@ -1,4 +1,4 @@
-# Proyecto Grupo 1F - Prototipo 3
+# Proyecto Grupo 1F - Prototipo 4
 _**Integrantes:**_
 * Angel David Piñeros Sierra (apineross@unal.edu.co)
 * Catalina Gómez Moreno (catgomez@unal.edu.co) _Arquitecto líder_
