@@ -316,9 +316,9 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 |----------------------|----------------------------------------------------------------------------------------------------------------------------|
 | **Source**           | Un usuario intenta autenticarse al sistema Aleph durante un aumento del tráfico de la red.  |
 | **Stimulus**         | Varios usuarios intentan iniciar sesión simultáneamente, pero una de las instancias de autenticación auth-ms se inactiva por una falla ocasionada. |
-| **Environment**      | Entorno de producción de AWS, con 3 instancias del microservicio auth-ms, que están replicadas por ECS y son gestionadas por un balanceador de carga.              |
+| **Environment**      | Entorno de producción de AWS, con 3 instancias del microservicio `auth-ms`, que están replicadas por ECS y son gestionadas por un balanceador de carga.              |
 | **Artifact**         | Microservicio de Autenticación, Load Balancer.    |
-| **Response**         | El balanceador de carga redirige las nuevas solicitudes hacia las instancias disponibles del microservicio de autenticación replicado (auth-ms).|
+| **Response**         | El balanceador de carga redirige las nuevas solicitudes hacia las instancias disponibles del microservicio de autenticación replicado (`auth-ms`).|
 | **Response Measure** | Se calcula la tasa de éxito de la autenticación de usuarios durante la falla. |
 
 ### Tácticas arquitectónicas aplicadas:
@@ -336,21 +336,64 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------|
 | **Source**           | Se crea una nueva instancia del microservicio de música music-ms.  |
-| **Stimulus**         | El sistema crea una nueva instancia de music-ms como respuesta a un aumento de tráfico, la cual necesita recibir solicitudes a través de balanceador de carga. |
-| **Environment**      | Entorno de producción en AWS con los microservicios de music-ms, auth-ms y profile-ms desplegados.          |
+| **Stimulus**         | El sistema crea una nueva instancia de `music-ms` como respuesta a un aumento de tráfico, la cual necesita recibir solicitudes a través de balanceador de carga. |
+| **Environment**      | Entorno de producción en AWS con los microservicios de `music-ms`, `auth-ms` y `profile-ms` desplegados.          |
 | **Artifact**         | Microservicio de música, Service Discovery de AWS. |
-| **Response**         | La nueva instancia de music-ms se registra en el service registry. De manera que las nuevas solicitudes a música se pueden enrutar hacia la nueva instancia sin configuración manual. |
+| **Response**         | La nueva instancia de `music-ms` se registra en el service registry. De manera que las nuevas solicitudes a música se pueden enrutar hacia la nueva instancia sin configuración manual. |
 | **Response Measure** | Se mide el tiempo de creación de la instancia y la disponibilidad de la misma para recibir el nuevo tráfico dentro de la red. Con esto se confirma que la instancia recibe las solicitudes.|
 
 ### Tácticas arquitectónicas aplicadas:
 
-* Redundacy Spare: Se mantienen múltiples instancias activas y disponibles para tomar la carga en caso de que una instancia falle.
-* Failover: EL balanceador de carga detecta fallas y redirige las peticiones a instancias que están disponibles.
+* Redundancy – Active: Varias instancios del mismo servicio están activas al mismo tiemo, para garantizar la disponibilidad continua y tolerancia a fallos de Aleph.
 
 
 ### Patrones aplicados:
+* Service Discovery Pattern.
+* Load Balancer Pattern.
+
+
+## 6.9 Clusters Pattern
+### Scenario:
+| Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
+|----------------------|----------------------------------------------------------------------------------------------------------------------------|
+| **Source**           | El nodo del clúster en ECS falla repentinamente(sea por un error de red o una pérdida de conexión con AWS) |
+| **Stimulus**         | Una de las instancias que ejecuta el microservicio de perfiles `profile-ms` dentro del clúster se inactiva o deja de responder por la falla ocasionada. |
+| **Environment**      | Entorno de producción en AWS que posee varias instancias de los servicios (en este caso `profile-ms`) distribuidas dentro de un clúster con su balanceador de carga.   |
+| **Artifact**         | Microservicio de perfiles, Clúster, load balancer. |
+| **Response**         | El clúster nota la caida del nodo y crea una nueva instancia del microservicio de perfiles en un nodo que esté disponible. El balanceador de carga actúa y deja de enviar las peticiones a la instancia fallida, las redirige a las disponibles.|
+| **Response Measure** | Se mide el tiempo de recuperación del sistema (failover) desde que ocurre la detección del fallo hasta que la nueva instancia esté disponible y en función. |
+
+### Tácticas arquitectónicas aplicadas:
+
+* Redundancy – Active: Varios nodos activos o de respaldo pueden tomar la ejecución del servicio si uno falla.
+* Fault detection and Recovery: El clúster está en la capacidad de detectar fallas de forma automática y actúa sin necesidad de intervención.
+
+
+### Patrones aplicados:
+* Cluster Pattern.
 * Replication Pattern.
 * Load Balancer Pattern.
+
+
+## 6.10 Healthcheck 
+### Scenario:
+| Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
+|----------------------|----------------------------------------------------------------------------------------------------------------------------|
+| **Source**           | El sistema de monitoreo de AWS (siendo load balancer + los healthcheck).|
+| **Stimulus**         | Una instancia de uno de los microservicios desplegados (`music-ms`, `profile-ms`, `auth-ms`) deja de responder en su endpoint de health. |
+| **Environment**      | Entorno de producción en AWS con los servicios desplegados (en este caso `profile-ms`) cada uno etiquetado con ‘tags’ y sus configuraciones de healthcheck.|
+| **Artifact**         | Microservicio de autenticación, microservicio de perfiles, microservicio de música, load balancer.|
+| **Response**         | Por medio del health el balanceador de carga detecta que la instancia del microservicio no responde a los helth checks y la marca como unhealthy. Detiene la instancia y crea una nueva para asegurar la disponibilidad del servicio.|
+| **Response Measure** | Se mide el tiempo desde que la instancia falla el health check hasta que se reemplaza por una nueva. Se confirma que las instancias del unhealthy no recibe tráfico y que la recuperación ocurre sin interrupciones.|
+
+### Tácticas arquitectónicas aplicadas:
+* Health Monitoring(Healthcheck): SE realiza una verificación periódica del estado de cada instancia mediante los endpoints expuestos.
+* Redundation Spare: AL haber varias instanscias (3 por cada microservicio), se pueden privar de una mientras se recupera el servicio.
+
+
+### Patrones aplicados:
+* Load Balancer Pattern
+
 
 # 7 Pruebas de rendimiento
 #### 7.1 Pruebas automatizadas con k6 (Rendimiento general del sistema)
