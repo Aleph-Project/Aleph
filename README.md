@@ -178,7 +178,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 | **Environment**      | Producción; clientes acceden mediante internet, proxy configurado con HTTPS y certificados válidos                         |
 | **Artifact**         | Datos sensibles transmitidos entre clientes y el sistema                                                                   |
 | **Response**         | El reverse proxy negocia conexión TLS con el cliente, cifra los datos desde el inicio; el atacante no puede leer el contenido capturado |
-| **Response Measure** | 100% de las conexiones entrantes usan HTTPS (TLS 1.2 o superior)<br>0% de datos sensibles (como contraseñas o tokens) visibles en texto claro en tráfico capturado |
+| **Response Measure** | Se garantiza la confidencialidad de los datos en tránsito del usuario mediante el uso de TLS(HTTPS). Haciendo que los datos se cifren de extremo a extremo. |
 
 ### Tácticas arquitectónicas aplicadas:
 * Encriptar los datos en el transito
@@ -198,7 +198,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 | **Environment**      | Producción, arquitectura desplegada con reverse proxy activo                                                                |
 | **Artifact**         | Arquitectura de Aleph protegida detrás del reverse proxy                                                            |
 | **Response**         | El reverse proxy intercepta y bloquea cualquier acceso directo a rutas no expuestas (por ejemplo, `/api/internal`), evitando que lleguen al backend |
-| **Response Measure** | 99% de los intentos de acceso directo a servicios internos resultan en respuestas 403 Forbidden o 404 Not Found.<br>0% de exposición directa de servicios backend al exterior |
+| **Response Measure** | Se bloquean los intentos de acceso directo a los microservicios internos desde redes externas. Se asegura que los componentes internos permanezcan ocultos y protegidos. |
 
 ### Tácticas arquitectónicas aplicadas:
 * **Ofuscacion de arquitectura:** Los componentes de la arquitectura de Aleph no son visibles desde fuera.
@@ -268,12 +268,12 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------|
-| **Source**           | 1000 usuarios simultáneos autenticados                                                                                     |
+| **Source**           | Múltiples usuarios simultáneamente acceden al sistema ocasionando alta demanda y generando un aumento en el volumen de las soclicitudes hacia el microservicio de perfil.     |
 | **Stimulus**         | Cada usuario realiza una consulta al microservicio de perfiles (por ejemplo, acceder a su perfil)     |
 | **Environment**      | Entorno de producción, bajo carga pico (por ejemplo, en horas de alta actividad), con un balanceador de carga distribuyendo peticiones entre las multiples instancias del microservicio de perfiles |
 | **Artifact**         | Arquitectura de Aleph          |
 | **Response**         | El balanceador de carga distribuye equitativamente las solicitudes entre las instancias disponibles, evitando saturación individual y asegurando un tiempo de respuesta aceptable |
-| **Response Measure** | < 500ms de tiempo de respuesta promedio por solicitud en al menos el 95% de los casos<br>< 5% de errores por sobrecarga (códigos 5xx) durante el pico de tráfico |
+| **Response Measure** | Se calculan los tiempos de respuesta promedio y la cantidad de recursos que utiliza el microservicio en cada instancia. Se realizan pruebas de carga para verificar que ninguna instancia se sature y que el sistema mantenga los tiempos de respuesta estables.|
 
 ### Tácticas arquitectónicas aplicadas:
 * Maintain multiple copies: Desplegar múltiples instancias del microservicio
@@ -289,12 +289,12 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------|
-| **Source**           | Miles de usuarios autenticados de Aleph.                                               |
+| **Source**           | Múltiples usuarios acceden simultáneamente al sistema tras el lanzamiento de un nuevo álbum. Se genera una carga grande al microservicio de música (aleph_music) y su base de datos(aleph_music_db).  |
 | **Stimulus**         | El artista más popular de la plataforma lanza un nuevo álbum, y se realizan más de 10,000 solicitudes por minuto al microservicio de música para acceder a las canciones del álbum |
 | **Environment**      | Producción; minutos posteriores al lanzamiento, bajo carga extrema, con sistema en operación normal                        |
 | **Artifact**         | Microservicio de música, Redis cache, balanceador de carga, instancias escalables                                         |
 | **Response**         | El microservicio responde rápidamente a las solicitudes usando Redis para cachear metadatos del álbum y canciones, y balanceador de carga para distribuir tráfico entre varias instancias |
-| **Response Measure** | Tiempo de respuesta medio: < 200ms en el 95% de las solicitudes<br>Tasa de errores 5xx: < 1%<br>Redis cache hit rate: ≥ 95% para datos del álbum en los primeros 10 minutos|
+| **Response Measure** | Se toma el tiempo promedio de respuesta del microservicio de música en el caché Redis, durante el lanzamiento del albúm. Se evalúa el rendimiento mediante la reducción de cosultas directas a la base de datos y el uso de la memoria caché. |
 
 ### Tácticas arquitectónicas aplicadas:
 
@@ -304,6 +304,54 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 
 ### Patrones aplicados:
 * Cache Aside Pattern: Las canciones y metadatos del álbum están cacheados desde el primer acceso
+
+### Patrones aplicados:
+* Load Balancer Pattern
+
+## 6. Quality Attributes (Reliability)
+
+## 6.8 Replication Pattern
+### Scenario:
+| Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
+|----------------------|----------------------------------------------------------------------------------------------------------------------------|
+| **Source**           | Un usuario intenta autenticarse al sistema Aleph durante un aumento del tráfico de la red.  |
+| **Stimulus**         | Varios usuarios intentan iniciar sesión simultáneamente, pero una de las instancias de autenticación auth-ms se inactiva por una falla ocasionada. |
+| **Environment**      | Entorno de producción de AWS, con 3 instancias del microservicio auth-ms, que están replicadas por ECS y son gestionadas por un balanceador de carga.              |
+| **Artifact**         | Microservicio de Autenticación, Load Balancer.    |
+| **Response**         | El balanceador de carga redirige las nuevas solicitudes hacia las instancias disponibles del microservicio de autenticación replicado (auth-ms).|
+| **Response Measure** | Se calcula la tasa de éxito de la autenticación de usuarios durante la falla. |
+
+### Tácticas arquitectónicas aplicadas:
+
+* Redundacy Spare: Se mantienen múltiples instancias activas y disponibles para tomar la carga en caso de que una instancia falle.
+* Failover: EL balanceador de carga detecta fallas y redirige las peticiones a instancias que están disponibles.
+
+
+### Patrones aplicados:
+* Replication Pattern.
+* Load Balancer Pattern.
+
+## 6.8 Service Discovery Pattern
+### Scenario:
+| Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
+|----------------------|----------------------------------------------------------------------------------------------------------------------------|
+| **Source**           | Se crea una nueva instancia del microservicio de música music-ms.  |
+| **Stimulus**         | El sistema crea una nueva instancia de music-ms como respuesta a un aumento de tráfico, la cual necesita recibir solicitudes a través de balanceador de carga. |
+| **Environment**      | Entorno de producción en AWS con los microservicios de music-ms, auth-ms y profile-ms desplegados.          |
+| **Artifact**         | Microservicio de música, Service Discovery de AWS. |
+| **Response**         | La nueva instancia de music-ms se registra en el service registry. De manera que las nuevas solicitudes a música se pueden enrutar hacia la nueva instancia sin configuración manual. |
+| **Response Measure** | Se mide el tiempo de creación de la instancia y la disponibilidad de la misma para recibir el nuevo tráfico dentro de la red. Con esto se confirma que la instancia recibe las solicitudes.|
+
+### Tácticas arquitectónicas aplicadas:
+
+* Redundacy Spare: Se mantienen múltiples instancias activas y disponibles para tomar la carga en caso de que una instancia falle.
+* Failover: EL balanceador de carga detecta fallas y redirige las peticiones a instancias que están disponibles.
+
+
+### Patrones aplicados:
+* Replication Pattern.
+* Load Balancer Pattern.
+
 # 7 Pruebas de rendimiento
 #### 7.1 Pruebas automatizadas con k6 (Rendimiento general del sistema)
 
