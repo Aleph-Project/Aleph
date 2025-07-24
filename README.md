@@ -315,7 +315,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------|
 | **Source**           | Un usuario intenta autenticarse al sistema Aleph durante un aumento del tráfico de la red.  |
-| **Stimulus**         | Varios usuarios intentan iniciar sesión simultáneamente, pero una de las instancias de autenticación auth-ms se inactiva por una falla ocasionada. |
+| **Stimulus**         | Varios usuarios intentan iniciar sesión simultáneamente, pero una de las instancias de autenticación `auth-ms` se inactiva por una falla ocasionada. |
 | **Environment**      | Entorno de producción de AWS, con 3 instancias del microservicio `auth-ms`, que están replicadas por ECS y son gestionadas por un balanceador de carga.              |
 | **Artifact**         | Microservicio de Autenticación, Load Balancer.    |
 | **Response**         | El balanceador de carga redirige las nuevas solicitudes hacia las instancias disponibles del microservicio de autenticación replicado (`auth-ms`).|
@@ -324,7 +324,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 ### Tácticas arquitectónicas aplicadas:
 
 * Redundacy Spare: Se mantienen múltiples instancias activas y disponibles para tomar la carga en caso de que una instancia falle.
-* Failover: EL balanceador de carga detecta fallas y redirige las peticiones a instancias que están disponibles.
+* Failover: El balanceador de carga detecta fallas y redirige las peticiones a instancias que están disponibles.
 
 
 ### Patrones aplicados:
@@ -387,11 +387,12 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 | **Response Measure** | Se mide el tiempo desde que la instancia falla el health check hasta que se reemplaza por una nueva. Se confirma que las instancias del unhealthy no recibe tráfico y que la recuperación ocurre sin interrupciones.|
 
 ### Tácticas arquitectónicas aplicadas:
-* Health Monitoring(Healthcheck): SE realiza una verificación periódica del estado de cada instancia mediante los endpoints expuestos.
-* Redundation Spare: AL haber varias instanscias (3 por cada microservicio), se pueden privar de una mientras se recupera el servicio.
+* Health Monitoring (Healthcheck): SE realiza una verificación periódica del estado de cada instancia mediante los endpoints expuestos.
+* Redundation Spare: Al haber varias instanscias (3 por cada microservicio), se pueden privar de una mientras se recupera el servicio.
 
 
 ### Patrones aplicados:
+* no sé
 * Load Balancer Pattern
 
 
