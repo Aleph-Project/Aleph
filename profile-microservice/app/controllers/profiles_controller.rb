@@ -58,6 +58,7 @@ class ProfilesController < ApplicationController
     end
 
     def update_my_profile
+      @profile = Profile.find_by(auth_id: params[:auth_id])
       if @profile.nil?
         render json: { error: 'No se encontró el perfil' }, status: :not_found
       else

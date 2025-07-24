@@ -232,23 +232,23 @@ class ReviewsController < ApplicationController
             render json: cached and return
         end
 
-        @reviews = Review.where(auth_id: params[:review][:auth_id])
-                            .select(
-                                'reviews.id, 
-                                reviews.reviewed_object_id, reviews.auth_id, 
-                                reviews.review_title, 
-                                reviews.review_body, 
-                                reviews.rating, 
-                                reviews.is_public,
-                                reviews.created_at,
-                                reviews.updated_at,
-                                reviews.is_song,
-                                (SELECT COUNT(*) FROM replicas WHERE replicas.review_id = reviews.id) AS replicas_count,
-                                (SELECT COUNT(*) FROM votes WHERE votes.review_id = reviews.id AND votes.type_vote = true) AS positive_votes,
-                                (SELECT COUNT(*) FROM votes WHERE votes.review_id = reviews.id AND votes.type_vote = false) AS negative_votes'
-                            )
-                            .group('reviews.id')
-                            .order(created_at: :desc)
+        @reviews = Review.where(auth_id: params[:auth_id])
+                .select(
+                    'reviews.id, 
+                    reviews.reviewed_object_id, reviews.auth_id, 
+                    reviews.review_title, 
+                    reviews.review_body, 
+                    reviews.rating, 
+                    reviews.is_public,
+                    reviews.created_at,
+                    reviews.updated_at,
+                    reviews.is_song,
+                    (SELECT COUNT(*) FROM replicas WHERE replicas.review_id = reviews.id) AS replicas_count,
+                    (SELECT COUNT(*) FROM votes WHERE votes.review_id = reviews.id AND votes.type_vote = true) AS positive_votes,
+                    (SELECT COUNT(*) FROM votes WHERE votes.review_id = reviews.id AND votes.type_vote = false) AS negative_votes'
+                )
+                .group('reviews.id')
+                .order(created_at: :desc)
         if @reviews.empty?
             render json: { message: 'No reviews found for this profile' }, status: :not_found
         else
