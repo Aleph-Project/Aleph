@@ -55,11 +55,15 @@ const handler = NextAuth({
                 try {
                     // Llamar al auth-ms a través del API Gateway (URL interna de Docker)
                     console.log(process.env.APIGATEWAY_INT_URL);
+                    const FRONT_TOKEN = process.env.FRONTEND_TOKEN || process.env.NEXT_PUBLIC_AUTH_FRONT_TOKEN;
                     const res = await fetch(
                         `${process.env.APIGATEWAY_INT_URL}/api/v1/auth/login`,
                         {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            headers: { 
+                                "Content-Type": "application/json",
+                                "x-auth-front-token": FRONT_TOKEN,
+                            },
                             body: JSON.stringify({
                                 email: credentials?.email,
                                 password: credentials?.password,
@@ -127,12 +131,16 @@ const handler = NextAuth({
                         "🔍 GOOGLE LOGIN - Calling auth-ms via:",
                         process.env.APIGATEWAY_INT_URL
                     );
+                    const FRONT_TOKEN = process.env.FRONTEND_TOKEN || process.env.NEXT_PUBLIC_AUTH_FRONT_TOKEN;
                     // Llamar al auth-ms a través del API Gateway (URL interna de Docker)
                     const authResponse = await fetch(
                         `${process.env.APIGATEWAY_INT_URL}/api/v1/auth/google-login`,
                         {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            headers: { 
+                                "Content-Type": "application/json",
+                                "x-auth-front-token": FRONT_TOKEN,
+                            },
                             body: JSON.stringify(googleUserData),
                         }
                     );

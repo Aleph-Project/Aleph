@@ -300,6 +300,8 @@ services:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - APIGATEWAY_INT_URL=${APIGATEWAY_INT_URL}
       - NODE_TLS_REJECT_UNAUTHORIZED=0  # Acepta certificados self-signed para desarrollo
+      - NEXT_PUBLIC_AUTH_FRONT_TOKEN=${NEXT_PUBLIC_AUTH_FRONT_TOKEN}
+      - FRONTEND_TOKEN=${AUTH_FRONT_TOKEN}
     extra_hosts:
       - "localhost:host-gateway"  # Permite resolver localhost desde el contenedor
     networks:
