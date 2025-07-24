@@ -15,6 +15,7 @@ export function loadEnv() {
       console.log('Variables de entorno cargadas:', {
         domain: process.env.AUTH0_DOMAIN ? '[DISPONIBLE]' : '[NO DISPONIBLE]',
         clientId: process.env.AUTH0_CLIENT_ID ? '[DISPONIBLE]' : '[NO DISPONIBLE]'
+        
       });
     } else {
       console.warn('Archivo .env no encontrado en desarrollo');

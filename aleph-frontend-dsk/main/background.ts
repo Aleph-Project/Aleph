@@ -70,6 +70,8 @@ const setupAuth0 = () => {
   }
 })();
 
+
+
 app.on('window-all-closed', () => {
   app.quit()
 })
@@ -145,7 +147,7 @@ ipcMain.handle('auth:login', async (_, email: string, password: string) => {
       'https://localhost:444/api/v1/auth/login',
       { email, password },
       {
-        headers: { Host: "aleph-dsk" },
+        headers: { Host: "aleph-dsk", "x-auth-front-token": process.env.AUTH_FRONT_TOKEN},
         httpsAgent: new https.Agent({ rejectUnauthorized: false }),
       }
     );
@@ -280,7 +282,7 @@ ipcMain.handle('auth:register', async (_, data) => {
             'https://localhost:444/api/v1/auth/register-dsk',
             data,
             {
-                headers: { Host: "aleph-dsk" },
+                headers: { Host: "aleph-dsk" , "x-auth-front-token": process.env.AUTH_FRONT_TOKEN},
                 httpsAgent: new https.Agent({ rejectUnauthorized: false }),
             }
         );
@@ -379,7 +381,7 @@ ipcMain.handle('auth:activate', async (_, { email, code }) => {
             'https://localhost:444/api/v1/auth/activate-dsk',
             { email, code },
             {
-                headers: { Host: "aleph-dsk" },
+                headers: { Host: "aleph-dsk", "x-auth-front-token": process.env.AUTH_FRONT_TOKEN},
                 httpsAgent: new https.Agent({ rejectUnauthorized: false }),
             }
         );

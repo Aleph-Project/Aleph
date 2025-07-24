@@ -46,7 +46,7 @@ const verifyDnsResolution = async (domain: string) => {
           ),
         ]);
 
-        console.log(`✅ DNS resuelto correctamente: ${domain} -> ${result}`);
+        console.log(`DNS resuelto correctamente: ${domain} -> ${result}`);
         return true;
       } catch (err) {
         console.error(`Error con servidor DNS actual: ${err.message}`);
@@ -55,7 +55,7 @@ const verifyDnsResolution = async (domain: string) => {
 
     throw new Error("No se pudo resolver el dominio con ningún servidor DNS");
   } catch (error) {
-    console.error(`❌ Error de resolución DNS para ${domain}:`, error.message);
+    console.error(`Error de resolución DNS para ${domain}:`, error.message);
     return false;
   }
 };
@@ -87,6 +87,7 @@ let config = {
   clientId: process.env.AUTH0_CLIENT_ID || "",
   clientSecret: process.env.AUTH0_CLIENT_SECRET || "",
   redirectUri: process.env.AUTH0_REDIRECT_URI || "",
+  
 };
 
 let auth0Client = new AuthenticationClient({
