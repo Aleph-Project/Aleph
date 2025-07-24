@@ -131,7 +131,7 @@ A continuación se presenta el diagrama de la estructura en capas del sistema Al
 |Datos|```aleph_profile_db```, ```aleph_music_db```, ```aleph_reviews_db```, ```aleph_analysis_db```, ```aleph_auth_db```, ```aleph_profile_bk```, ```aleph_music_bk```, ```aleph_streaming_bk```, ```aleph_analysis_cache```, ```aleph_reviews_cache```,```aleph_music_cache```
 
 ## 4. Deployment Structure 
-A continuación se presenta el diagrama de despliegue del sistema Aleph, donde se visualizan los contenedores, servicios en la nube y la distribución de los componentes. Para el desarrollo del prototipo #4, se ha cambiado la arquitectura de despliegue de Alpeh, pasando de un entorno local basado en redes Docker a una infrastructura de nube utilizando la estrategia de Elastic COnteiner Service(ECS) de Amazon Web Services(AWS). 
+A continuación se presenta el diagrama de despliegue del sistema Aleph, donde se visualizan los contenedores, servicios en la nube y la distribución de los componentes. Para el desarrollo del prototipo #4, se ha cambiado la arquitectura de despliegue de Alpeh, pasando de un entorno local basado en redes Docker a una infrastructura de nube utilizando la estrategia de Elastic Conteiner Service(ECS) de Amazon Web Services(AWS). 
 
 Inicialmente, todos los componentes y microservicios del sistema se desplegaron localmente como contenedores de DOcker. Operando dentro de la red virtual de Docker. Cada componente exponía un puerto interno para la comunicación entre los servicios y para la comunicación externa (como es en el caso del ```reverse_proxy```), se utilizaba un *puerto mapeado* hacia un puerto del host(por ejemplo, ```aleph_rproxy``` o ```aleph_rproxy_dsk```).
 
@@ -142,14 +142,13 @@ Actualmente, el sistema se encuentra alojado en la nube utilizando AWS ECS con l
 	- auth-ms-service: Para la gestión de autenticación y autorización de usuarios.
 	- music-ms-service: Para la gestión de canciones, álbumes y artistas.
 	- profile-ms-service: Para la gestión de perfiles y preferencias de los usuarios.
- - 
 - **Replicación de Servicios**:
 	Para microservicio se hizo replicación en tres tareas ESC(tres instancias) para mejorar la disponibilidad, tolerancia a fallos y escalabilidad del sistema.
 
 - **Balanceo de carga**:
 	Cada microservisio está conectado a su propio balanceador de carga de aplicación (ALB). Estos balanceadores permiten distribuir el tráfico de la red entre las tres instancias en ejecución, cada una escucha al **puerto 3002**.
 
-- **COnfiguración de los Puertos**:
+- **Configuración de los Puertos**:
 	Todos los microservicios exponen sus APIs a través del **puerto 3002**, configurado tanto en las definiciones de tareas ECS como en las reglas de escucha de los balanceadores.
 
 ![Diagrama de deployment]()
