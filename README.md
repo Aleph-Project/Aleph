@@ -330,6 +330,8 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 ### Patrones aplicados:
 * Replication Pattern.
 * Load Balancer Pattern.
+  
+![Diagrama de segmentación de red](./images/diagrama_segmentacion_red.drawio.png)
 
 ## 6.8 Service Discovery Pattern
 ### Scenario:
