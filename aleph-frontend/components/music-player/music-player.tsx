@@ -365,9 +365,9 @@ export function MusicPlayer({ webSocket }: MusicPlayerProps) {
                 ) : (
                     <>
                         <img
-                            src="/placeholder.svg?height=56&width=56"
+                            src="/Vinilo.png"
                             alt="Album cover"
-                            className="h-14 w-14 rounded object-cover mr-3"
+                            className="h-14 w-14 w-[56] rounded object-cover mr-3"
                         />
                         <div>
                             <h4 className="text-sm font-medium">Selecciona una canción</h4>
