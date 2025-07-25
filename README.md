@@ -188,7 +188,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 * Secure Channel Pattern (TLS/HTTPS)
 * Reverse Proxy
 
-  ![Escenario Secure Channel](./images/SecureChanel.jpg)
+  ![Escenario Secure Channel](./images/SecureChannel.jpg)
 
 ## 6.2 Reverse Proxy Pattern
 
