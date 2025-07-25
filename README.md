@@ -469,7 +469,32 @@ Rendimiento de auth-ms, profiles y reviews:
 
   En general, para los microservicios de caching se encuentra la knee para valores altos (carga de 100) , esto dado a que la información que consultan en los tests es cacheada satisfactoriamente. Estos servicios son de los más importantes para nuestro sistema y hacen parte de las funcionalidades core del mismo, por esto la relevancia de estos resultados. Para otros microservicios (Rendimiento de auth-ms, profiles y reviews) los cuales no se les aplicaron patrones y tácticas, su knee se encuentra en valores de carga inferiores a 50.  
   
-  
+
+---
+
+#### 7.3 Pruebas con JMeter después del despliegue en AWS ECS
+
+Después de desplegar los microservicios principales (`music`, `auth` y `profiles`) en AWS ECS, se realizaron nuevas pruebas de rendimiento utilizando JMeter. Se observó una mejora significativa en la capacidad de manejo de usuarios concurrentes. Esta mejora se debe a que los microservicios ya no están recargando el sistema como ocurría en el prototipo 3 (donde todos los servicios estaban dentro de un único `docker compose`), sino que ahora cuentan con recursos de infraestructura dedicados en instancias EC2, con sus réplicas correspondientes y un balanceador de carga de AWS.
+
+En las pruebas, se evidenció que la knee (punto de inflexión donde la latencia comienza a crecer rápidamente) pasó de estar entre 5 y 30 usuarios concurrentes (dependiendo del microservicio) en el prototipo anterior, a soportar hasta 100 usuarios concurrentes en el entorno actual.
+
+A continuación se muestran las nuevas gráficas de rendimiento para los microservicios después del despliegue en AWS ECS:
+
+<!-- Espacio para nuevas gráficas de rendimiento de music, auth y profiles -->
+![JMeter: Rendimiento music-ms en AWS ECS](./images/aws_music_ms.png)
+![JMeter: Rendimiento auth-ms en AWS ECS](./images/aws_auth_ms.png)
+![JMeter: Rendimiento profiles-ms en AWS ECS](./images/aws_profiles_ms.png)
+
+También se incluye una gráfica comparativa que muestra el cambio de rendimiento entre los prototipos 2, 3 y 4:
+
+- **P2:** Sistema con toda la funcionalidad pero sin patrones ni tácticas de rendimiento y escalabilidad.
+- **P3:** Sistema con load balancing, replicación y bases de datos cache.
+- **P4:** Microservicios desplegados en un ECS de AWS, con mayor disponibilidad y tolerancia a particiones.
+
+<!-- Espacio para gráfica comparativa de rendimiento entre prototipos -->
+![Comparativa de rendimiento P2, P3 y P4](./images/comparativa_prototipos.png)
+
+
 ## Prototype
 
 1. **Realizar instalaciones previas**
@@ -507,3 +532,4 @@ Rendimiento de auth-ms, profiles y reviews:
      
 	```bash
      	npm run build
+```
