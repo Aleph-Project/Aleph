@@ -457,15 +457,8 @@ Para evaluar el rendimiento de cada microservicio de manera aislada, se empleó 
 A continuación se presentan gráficas de rendimiento obtenidas con JMeter:
 
   
-Rendimiento de analysis-ms y music-ms:
 
-  ![JMeter: analysis-ms y music-ms](./images/Analysis%20y%20Music.png)
-
-
-  
-Rendimiento de auth-ms, profiles y reviews:
-
-  ![JMeter: auth-ms, profiles y reviews](./images/Auth_,%20Profiles%20y%20Reviews.png)
+  ![JMeter: Profiles, Auth, Music y Analysis](./images/ProfilesAuthMusicyAnalysisAntes.png)
 
   En general, para los microservicios de caching se encuentra la knee para valores altos (carga de 100) , esto dado a que la información que consultan en los tests es cacheada satisfactoriamente. Estos servicios son de los más importantes para nuestro sistema y hacen parte de las funcionalidades core del mismo, por esto la relevancia de estos resultados. Para otros microservicios (Rendimiento de auth-ms, profiles y reviews) los cuales no se les aplicaron patrones y tácticas, su knee se encuentra en valores de carga inferiores a 50.  
   
@@ -481,9 +474,8 @@ En las pruebas, se evidenció que la knee (punto de inflexión donde la latencia
 A continuación se muestran las nuevas gráficas de rendimiento para los microservicios después del despliegue en AWS ECS:
 
 <!-- Espacio para nuevas gráficas de rendimiento de music, auth y profiles -->
-![JMeter: Rendimiento music-ms en AWS ECS](./images/aws_music_ms.png)
-![JMeter: Rendimiento auth-ms en AWS ECS](./images/aws_auth_ms.png)
-![JMeter: Rendimiento profiles-ms en AWS ECS](./images/aws_profiles_ms.png)
+![JMeter: Rendimiento music-ms, auth-ms, profiles-ms en AWS ECS](./images/ProfilesAuthMusicyAnalysis.png)
+
 
 También se incluye una gráfica comparativa que muestra el cambio de rendimiento entre los prototipos 2, 3 y 4:
 
