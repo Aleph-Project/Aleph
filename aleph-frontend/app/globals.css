@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: Montserrat;
+  src: url("../styles/Montserrat-VariableFont_wght.ttf"), url("../styles/Montserrat-Italic-VariableFont_wght.ttf");
+  font-weight: 500;
+  font-style: normal;
+}
 
 body {
   font-family: Montserrat;

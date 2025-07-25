@@ -436,7 +436,9 @@ export default function SongPage() {
             {/* Lista de reseñas */}
             {reviews.length > 0 ? (
               <div className="space-y-4">
+                
                 {reviews.map((review) => (
+                  review.profile && review.review ? (
                   <div
                     key={review.review.id}
                     className="bg-zinc-900 rounded-lg p-6 hover:bg-zinc-800 transition-colors cursor-pointer"
@@ -444,7 +446,7 @@ export default function SongPage() {
                   >
                     <div className="flex items-start gap-4">
                       <Image
-                        src={review.profile.avatar_url || "/placeholder.svg"}
+                        src={review.profile.avatar_url === null ? "/userimg.png" : review.profile.avatar_url}
                         alt={review.profile.name}
                         width={40}
                         height={40}
@@ -467,6 +469,7 @@ export default function SongPage() {
                       </div>
                     </div>
                   </div>
+                  ) : null
                 ))}
               </div>
             ) : (
