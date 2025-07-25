@@ -416,7 +416,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 * Replication Pattern.
 * Load Balancer Pattern.
 
-  
+  ![Escenario Healthcheck tactic](./images/HealthCheck.jpg)
 
 ## 6.10 Healthcheck Tactic
 ### Scenario:
