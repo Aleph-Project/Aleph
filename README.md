@@ -169,7 +169,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 ![Diagrama de descomposition](./images/diagrama_descomposicion.drawio.png)
 
 ## 6. Quality Attributes (Security)
-## 6.1. Secure Chanel Pattern
+## 6.1. Secure Channel Pattern
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------|
@@ -187,6 +187,8 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 ### Patrones aplicados:
 * Secure Channel Pattern (TLS/HTTPS)
 * Reverse Proxy
+
+  ![Escenario Secure Channel](./images/SecureChanel.jpg)
 
 ## 6.2 Reverse Proxy Pattern
 
@@ -213,6 +215,8 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 
 * **Facade Pattern**
 
+   ![Escenario Rerverse Proxy](./images/ReverseProxy.jpg)
+
 
 ## 6.3 Network Segmentation Pattern
 ![Diagrama de segmentación de red](./images/diagrama_segmentacion_red.drawio.png)
@@ -233,6 +237,8 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 ### Patrones Aplicados:
 * **Network Segmentation**
 
+   ![Escenario Network Segmentation](./images/NetworkSegmentation.jpg)
+
 ## 6.4 Tokens validation pattern
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                                                       |
@@ -247,6 +253,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 ### Tácticas Aplicadas
 * **Authenticate Actor:** El sistema verifica la identidad del usuario o servicio que está solicitando acceder a un componente o recurso del sistema que se encuentra protegido. El sistema verifica la autenticación del usuario mediante Tokens JWT para cada solicitud que realice. Para esto, el API Gateway actúa como el único punto de entrada para dichas solicitudes y las verifica. Si el Token es valido, redirige la petición al microservicio, si no es válido, rechaza la petición.  
 
+   ![Escenario Tokens Validation](./images/ReverseProxy.jpg)
 	
 ## 6.5 Rate Limiting pattern
 ### Scenario:
@@ -261,6 +268,8 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 
 ### Tácticas Aplicadas
 * **Limit Access:** Se restringe el acceso a los recursos del sistema por servicios que no estén autorizados. Se aplica la validación por Tokens JWT antes de ingresar a los microservicios requeridos, asegurando que solo los componentes definidos para su comunicación puedan interactuar entre sí.
+
+   ![Escenario Rate Limiting](./images/RateLimiting.jpg)
 
 ## 6. Quality Attributes (Performance and Scalability)
 
@@ -285,6 +294,8 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 ### Patrones aplicados:
 * Load Balancer Pattern
 
+  ![Escenario Load Balancing](./images/LoadBalancing.jpg)
+
 ## 6.7 Db Caching
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
@@ -307,6 +318,8 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 
 ### Patrones aplicados:
 * Load Balancer Pattern
+
+  ![Escenario DB Caching](./images/Caching.jpg)
 
 ## 6. Quality Attributes (Reliability)
 
@@ -331,7 +344,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 * Replication Pattern.
 * Load Balancer Pattern.
   
-![Diagrama de segmentación de red](./images/diagrama_segmentacion_red.drawio.png)
+  ![Escenario Replication Pattern](./images/Replication.jpg)
 
 ## 6.8 Service Discovery Pattern
 ### Scenario:
@@ -352,7 +365,8 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 ### Patrones aplicados:
 * Service Discovery Pattern.
 * Load Balancer Pattern.
-
+  
+  ![Escenario Service Discovery](./images/ServiceDiscovery.jpg)
 
 ## 6.9 Clusters Pattern
 ### Scenario:
@@ -376,6 +390,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 * Replication Pattern.
 * Load Balancer Pattern.
 
+  ![Escenario Clusters Pattern](./images/Clusters.jpg)
 
 ## 6.10 Healthcheck 
 ### Scenario:
