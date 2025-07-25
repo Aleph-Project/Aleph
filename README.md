@@ -310,7 +310,6 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 ### Patrones aplicados:
 * Load Balancer Pattern
 
-  
 
 ## 6.7 Db Caching
 
@@ -419,7 +418,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 
   
 
-## 6.10 Healthcheck 
+## 6.10 Healthcheck Tactic
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                      |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------|
@@ -436,7 +435,6 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 
 
 ### Patrones aplicados:
-* no sé
 * Load Balancer Pattern
 
 
