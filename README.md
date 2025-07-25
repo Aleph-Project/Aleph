@@ -245,7 +245,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 ### Patrones Aplicados:
 * **Network Segmentation**
 
-![Diagrama de segmentación de red](./images/segementationRed.png)   
+![Diagrama de segmentación de red](./images/segementationRed.jpg)   
 
 ## 6.4 Tokens validation pattern
 
