@@ -249,7 +249,7 @@ Conformado por los submódulos de analysis, streaming, artistis, albums y songs.
 
 ## 6.4 Tokens validation pattern
 
-![Escenario Tokens Validation](./images/ReverseProxy.jpg)
+![Escenario Tokens Validation](./images/TokensValidation.jpg)
 
 ### Scenario:
 | Elemento             | Descripción del Comportamiento del Sistema                                                                                                                                                       |
