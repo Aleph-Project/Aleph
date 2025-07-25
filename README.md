@@ -151,7 +151,7 @@ Actualmente, el sistema se encuentra alojado en la nube utilizando AWS ECS con l
 - **Configuración de los Puertos**:
 	Todos los microservicios exponen sus APIs a través del **puerto 3002**, configurado tanto en las definiciones de tareas ECS como en las reglas de escucha de los balanceadores.
 
-![Diagrama de deployment]()
+![Diagrama de descomposition](./images/DiagramaDespliegue.jpg)
 
 
 ## 5. Decomposition Structure
